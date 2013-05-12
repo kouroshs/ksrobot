@@ -1,0 +1,16 @@
+TODO: In case of SLAM update, how can we fix FOVIS pose? or is it necessary at all?
+TODO: Reset namespace types, probably remove utils but keep gui.
+(HIGH) Motion estimation status, current position, position change. All in StatisticsContainer
+
+(HIGH) Do sth when KinectDatasetReader finishes. should it send some kind of notification?
+(HIGH) Set kinect intrinsic params inside KinectDatasetReader.
+
+(MID-High_prio) Add code to pause/resume.
+
+(MID-PRIORITY) Implement controller.
+(MID-PRIORITY) Implement saving to logfile. (after config implementation)
+(MID-PRIORITY) Add 3D View container codes for point cloud? and map viewer. (using other codes or Ogre3d for last resort)
+
+(LOW-PRIORITY) Add documentation in doxygen style.
+(LOW-PRIORITY) Add program_options for command line.
+(LOW-PRIORITY) Save window positions on exit
