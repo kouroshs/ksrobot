@@ -9,11 +9,11 @@
 #include <QString>
 #include <Eigen/Geometry>
 
-#ifdef USE_SHORT_NAMES
+//#ifdef USE_SHORT_NAMES
 #define KQT_OBJECT_NAME(obj) QString(#obj)
-#else // USE_COMPLETE_NAME
-#define KQT_OBJECT_NAME(obj) this->objectName() + "." #obj
-#endif
+//#else // USE_COMPLETE_NAME
+//#define KQT_OBJECT_NAME(obj) this->objectName() + "." #obj
+//#endif
 
 
 #define SET_QTOBJECTNAME(obj) (obj)->setObjectName(KQT_OBJECT_NAME(obj));

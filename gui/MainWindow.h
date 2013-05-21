@@ -66,6 +66,9 @@ private:
     void                                CreateStatusbar();
     void                                SetupUI();
     
+    
+    std::string                         GetChildObjName(QObject* obj) const;
+    
     void                                Cleanup();
     
     void                                InitMdiSubWindow(QMdiSubWindow* wnd, const QString& title, QAction* act);

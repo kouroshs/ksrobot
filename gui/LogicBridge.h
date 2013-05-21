@@ -32,6 +32,7 @@ namespace gui
 
 class LogicBridge : public QObject
 {
+    Q_OBJECT
 public:
     explicit LogicBridge(QObject* parent = 0);
     ~LogicBridge();

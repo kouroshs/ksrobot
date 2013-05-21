@@ -12,9 +12,9 @@ ImageContainer::~ImageContainer()
 {
 }
 
-void ImageContainer::InitControl(KSRobot::utils::ProgramOptions::Ptr po, bool fromControlName)
+void ImageContainer::InitControl(KSRobot::utils::ProgramOptions::Ptr po)
 {
-    KSRobot::gui::KWidgetBase::InitControl(po, fromControlName);
+    KSRobot::gui::KWidgetBase::InitControl(po);
     setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
 }
 

@@ -36,7 +36,7 @@ public:
     explicit KWidgetBase(QWidget* parent = 0, Qt::WindowFlags f = 0);
     virtual ~KWidgetBase();
 
-    virtual void                                 InitControl(utils::ProgramOptions::Ptr po, bool fromControlName = true);
+    virtual void                                 InitControl(utils::ProgramOptions::Ptr po);
 protected:
     utils::ProgramOptions::Ptr                   mGuiPO;
 };

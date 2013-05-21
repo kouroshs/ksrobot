@@ -28,10 +28,7 @@ KSRobot::gui::KWidgetBase::~KWidgetBase()
 {
 }
 
-void KSRobot::gui::KWidgetBase::InitControl(KSRobot::utils::ProgramOptions::Ptr po, bool fromControlName)
+void KSRobot::gui::KWidgetBase::InitControl(KSRobot::utils::ProgramOptions::Ptr po)
 {
-    if( fromControlName )
-        mGuiPO = po->StartNode(objectName().toStdString());
-    else
-        mGuiPO = po;
+    mGuiPO = po;
 }

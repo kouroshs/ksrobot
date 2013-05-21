@@ -92,9 +92,9 @@ ExecutionControl::~ExecutionControl()
 {
 }
 
-void ExecutionControl::InitControl(ProgramOptions::Ptr po, bool fromControlName)
+void ExecutionControl::InitControl(ProgramOptions::Ptr po)
 {
-    KWidgetBase::InitControl(po, fromControlName);
+    KWidgetBase::InitControl(po);
 
     mUI = new Ui::ExecutionControl();
     //NOTE: Because the ui is very big, I'm going to turn a blind eye on naming conventions inside this class,

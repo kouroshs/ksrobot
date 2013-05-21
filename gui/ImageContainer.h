@@ -16,7 +16,7 @@ public:
     explicit ImageContainer(QWidget* parent = 0, Qt::WindowFlags f = 0);
     virtual ~ImageContainer();
     
-    virtual void InitControl(utils::ProgramOptions::Ptr po, bool fromControlName = true);
+    virtual void InitControl(utils::ProgramOptions::Ptr po);
     
     virtual QSize minimumSizeHint() const;
     virtual QSize sizeHint() const;

@@ -47,6 +47,9 @@ void MainWindow::InitWindow(ProgramOptions::Ptr root, ProgramOptions::Ptr poGUI)
     
     setWindowTitle(tr("KSRobot"));
     
+    if( objectName() == "" )
+        this->setObjectName("MainWindow");
+    
     mMdiArea = new QMdiArea(this);
     SET_QTOBJECTNAME(mMdiArea);
     mMdiArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -60,6 +63,11 @@ void MainWindow::InitWindow(ProgramOptions::Ptr root, ProgramOptions::Ptr poGUI)
     SetupUI();
     
     showMaximized();
+}
+
+std::string MainWindow::GetChildObjName(QObject* obj) const
+{
+    return (obj->objectName()).toStdString();
 }
 
 void MainWindow::CreateActions()
@@ -172,7 +180,7 @@ void MainWindow::CreateToolbars()
 
 void MainWindow::InitControl(KWidgetBase* wid)
 {
-    wid->InitControl(mGuiPO);
+    wid->InitControl(mGuiPO->StartNode(GetChildObjName(wid)));
     wid->setAttribute(Qt::WA_DeleteOnClose, false);
 }
 
@@ -242,7 +250,7 @@ void MainWindow::SetupUI()
 
 void MainWindow::InitMdiSubWindow(QMdiSubWindow* wnd, const QString& title, QAction* act)
 {
-    ProgramOptions::Ptr wndpo = mGuiPO->StartNode(wnd->objectName().toStdString());
+    ProgramOptions::Ptr wndpo = mGuiPO->StartNode(GetChildObjName(wnd));
     wnd->installEventFilter(this);
     wnd->setWindowTitle(title);
     wnd->setAttribute(Qt::WA_DeleteOnClose, false);
@@ -266,22 +274,19 @@ void MainWindow::InitCheckableAction(QAction* act, const QString& tip)
 {
     act->setStatusTip(tip);
     act->setCheckable(true);
-    act->setChecked(mGuiPO->GetBool(act->objectName().toStdString() + ".Checked", true));
+    //act->setChecked(mGuiPO->GetBool((objectName() + "." + act->objectName()).toStdString() + ".Checked", true));
+    act->setChecked(mGuiPO->GetBool(GetChildObjName(act) + ".Checked", true));
     connect(act, SIGNAL(triggered(bool)), this, SLOT(ToggleAction(bool)));
 }
 
 void MainWindow::SaveMdiSubWindow(QMdiSubWindow* wnd)
 {
-    Utils::WritePoint(mGuiPO, wnd->objectName().toStdString() + 
-                        ".Position", wnd->pos());
-    
-    //qDebug() << "(MainWindow::SaveMdiSubWindow) " << wnd->objectName();
+    Utils::WritePoint(mGuiPO, GetChildObjName(wnd) + ".Position", wnd->pos());
 }
 
 void MainWindow::SaveCheckableAction(QAction* act)
 {
-    //qDebug() << "(MainWindow::SaveCheckableAction) " << act->objectName();
-    mGuiPO->PutBool(act->objectName().toStdString() + ".Checked", act->isChecked());
+    mGuiPO->PutBool(GetChildObjName(act) + ".Checked", act->isChecked());
 }
 
 void MainWindow::ToggleAction(bool bShow)
@@ -296,7 +301,7 @@ void MainWindow::ToggleAction(bool bShow)
     }
     QWidget* wid = iter->second;
     bShow ? wid->show() : wid->hide();
-    mGuiPO->PutBool(wid->objectName().toStdString() + ".Checked", bShow);
+    mGuiPO->PutBool(GetChildObjName(wid) + ".Checked", bShow);
 }
 
 void MainWindow::ShowConfig(bool bShow)
@@ -304,7 +309,6 @@ void MainWindow::ShowConfig(bool bShow)
     (void)bShow;
     qDebug() << "(MainWindow::ShowConfig) Method not implemented.";
 }
-
 
 void MainWindow::About()
 {

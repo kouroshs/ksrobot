@@ -37,9 +37,9 @@ StatisticsContainer::~StatisticsContainer()
 {
 }
 
-void StatisticsContainer::InitControl(utils::ProgramOptions::Ptr po, bool fromControlName)
+void StatisticsContainer::InitControl(utils::ProgramOptions::Ptr po)
 {
-    KSRobot::gui::KWidgetBase::InitControl(po, fromControlName);
+    KSRobot::gui::KWidgetBase::InitControl(po);
 }
 
 

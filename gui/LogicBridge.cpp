@@ -35,7 +35,6 @@ LogicBridge::~LogicBridge()
 
 void LogicBridge::OnStart(const ExecControlData& data)
 {
-    
 }
 
 void LogicBridge::OnStop()

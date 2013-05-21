@@ -27,7 +27,7 @@ public:
     explicit LogContainer(QWidget* parent = 0, Qt::WindowFlags f = 0);
     virtual ~LogContainer();
     
-    virtual void InitControl(utils::ProgramOptions::Ptr po, bool fromControlName = true);
+    virtual void InitControl(utils::ProgramOptions::Ptr po);
     
     QColor                              GetDefaultTextColor() const;
     void                                SetDefaultTextColor(QColor color);

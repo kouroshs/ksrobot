@@ -19,11 +19,9 @@ public:
     explicit StatisticsContainer(QWidget* parent = 0, Qt::WindowFlags f = 0);
     virtual ~StatisticsContainer();
     
-    virtual void InitControl(utils::ProgramOptions::Ptr po, bool fromControlName = true);
+    virtual void InitControl(utils::ProgramOptions::Ptr po);
     
 private:
-    utils::ProgramOptions::Ptr                            mPO;
-    
     enum LabelRep
     {
         LR_BEGIN = 0,
