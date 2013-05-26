@@ -1,6 +1,7 @@
 #include "ProgramOptions.h"
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/graph/graph_concepts.hpp>
 
 #include <fstream>
 
@@ -8,6 +9,9 @@ using namespace KSRobot::utils;
 namespace bt = boost::property_tree;
 
 using namespace std;
+
+ProgramOptions::UserTypesMap    ProgramOptions::mUserTypesMap;
+boost::mutex                    ProgramOptions::mUserTypesGaurd;
 
 ProgramOptions::ProgramOptions() : mRoot(new TreeType()), mStrPrefix(""), mGaurd(new MutexType())
 {
@@ -18,15 +22,6 @@ ProgramOptions::ProgramOptions(const ProgramOptions& other) : mRoot(other.mRoot)
 {
     mGaurd = other.mGaurd;
 }
-
-// ProgramOptions::ProgramOptions(const ProgramOptions* this_ref, const std::string& other)
-// {
-//     mGaurd = this_ref->mGaurd;
-//     mRoot = this_ref->mRoot;
-//     mStrPrefix = other;
-//     cout << "other constructor\n" << flush;
-// }
-
 
 ProgramOptions::~ProgramOptions()
 {
@@ -161,7 +156,7 @@ ProgramOptions::Ptr ProgramOptions::StartNode(const std::string& name)
 }
 
 template<class X>
-class BaseTypeInterface : public ProgramOptions::TypeInterface
+class BaseTypeInterface : public ProgramOptions::UserTypeInterface
 {
 public:
     virtual ~BaseTypeInterface(){;}

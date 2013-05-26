@@ -9,8 +9,6 @@
 
 #include <string>
 
-extern gtsam::Point2 P;
-extern gtsam::Rot2 R;
 namespace KSRobot
 {
 namespace utils
@@ -23,10 +21,10 @@ public:
     typedef boost::shared_ptr<ProgramOptions>  Ptr;
     typedef boost::shared_ptr<const ProgramOptions> ConstPtr;
     
-    class TypeInterface
+    class UserTypeInterface
     {
     public:
-        virtual ~TypeInterface();
+        virtual ~UserTypeInterface();
         virtual void Add(const std::string& name, ProgramOptions* po, const boost::any& value) = 0;
         virtual void Put(const std::string& name, ProgramOptions* po, const boost::any& value) = 0;
         virtual void Get(const std::string& name, ProgramOptions* po, boost::any& value) = 0;
@@ -94,45 +92,7 @@ public:
         mRoot->add<X>(mStrPrefix + name, val);
     }
     
-    template<class ListType>
-    void SetListOfValues(const std::string& name, const ListType& lst)
-    {
-        typedef typename ListType::const_iterator Iterator;
-        for(Iterator iter = lst.begin(); iter != lst.end(); iter++)
-            AddValue(name, *iter);
-    }
-    
-    template<class ListType>
-    void ReadListOfValues(const std::string& name, ListType& lst)
-    {
-        MutexType::scoped_lock lock(*mGaurd);
-        BOOST_FOREACH(boost::property_tree::ptree::value_type& v, mRoot->get_child(mStrPrefix + name))
-            lst.push_back(v.second.data());
-    }
-    
 private:
-    // In case of no multithreading support.
-//     class DummyMutex
-//     {
-//     public:
-//         DummyMutex(){;}
-//         DummyMutex(const DummyMutex&) {;}
-//         
-//         void lock() {;}
-//         bool try_lock() { return true;}
-//         void unlock() {;}
-//         
-//         class scoped_lock
-//         {
-//         public:
-//             scoped_lock(const DummyMutex& dm){ (void)dm;}
-//         };
-//     };
-    
-    typedef std::map<std::string, Interface>    TypeInterfaceMap;
-    static boost::mutex                         mMapGaurd;
-    static TypeInterfaceMap                     mTypes;
-    
     typedef boost::property_tree::ptree TreeType;
     typedef boost::shared_ptr<TreeType> TreePtr;
     
@@ -142,6 +102,10 @@ private:
     std::string                         mStrPrefix;
     boost::shared_ptr<MutexType>        mGaurd;
 
+    //TODO: Complete here
+    typedef std::map<std::string, UserTypeInterface*>   UserTypesMap;
+    static UserTypesMap                 mUserTypesMap;
+    static boost::mutex                 mUserTypesGaurd;
 };
 
 #undef DEFAULT_VAL
