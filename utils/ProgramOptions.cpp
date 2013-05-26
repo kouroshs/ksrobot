@@ -160,3 +160,25 @@ ProgramOptions::Ptr ProgramOptions::StartNode(const std::string& name)
 //     return ProgramOptions(this, otherPrefix);
 }
 
+template<class X>
+class BaseTypeInterface : public ProgramOptions::TypeInterface
+{
+public:
+    virtual ~BaseTypeInterface(){;}
+    
+    virtual void Add(const std::string& name, ProgramOptions* po, const boost::any& value)
+    {
+        po->AddValue<X>(name, boost::any_cast<X>(value));
+    }
+    
+    virtual void Put(const std::string& name, ProgramOptions* po, const boost::any& value)
+    {
+        po->PutValue<X>(name, boost::any_cast<X>(value));
+    }
+    
+    
+
+};
+
+
+

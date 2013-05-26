@@ -9,6 +9,8 @@
 
 #include <string>
 
+extern gtsam::Point2 P;
+extern gtsam::Rot2 R;
 namespace KSRobot
 {
 namespace utils
@@ -20,6 +22,16 @@ class ProgramOptions
 public:
     typedef boost::shared_ptr<ProgramOptions>  Ptr;
     typedef boost::shared_ptr<const ProgramOptions> ConstPtr;
+    
+    class TypeInterface
+    {
+    public:
+        virtual ~TypeInterface();
+        virtual void Add(const std::string& name, ProgramOptions* po, const boost::any& value) = 0;
+        virtual void Put(const std::string& name, ProgramOptions* po, const boost::any& value) = 0;
+        virtual void Get(const std::string& name, ProgramOptions* po, boost::any& value) = 0;
+    };
+    
     
     ProgramOptions();
     ProgramOptions(const ProgramOptions& other);
@@ -100,22 +112,26 @@ public:
     
 private:
     // In case of no multithreading support.
-    class DummyMutex
-    {
-    public:
-        DummyMutex(){;}
-        DummyMutex(const DummyMutex&) {;}
-        
-        void lock() {;}
-        bool try_lock() { return true;}
-        void unlock() {;}
-        
-        class scoped_lock
-        {
-        public:
-            scoped_lock(const DummyMutex& dm){ (void)dm;}
-        };
-    };
+//     class DummyMutex
+//     {
+//     public:
+//         DummyMutex(){;}
+//         DummyMutex(const DummyMutex&) {;}
+//         
+//         void lock() {;}
+//         bool try_lock() { return true;}
+//         void unlock() {;}
+//         
+//         class scoped_lock
+//         {
+//         public:
+//             scoped_lock(const DummyMutex& dm){ (void)dm;}
+//         };
+//     };
+    
+    typedef std::map<std::string, Interface>    TypeInterfaceMap;
+    static boost::mutex                         mMapGaurd;
+    static TypeInterfaceMap                     mTypes;
     
     typedef boost::property_tree::ptree TreeType;
     typedef boost::shared_ptr<TreeType> TreePtr;

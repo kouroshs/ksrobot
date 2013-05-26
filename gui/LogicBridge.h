@@ -25,6 +25,8 @@
 
 #include <gui/ExecutionControl.h>
 
+#include <utils/SettingsBinder.h>
+
 namespace KSRobot
 {
 namespace gui
@@ -41,7 +43,8 @@ public slots:
     void                        OnStart(const ExecControlData& data);
     void                        OnStop();
     
-    
+protected:
+    utils::SettingsBinder       mBinder;
 };
 
 } // end namespace gui

@@ -3,6 +3,7 @@
 
 #include <utils/ProgramOptions.h>
 #include <gui/KWidgetBase.h>
+#include <utils/SettingsBinder.h>
 
 #include <gui/ui_ExecutionControl.h>
 
@@ -17,7 +18,8 @@ public:
     struct
     {
         bool            GetFromDevice;
-        std::string     Source;
+        std::string     SourceDevice;
+        std::string     SourceDir;
     } Kinect;
     
     struct
@@ -43,6 +45,8 @@ public:
     struct
     {
         bool            Enable;
+        int             Port;
+        std::string     Address;
     } Comm;
     
     struct
@@ -77,6 +81,9 @@ signals:
     void                                        OnStop();
     
 private:
+    void                                        BindSettings();
+    void                                        ReadSettings();
+    void                                        SaveSettings();
     bool                                        UpdateUIFromData();
     bool                                        UpdateDataFromUI();
 private slots:
@@ -98,6 +105,7 @@ private slots:
 private:
     Ui::ExecutionControl*                       mUI;
     ExecControlData                             mData;
+    utils::SettingsBinder                       mBinder;
 };
 
 } // end namespace gui
