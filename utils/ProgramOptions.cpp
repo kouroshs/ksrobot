@@ -69,78 +69,54 @@ void ProgramOptions::SaveToFile(const std::string& filename)
     }
 }
 
-double ProgramOptions::GetDouble(const std::string& name, const boost::any& defVal)
+double ProgramOptions::GetDouble(const std::string& name, const boost::optional<double>& defVal)
 {
-    if( defVal.empty() )
-        return GetValue<double>(name);
-    else
-        return GetValue<double>(name, boost::any_cast<double>(defVal));
+    return GetValue<double>(name, defVal);
+//     if( defVal.empty() )
+//         return GetValue<double>(name);
+//     else
+//         return GetValue<double>(name, boost::any_cast<double>(defVal));
 }
 
-void ProgramOptions::PutDouble(const std::string& name, double val, bool letMultiple)
+void ProgramOptions::PutDouble(const std::string& name, double val)
 {
-    if( letMultiple )
-        AddValue(name, val);
-    else
-        PutValue(name, val);
+    PutValue(name, val);
 }
 
-int ProgramOptions::GetInt(const std::string& name, const boost::any& defVal)
+int ProgramOptions::GetInt(const std::string& name, const boost::optional<int>& defVal)
 {
-    if( defVal.empty() )
-        return GetValue<int>(name);
-    else
-        return GetValue<int>(name, boost::any_cast<int>(defVal));
+    return GetValue<int>(name, defVal);
 }
 
-void ProgramOptions::PutInt(const std::string& name, int val, bool letMultiple)
+void ProgramOptions::PutInt(const std::string& name, int val)
 {
-    if( letMultiple )
-        AddValue(name, val);
-    else
-        PutValue(name, val);
+    PutValue(name, val);
 }
 
-std::string ProgramOptions::GetString(const std::string& name, const boost::any& defVal)
+std::string ProgramOptions::GetString(const std::string& name, const boost::optional<std::string>& defVal)
 {
-    if( defVal.empty() )
-        return GetValue<std::string>(name);
-    else
-        return GetValue<std::string>(name, boost::any_cast<std::string>(defVal));
+    return GetValue<std::string>(name, defVal);
 }
 
-void ProgramOptions::PutString(const std::string& name, const std::string& val, bool letMultiple)
+void ProgramOptions::PutString(const std::string& name, const std::string& val)
 {
-    if( letMultiple )
-        AddValue(name, val);
-    else
-        PutValue(name, val);
+    PutValue(name, val);
 }
 
-bool ProgramOptions::GetBool(const std::string& name, const boost::any& defVal)
+bool ProgramOptions::GetBool(const std::string& name, const boost::optional<bool>& defVal)
 {
-    if( defVal.empty() )
-        return GetValue<bool>(name);
-    else
-        return GetValue<bool>(name, boost::any_cast<bool>(defVal));
+    return GetValue<bool>(name, defVal);
 }
 
-void ProgramOptions::PutBool(const std::string& name, bool val, bool letMultiple)
+void ProgramOptions::PutBool(const std::string& name, bool val)
 {
-    if( letMultiple )
-        AddValue(name, val);
-    else
-        PutValue(name, val);
+    PutValue(name, val);
 }
 
 bool ProgramOptions::NodeExists(const std::string& name) const
 {
     boost::optional<boost::property_tree::ptree&> child = mRoot->get_child_optional(mStrPrefix + name);
-    return (bool) child;
-//     if( !child )
-//         return false;
-//     else
-//         return true;
+    return (bool)child;
 }
 
 ProgramOptions::Ptr ProgramOptions::StartNode(const std::string& name)
@@ -148,32 +124,4 @@ ProgramOptions::Ptr ProgramOptions::StartNode(const std::string& name)
     ProgramOptions::Ptr ptr(new ProgramOptions(*this));
     ptr->mStrPrefix += name + ".";
     return ptr;
-//     std::cout << "before Loc\n" << std::flush;
-//     boost::mutex::scoped_lock lock(*mGaurd);
-//     std::cout << "after\n" << std::flush;
-//     std::string otherPrefix = mStrPrefix + name + ".";
-//     return ProgramOptions(this, otherPrefix);
 }
-
-template<class X>
-class BaseTypeInterface : public ProgramOptions::UserTypeInterface
-{
-public:
-    virtual ~BaseTypeInterface(){;}
-    
-    virtual void Add(const std::string& name, ProgramOptions* po, const boost::any& value)
-    {
-        po->AddValue<X>(name, boost::any_cast<X>(value));
-    }
-    
-    virtual void Put(const std::string& name, ProgramOptions* po, const boost::any& value)
-    {
-        po->PutValue<X>(name, boost::any_cast<X>(value));
-    }
-    
-    
-
-};
-
-
-
