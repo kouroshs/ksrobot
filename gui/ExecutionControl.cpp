@@ -107,7 +107,27 @@ void ExecutionControl::InitControl(ProgramOptions::Ptr po)
     else
         mUI->mRdBtnKinectFile->setChecked(true);
     
-//    mBinder.SetPO(mGuiPO);
+    mBinder.SetPO(mGuiPO);
+    //TODO: 
+    //      Second make sure that the variables will be also updated; but this is necessary
+    //             only for starting a run.
+    
+    // attack paths to controls
+    BindValueToName("Kinect.GetFromDevice", mUI->mRdBtnKinectDevice);
+    BindValueToName("Fovis.Enabled", mUI->mChkEnableFovis);
+    BindValueToName("iSAM.Enabled", mUI->mChkEnableSAM);
+    BindValueToName("OctoMap.Enabled", mUI->mChkEnableOctomap);
+    BindValueToName("OMPL.Enabled", mUI->mChkEnableOMPL);
+    BindValueToName("Comm.Enable", mUI->mChkEnableComm);
+    
+    BindValueToName("GUI.ViewFovis", mUI->mChkViewFovisResults);
+    BindValueToName("GUI.ViewOctoMap", mUI->mChkViewOctomap);
+    BindValueToName("GUI.ViewOMPL", mUI->mChkViewOMPL);
+    BindValueToName("GUI.ViewPCL", mUI->mChkViewPointCloud);
+    BindValueToName("GUI.ViewRGBD", mUI->mChkViewRGBD);
+    
+    //TODO: Should add another binder for variables to paths; or
+    //      generate two functions at binder. one for updating vars and another for functions (not good)
 }
 
 void ExecutionControl::ReadSettings()
@@ -176,19 +196,7 @@ void ExecutionControl::BindValueToName(const std::string& name, QAbstractButton*
 }
 
 bool ExecutionControl::UpdateUIFromData()
-{
-    //TODO: First move these to another function, which is executed at initialization.
-    //      Second make sure that the variables will be also updated; but this is necessary
-    //             only for starting a run.
-    BindValueToName("Kinect.GetFromDevice", mUI->mRdBtnKinectDevice);
-    BindValueToName("Fovis.Enabled", mUI->mChkEnableFovis);
-    BindValueToName("iSAM.Enabled", mUI->mChkEnableSAM);
-    BindValueToName("OctoMap.Enabled", mUI->mChkEnableOctomap);
-    BindValueToName("OMPL.Enabled", mUI->mChkEnableOMPL);
-    BindValueToName("Comm.Enable", mUI->mChkEnableComm);
-    
-    
-    
+{    
     //TODO: Implemet loading UIData from settings, possibly inside another function
     try
     {
