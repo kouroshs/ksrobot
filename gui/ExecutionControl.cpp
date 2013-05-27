@@ -170,10 +170,10 @@ void ExecutionControl::BindSettings()
 
 bool ExecutionControl::UpdateUIFromData()
 {
-    /*mBinder.AddFunctionSetting<bool>("Kinect.GetFromDevice", 
+    mBinder.AddFunctionSetting<bool>("Kinect.GetFromDevice", 
                              boost::bind(&QRadioButton::isChecked, mUI->mRdBtnKinectDevice), 
                              boost::bind(&QRadioButton::setChecked, mUI->mRdBtnKinectDevice, _1));
-    */
+    
     //TODO: Implemet loading UIData from settings, possibly inside another function
     try
     {

@@ -7,7 +7,146 @@ namespace gui
 {
 
 using utils::ProgramOptions;
+
+template<class X>
+class QtTypeInterface : public ProgramOptions::UserTypeInterface
+{
+public:
+    virtual ~QtTypeInterface() {;}
     
+    virtual void Put(ProgramOptions::Ptr po, const boost::any& value)
+    {
+        throw std::exception("(QtTypeInterface::Put) Unknown type");
+    }
+    
+    virtual boost::any Get(ProgramOptions::Ptr po)
+    {
+        throw std::exception("(QtTypeInterface::Get) Unknown type");
+    }
+    
+};
+
+template <>
+class QtTypeInterface<QSize> : public ProgramOptions::UserTypeInterface
+{
+public:
+    virtual ~QtTypeInterface() {;}
+    
+    virtual void Put(ProgramOptions::Ptr po, const boost::any& value)
+    {
+        QSize sz = boost::any_cast<QSize>(value);
+        po->PutInt("Width", sz.width());
+        po->PutInt("Height", sz.height());
+    }
+    
+    virtual boost::any Get(ProgramOptions::Ptr po)
+    {
+        QSize sz;
+        sz.setWidth(po->GetInt("Width"));
+        sz.setHeight(po->GetInt("Height"));
+        return sz;
+    }
+};
+
+template<>
+class QtTypeInterface<QRect> : public ProgramOptions::UserTypeInterface
+{
+public:
+    virtual ~QtTypeInterface() {;}
+    
+    virtual void Put(ProgramOptions::Ptr po, const boost::any& value)
+    {
+        QRect r = boost::any_cast<QRect>(value);
+        po->PutInt("Left", r.left());
+        po->PutInt("Top", r.top());
+        po->PutInt("Width", r.width());
+        po->PutInt("Height", r.height());
+    }
+    
+    virtual boost::any Get(ProgramOptions::Ptr po)
+    {
+        QRect r;
+        r.setLeft(po->GetInt("Left"));
+        r.setTop(po->GetInt("Top"));
+        r.setWidth(po->GetInt("Width"));
+        r.setHeight(po->GetInt("Height"));
+        return r;
+    }
+};
+
+template<>
+class QtTypeInterface<QMargins> : public ProgramOptions::UserTypeInterface
+{
+public:
+    virtual ~QtTypeInterface() {;}
+    
+    virtual void Put(ProgramOptions::Ptr po, const boost::any& value)
+    {
+        QMargins r = boost::any_cast<QMargins>(value);
+        po->PutInt("Left", r.left());
+        po->PutInt("Top", r.top());
+        po->PutInt("Right", r.right());
+        po->PutInt("Bottom", r.bottom());
+    }
+    
+    virtual boost::any Get(ProgramOptions::Ptr po)
+    {
+        QMargins r;
+        r.setLeft(po->GetInt("Left"));
+        r.setTop(po->GetInt("Top"));
+        r.setRight(po->GetInt("Right"));
+        r.setBottom(po->GetInt("Bottom"));
+        return r;
+    }
+};
+
+template<>
+class QtTypeInterface<QPoint> : public ProgramOptions::UserTypeInterface
+{
+public:
+    virtual void Put(ProgramOptions::Ptr po, const boost::any& value)
+    {
+        QPoint pt = boost::any_cast<QPoint>(value);
+        po->PutInt("X", pt.x());
+        po->PutInt("Y", pt.y());
+    }
+    
+    virtual boost::any Get(ProgramOptions::Ptr po)
+    {
+        QPoint pt;
+        pt.setX(po->GetInt("X"));
+        pt.setY(po->GetInt("Y"));
+        return pt;
+    }
+};
+
+template<>
+class QtTypeInterface<QString> : public ProgramOptions::UserTypeInterface
+{
+public:
+    virtual void Put(ProgramOptions::Ptr po, const boost::any& value)
+    {
+        QString str = boost::any_cast<QString>(value);
+        po->PutNodeValue(str.toStdString());
+    }
+    
+    virtual boost::any Get(ProgramOptions::Ptr po)
+    {
+        return QString(po->GetNodeValue().c_str());
+    }
+};
+
+#define ADD_TYPE(T) ProgramOptions::AddUserType<T>(static_cast<ProgramOptions::UserTypeInterface*>(new QtTypeInterface<T>()))
+
+void Utils::RegisterDefaultQtTypes()
+{
+    ADD_TYPE(QString);
+    ADD_TYPE(QPoint);
+    ADD_TYPE(QMargins);
+    ADD_TYPE(QRect);
+    ADD_TYPE(QSize);
+}
+
 QSize Utils::ReadSize(ProgramOptions::Ptr po, const std::string& name, const QSize& defaultVal)
 {
     QSize ret;

@@ -67,13 +67,9 @@ public:
     bool                                NodeExists(const std::string& name) const;
     ProgramOptions::Ptr                 StartNode(const std::string& name);
     void                                operator = (const ProgramOptions& other);
-    
-    //NOTE: THE NEW VERSION
-//     template<class X>
-//     X GetValue(const std::string& name)
-//     {
-//         return GetValInternal<X>(name, boost::none, typename IsSupportedType<X>::truth_type());
-//     }
+
+    void                                PutNodeValue(const std::string& val);
+    std::string                         GetNodeValue();
     
     template<class X>
     X GetValue(const std::string& name, const boost::optional<X>& defVal = boost::none)

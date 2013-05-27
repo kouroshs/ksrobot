@@ -3,7 +3,7 @@
 
 #include <utils/ProgramOptions.h>
 #include "KinectImage.h"
-#include <cv.h>
+
 
 #include <boost/function.hpp>
 #include <boost/signals2.hpp>

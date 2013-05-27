@@ -1,21 +1,27 @@
 project(ksrobot)
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
 
 #NOTE: This configuration should be set for each computer:
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules)
-set(OpenCV_DIR "/home/kourosh/soft/opencv-2.4.5/build/")
+#set(OpenCV_DIR "/home/kourosh/soft/opencv-2.4.5/build/")
 
-find_package(Qt4 REQUIRED)
-find_package(Boost COMPONENTS system filesystem thread date_time program_options chrono REQUIRED)
-find_package(PCL 1.7 REQUIRED QUIET)
-find_package(OpenCV REQUIRED)
-find_package(OpenNI REQUIRED)
 find_package(PkgConfig REQUIRED)
-
 pkg_check_modules(EIGEN REQUIRED eigen3)
 
+find_package(Qt4 REQUIRED)
+message(STATUS "---------------------before boost")
+find_package(Boost COMPONENTS system filesystem thread date_time program_options chrono REQUIRED)
+message(STATUS "---------------------before openni")
+find_package(OpenNI REQUIRED)
+message(STATUS "---------------------before pcl")
+
+find_package(PCL 1.7 COMPONENTS common io REQUIRED)
+message(STATUS "---------------------after pcl")
+
+#find_package(OpenCV REQUIRED)
+
 # Use thread safe boost components
-#set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_MULTITHREADED ON)
 
 set(GLOBAL_LIBRARIES ${PCL_LIBRARIES} ${Boost_LIBRARIES})
 
@@ -36,6 +42,6 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 
-add_subdirectory(gui)
 add_subdirectory(utils)
+add_subdirectory(gui)
 add_subdirectory(apps)

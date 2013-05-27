@@ -41,24 +41,25 @@ public:
     
     void                        ReadSettings();
     void                        WriteSettings();
-    
+        
     template<class X>
-    void                        AddVariableSetting(const std::string& name, X* varPtr);
+    void                        AddVariableSetting(const std::string& name, X* varPtr, 
+                                                   const boost::optional<X>& defVal = boost::none);
     template <class X>
     void                        AddFunctionSetting(const std::string& name,
-                                           boost::function<X ()> getter, boost::function<void (X)> setter);    
+                                           typename boost::function<X ()> getter, typename boost::function<void (X)> setter,
+                                           const boost::optional<X>& defVal = boost::none);
 private:
     class GetSetBase
     {
     public:
-        GetSetBase(ProgramOptions::Ptr po, const std::string& name) : mPO(po), mName(name) {;}
+        GetSetBase(const std::string& name) : mName(name) {;}
         virtual ~GetSetBase() {;}
         
-        virtual void ReadFromFile() = 0;
-        virtual void WriteToFile() = 0;
+        virtual void ReadFromFile(ProgramOptions::Ptr po) = 0;
+        virtual void WriteToFile(ProgramOptions::Ptr po) = 0;
     protected:
-        ProgramOptions::Ptr   mPO;
-        std::string           mName;
+        std::string  mName;
     };
     
     template <class X>
@@ -68,19 +69,19 @@ private:
         typedef boost::function<X()>                GetterFn;
         typedef boost::function<void (X)>           SetterFn;
         
-        GSFunction(ProgramOptions::Ptr po, const std::string& name) : GetSetBase(po, name) {;}
+        GSFunction(const std::string& name) : GetSetBase(name) {;}
         virtual ~GSFunction() {;}
         
         void SetFn(GetterFn getter, SetterFn setter) { mGetter = getter; mSetter = setter; }
         
-        virtual void ReadFromFile()
+        virtual void ReadFromFile(ProgramOptions::Ptr po)
         {
-            mSetter(mPO->GetValue<X>(mName));
+            mSetter(po->GetValue<X>(mName));
         }
         
-        virtual void WriteToFile()
+        virtual void WriteToFile(ProgramOptions::Ptr po)
         {
-            mPO->PutValue<X>(mName, mGetter());
+            po->PutValue<X>(mName, mGetter());
         }
     protected:
         GetterFn            mGetter;
@@ -91,16 +92,16 @@ private:
     class GSVariable : public GetSetBase
     {
     public:
-        GSVariable(ProgramOptions::Ptr po, const std::string& name, X* ptr) : GetSetBase(po, name), mPtr(ptr) {;}
+        GSVariable(const std::string& name, X* ptr) : GetSetBase(name), mPtr(ptr) {;}
         
-        virtual void ReadFromFile()
+        virtual void ReadFromFile(ProgramOptions::Ptr po)
         {
-            *mPtr = mPO->GetValue<X>(mName);
+            *mPtr = po->GetValue<X>(mName);
         }
         
-        virtual void WriteToFile()
+        virtual void WriteToFile(ProgramOptions::Ptr po)
         {
-            mPO->PutValue<X>(mName, *mPtr);
+            po->PutValue<X>(mName, *mPtr);
         }
         
     protected:
@@ -115,21 +116,29 @@ private:
 // INLINE IMPLEMENTATION
 template <class X>
 void SettingsBinder::AddFunctionSetting(const std::string& name,
-                                               boost::function<X ()> getter, boost::function<void (X)> setter)
+                                        boost::function<X ()> getter,
+                                        boost::function<void (X)> setter,
+                                        const boost::optional<X>& defVal)
 {
-    GSFunction<X>* ptr = new GSFunction<X>(mPO, name);
+    GSFunction<X>* ptr = new GSFunction<X>(name);
     ptr->SetFn(getter, setter);
     mData.push_back(ptr);
+    
+    //Now if default value was passed, make sure it exists
+    if( defVal && !mPO->NodeExists(name) )
+        mPO->PutValue<X>(name, *defVal);
 }
 
 template<class X>
-void SettingsBinder::AddVariableSetting(const std::string& name, X* varPtr)
+void SettingsBinder::AddVariableSetting(const std::string& name, X* varPtr, const boost::optional<X>& defVal)
 {
     //TODO: IMPLEMENT
-    GSVariable<X>* var = new GSVariable<X>(mPO, name, varPtr);
+    GSVariable<X>* var = new GSVariable<X>(name, varPtr);
     mData.push_back(var);
+    
+    if( defVal && !mPO->NodeExists(name) )
+        mPO->PutValue<X>(name, *defVal);
 }
-
 
 
 } // end namespace utils

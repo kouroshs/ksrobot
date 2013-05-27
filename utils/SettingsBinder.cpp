@@ -40,7 +40,7 @@ void SettingsBinder::ReadSettings()
 {
     for(DataArray::iterator iter = mData.begin(); iter != mData.end(); iter++)
     {
-        (*iter)->ReadFromFile();
+        (*iter)->ReadFromFile(mPO);
     }
 }
 
@@ -48,7 +48,7 @@ void SettingsBinder::WriteSettings()
 {
     for(DataArray::iterator iter = mData.begin(); iter != mData.end(); iter++)
     {
-        (*iter)->WriteToFile();
+        (*iter)->WriteToFile(mPO);
     }
 }
 

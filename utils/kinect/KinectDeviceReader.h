@@ -3,7 +3,6 @@
 
 #include "KinectInterface.h"
 #include <pcl/io/openni_grabber.h>
-#include <cv.h>
 
 namespace KSRobot
 {

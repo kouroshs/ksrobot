@@ -141,3 +141,14 @@ ProgramOptions::UserTypeInterface* ProgramOptions::FindInterface(const string& n
     return iter->second;
 }
 
+void ProgramOptions::PutNodeValue(const string& val)
+{
+    mRoot->put<std::string>(mStrPrefix.substr(0, mStrPrefix.length() - 1), val);
+}
+
+string ProgramOptions::GetNodeValue()
+{
+    return mRoot->get<std::string>(mStrPrefix.substr(0, mStrPrefix.length() - 1));
+}
+
+

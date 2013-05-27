@@ -8,7 +8,6 @@
 #include <boost/static_assert.hpp>
 #include <cmath>
 
-#include <highgui.h>
 #include <pcl/point_cloud.h> //basic pcl includes
 #include <pcl/point_types.h>
 #include <pcl/io/image_grabber.h>

@@ -26,6 +26,8 @@ namespace gui
 class Utils
 {
 public:
+    static void                 RegisterDefaultQtTypes();
+    
     static QSize                ReadSize(KSRobot::utils::ProgramOptions::Ptr po,
                                          const std::string& name,
                                          const QSize& defaultVal);
