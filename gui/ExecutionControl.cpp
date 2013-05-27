@@ -168,11 +168,26 @@ void ExecutionControl::BindSettings()
     
 }
 
+void ExecutionControl::BindValueToName(const std::string& name, QAbstractButton* btn)
+{
+    mBinder.AddFunctionSetting<bool>(name, 
+                            boost::bind(&QAbstractButton::isChecked, btn), 
+                            boost::bind(&QAbstractButton::setChecked, btn, _1));
+}
+
 bool ExecutionControl::UpdateUIFromData()
 {
-    mBinder.AddFunctionSetting<bool>("Kinect.GetFromDevice", 
-                             boost::bind(&QRadioButton::isChecked, mUI->mRdBtnKinectDevice), 
-                             boost::bind(&QRadioButton::setChecked, mUI->mRdBtnKinectDevice, _1));
+    //TODO: First move these to another function, which is executed at initialization.
+    //      Second make sure that the variables will be also updated; but this is necessary
+    //             only for starting a run.
+    BindValueToName("Kinect.GetFromDevice", mUI->mRdBtnKinectDevice);
+    BindValueToName("Fovis.Enabled", mUI->mChkEnableFovis);
+    BindValueToName("iSAM.Enabled", mUI->mChkEnableSAM);
+    BindValueToName("OctoMap.Enabled", mUI->mChkEnableOctomap);
+    BindValueToName("OMPL.Enabled", mUI->mChkEnableOMPL);
+    BindValueToName("Comm.Enable", mUI->mChkEnableComm);
+    
+    
     
     //TODO: Implemet loading UIData from settings, possibly inside another function
     try

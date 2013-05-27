@@ -86,6 +86,8 @@ private:
     void                                        SaveSettings();
     bool                                        UpdateUIFromData();
     bool                                        UpdateDataFromUI();
+    
+    void                                        BindValueToName(const std::string& name, QAbstractButton* btn);
 private slots:
     void on_mBtnStart_clicked();
     void on_mBtnStop_clicked();
