@@ -72,15 +72,11 @@ void ProgramOptions::SaveToFile(const std::string& filename)
 double ProgramOptions::GetDouble(const std::string& name, const boost::optional<double>& defVal)
 {
     return GetValue<double>(name, defVal);
-//     if( defVal.empty() )
-//         return GetValue<double>(name);
-//     else
-//         return GetValue<double>(name, boost::any_cast<double>(defVal));
 }
 
 void ProgramOptions::PutDouble(const std::string& name, double val)
 {
-    PutValue(name, val);
+    PutValue<double>(name, val);
 }
 
 int ProgramOptions::GetInt(const std::string& name, const boost::optional<int>& defVal)
@@ -90,7 +86,7 @@ int ProgramOptions::GetInt(const std::string& name, const boost::optional<int>& 
 
 void ProgramOptions::PutInt(const std::string& name, int val)
 {
-    PutValue(name, val);
+    PutValue<int>(name, val);
 }
 
 std::string ProgramOptions::GetString(const std::string& name, const boost::optional<std::string>& defVal)
@@ -100,7 +96,7 @@ std::string ProgramOptions::GetString(const std::string& name, const boost::opti
 
 void ProgramOptions::PutString(const std::string& name, const std::string& val)
 {
-    PutValue(name, val);
+    PutValue<std::string>(name, val);
 }
 
 bool ProgramOptions::GetBool(const std::string& name, const boost::optional<bool>& defVal)
@@ -110,7 +106,7 @@ bool ProgramOptions::GetBool(const std::string& name, const boost::optional<bool
 
 void ProgramOptions::PutBool(const std::string& name, bool val)
 {
-    PutValue(name, val);
+    PutValue<bool>(name, val);
 }
 
 bool ProgramOptions::NodeExists(const std::string& name) const
@@ -125,3 +121,23 @@ ProgramOptions::Ptr ProgramOptions::StartNode(const std::string& name)
     ptr->mStrPrefix += name + ".";
     return ptr;
 }
+
+void ProgramOptions::AddUserTypeInternal(const string& name, ProgramOptions::UserTypeInterface* iface)
+{
+    MutexType::scoped_lock lock(mUserTypesGaurd);
+    UserTypesMap::iterator iter = mUserTypesMap.find(name);
+    if( iter != mUserTypesMap.end() )
+        throw std::runtime_error("(ProgramOptions::AddUserTypeInterna) Cannot add a type twice <typename=" + name + ">.");
+    
+    mUserTypesMap[name] = iface;
+}
+
+ProgramOptions::UserTypeInterface* ProgramOptions::FindInterface(const string& name)
+{
+    MutexType::scoped_lock lock(mUserTypesGaurd);
+    UserTypesMap::iterator iter = mUserTypesMap.find(name);
+    if( iter == mUserTypesMap.end() )
+        throw std::runtime_error("(ProgramOptions::FindInterface) Unknown type was encountered <typename=" + name + ">.");
+    return iter->second;
+}
+

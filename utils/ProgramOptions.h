@@ -26,16 +26,15 @@ public:
     struct IsSupportedType
     {
         typedef boost::integral_constant<bool, ::boost::is_same<X, std::string>::value 
-        || ::boost::is_integral<X>::value > truth_type;
+        || ::boost::is_integral<X>::value || ::boost::is_floating_point<X>::value > truth_type;
     };
     
     class UserTypeInterface
     {
     public:
-        virtual ~UserTypeInterface();
-        virtual void Add(ProgramOptions* po, const std::string& name, const boost::any& value) = 0;
-        virtual void Put(ProgramOptions* po, const std::string& name, const boost::any& value) = 0;
-        virtual boost::any Get(ProgramOptions* po, const std::string& name) = 0;
+        virtual ~UserTypeInterface() {;}
+        virtual void            Put(ProgramOptions::Ptr po, const boost::any& value) = 0;
+        virtual boost::any      Get(ProgramOptions::Ptr po) = 0;
     };
     
     
@@ -88,44 +87,6 @@ public:
         PutValInternal<X>(name, val, typename IsSupportedType<X>::truth_type());
     }
 
-    //TODO: For later versions, support reading multiple values. (AddValue)
-    
-//     template<class X>
-//     X GetValue(const std::string& name)
-//     {
-//         MutexType::scoped_lock lock(*mGaurd);
-//         return mRoot->get<X>(mStrPrefix + name);
-//     }
-//     
-//     //NOTE: This also adds the current default value to the tree
-//     template<class X>
-//     X GetValue(const std::string& name, const X& defVal)
-//     {
-//         mGaurd->lock();
-//         boost::optional<X> ref = mRoot->get_optional<X>(mStrPrefix + name);
-//         mGaurd->unlock();
-//         if( !ref )
-//         {
-//             // add the default value.
-//             PutValue(name, defVal);
-//             return defVal;
-//         }
-//         return ref.get();
-//     }
-//     
-//     template<class X>
-//     void PutValue(const std::string& name, const X& val)
-//     {
-//         MutexType::scoped_lock lock(*mGaurd);
-//         mRoot->put<X>(mStrPrefix + name, val);
-//     }
-//     
-//     template<class X>
-//     void AddValue(const std::string& name, const X& val)
-//     {
-//         MutexType::scoped_lock lock(*mGaurd);
-//         mRoot->add<X>(mStrPrefix + name, val);
-//     }
 private:
     template<class X>
     X GetValInternal(const std::string& name, boost::optional<X> defVal, boost::true_type)
@@ -155,24 +116,35 @@ private:
     template<class X>
     X GetValInternal(const std::string& name, boost::optional<X> defVal, boost::false_type)
     {
-        //TODO: Implement this
-        return X();
+        UserTypeInterface* iface = FindInterface(typeid(X).name());
+        assert(iface);
+        if( NodeExists(name) )
+            return boost::any_cast<X>(iface->Get(StartNode(name)));
+        else
+        {
+            PutValue<X>(name, *defVal);
+            return *defVal;
+        }
     }
     
     template<class X>
-    void PutValInternal(const std::string& name, const X& val, boost::true_type&)
+    void PutValInternal(const std::string& name, const X& val, boost::true_type)
     {
         MutexType::scoped_lock lock(*mGaurd);
         mRoot->put<X>(mStrPrefix + name, val);
     }
     
     template<class X>
-    void PutValInternal(const std::string& name, const X& val, boost::false_type&)
+    void PutValInternal(const std::string& name, const X& val, boost::false_type)
     {
         //TODO: Implement this
+        UserTypeInterface* iface = FindInterface(typeid(X).name());
+        assert(iface);
+        iface->Put(StartNode(name), boost::any(val));
     }
     
     static void AddUserTypeInternal(const std::string& name, UserTypeInterface* iface);
+    static UserTypeInterface* FindInterface(const std::string& name);
 private:
     typedef boost::property_tree::ptree TreeType;
     typedef boost::shared_ptr<TreeType> TreePtr;
@@ -186,7 +158,7 @@ private:
     //TODO: Complete here
     typedef std::map<std::string, UserTypeInterface*>   UserTypesMap;
     static UserTypesMap                 mUserTypesMap;
-    static boost::mutex                 mUserTypesGaurd;
+    static MutexType                    mUserTypesGaurd;
 };
 
 #undef DEFAULT_VAL
