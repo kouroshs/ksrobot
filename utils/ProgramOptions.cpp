@@ -4,6 +4,7 @@
 #include <boost/graph/graph_concepts.hpp>
 
 #include <fstream>
+#include <iostream>
 
 using namespace KSRobot::utils;
 namespace bt = boost::property_tree;
@@ -127,7 +128,7 @@ void ProgramOptions::AddUserTypeInternal(const string& name, ProgramOptions::Use
     MutexType::scoped_lock lock(mUserTypesGaurd);
     UserTypesMap::iterator iter = mUserTypesMap.find(name);
     if( iter != mUserTypesMap.end() )
-        throw std::runtime_error("(ProgramOptions::AddUserTypeInterna) Cannot add a type twice <typename=" + name + ">.");
+        throw std::runtime_error("(ProgramOptions::AddUserTypeInternal) Cannot add a type twice <typename=" + name + ">.");
     
     mUserTypesMap[name] = iface;
 }

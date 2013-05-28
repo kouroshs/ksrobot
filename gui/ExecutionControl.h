@@ -107,7 +107,8 @@ private slots:
 private:
     Ui::ExecutionControl*                       mUI;
     ExecControlData                             mData;
-    utils::SettingsBinder                       mBinder;
+    utils::SettingsBinder                       mBinderFns;
+    utils::SettingsBinder                       mBinderVars;
 };
 
 } // end namespace gui

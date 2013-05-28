@@ -1,5 +1,4 @@
 TODO: In case of SLAM update, how can we fix FOVIS pose? or is it necessary at all?
-TODO: Reset namespace types, probably remove utils but keep gui.
 (HIGH) Change the name of utils namespace to common
 (HIGH) Motion estimation status, current position, position change. All in StatisticsContainer
 

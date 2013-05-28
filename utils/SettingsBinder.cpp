@@ -52,5 +52,10 @@ void SettingsBinder::WriteSettings()
     }
 }
 
+void SettingsBinder::SetPO(ProgramOptions::Ptr po)
+{
+    mPO = po;
+}
+
 } // end namespace utils
 } // end namespace KSRobot

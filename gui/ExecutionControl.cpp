@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <boost/graph/graph_concepts.hpp>
 
 using namespace KSRobot;
 using namespace gui;
@@ -107,27 +108,38 @@ void ExecutionControl::InitControl(ProgramOptions::Ptr po)
     else
         mUI->mRdBtnKinectFile->setChecked(true);
     
-    mBinder.SetPO(mGuiPO);
-    //TODO: 
-    //      Second make sure that the variables will be also updated; but this is necessary
-    //             only for starting a run.
+    mBinderFns.SetPO(mGuiPO);
+    mBinderVars.SetPO(mGuiPO);
     
     // attack paths to controls
     BindValueToName("Kinect.GetFromDevice", mUI->mRdBtnKinectDevice);
-    BindValueToName("Fovis.Enabled", mUI->mChkEnableFovis);
-    BindValueToName("iSAM.Enabled", mUI->mChkEnableSAM);
-    BindValueToName("OctoMap.Enabled", mUI->mChkEnableOctomap);
-    BindValueToName("OMPL.Enabled", mUI->mChkEnableOMPL);
+    BindValueToName("Fovis.Enable", mUI->mChkEnableFovis);
+    BindValueToName("iSAM.Enable", mUI->mChkEnableSAM);
+    BindValueToName("OctoMap.Enable", mUI->mChkEnableOctomap);
+    BindValueToName("OMPL.Enable", mUI->mChkEnableOMPL);
     BindValueToName("Comm.Enable", mUI->mChkEnableComm);
-    
     BindValueToName("GUI.ViewFovis", mUI->mChkViewFovisResults);
     BindValueToName("GUI.ViewOctoMap", mUI->mChkViewOctomap);
     BindValueToName("GUI.ViewOMPL", mUI->mChkViewOMPL);
     BindValueToName("GUI.ViewPCL", mUI->mChkViewPointCloud);
     BindValueToName("GUI.ViewRGBD", mUI->mChkViewRGBD);
     
-    //TODO: Should add another binder for variables to paths; or
-    //      generate two functions at binder. one for updating vars and another for functions (not good)
+    mBinderVars.AddVariableSetting("Kinect.GetFromDevice", &(mData.Kinect.GetFromDevice), false);
+    mBinderVars.AddVariableSetting("Kinect.SourceDevice", &(mData.Kinect.SourceDevice), std::string(""));
+    mBinderVars.AddVariableSetting("Kinect.SourceDir", &(mData.Kinect.SourceDir), 
+                                   std::string("/windows/E/Datasets/rgbd_dataset_freiburg2_pioneer_slam/"));
+    mBinderVars.AddVariableSetting("Fovis.Enable", &(mData.Fovis.Enable), false);
+    mBinderVars.AddVariableSetting("iSAM.Enable", &(mData.iSAM.Enable), false);
+    mBinderVars.AddVariableSetting("OctoMap.Enable", &(mData.OctoMap.Enable), false);
+    mBinderVars.AddVariableSetting("OMPL.Enable", &(mData.OMPL.Enable), false);
+    mBinderVars.AddVariableSetting("Comm.Enable", &(mData.Comm.Enable), false);
+    mBinderVars.AddVariableSetting("Comm.Address", &(mData.Comm.Address), std::string("127.0.0.1"));
+    mBinderVars.AddVariableSetting("Comm.Port", &(mData.Comm.Port), 0);
+    mBinderVars.AddVariableSetting("GUI.ViewFovis", &(mData.GUI.ViewFovis), false);
+    mBinderVars.AddVariableSetting("GUI.ViewOctoMap", &(mData.GUI.ViewOctoMap), false);
+    mBinderVars.AddVariableSetting("GUI.ViewOMPL", &(mData.GUI.ViewOMPL), false);
+    mBinderVars.AddVariableSetting("GUI.ViewPCL", &(mData.GUI.ViewPCL), false);
+    mBinderVars.AddVariableSetting("GUI.ViewRGBD", &(mData.GUI.ViewRGBD), false);
 }
 
 void ExecutionControl::ReadSettings()
@@ -190,7 +202,7 @@ void ExecutionControl::BindSettings()
 
 void ExecutionControl::BindValueToName(const std::string& name, QAbstractButton* btn)
 {
-    mBinder.AddFunctionSetting<bool>(name, 
+    mBinderFns.AddFunctionSetting<bool>(name, 
                             boost::bind(&QAbstractButton::isChecked, btn), 
                             boost::bind(&QAbstractButton::setChecked, btn, _1));
 }

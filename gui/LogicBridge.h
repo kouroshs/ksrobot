@@ -24,8 +24,9 @@
 #include <QObject>
 
 #include <gui/ExecutionControl.h>
-
 #include <utils/SettingsBinder.h>
+#include <utils/kinect/KinectDatasetReader.h>
+#include <utils/kinect/KinectDeviceReader.h>
 
 namespace KSRobot
 {
@@ -39,12 +40,29 @@ public:
     explicit LogicBridge(QObject* parent = 0);
     ~LogicBridge();
 
+    void                        SaveKinectInput(const QString& path);
+    QString                     GetSavePath() const;
+    
+signals:
+    void                        OnRGBD(QImage rgb, QImage depth);
+    
 public slots:
     void                        OnStart(const ExecControlData& data);
     void                        OnStop();
     
+private slots:
+    
+private:
+    void                        KinectPointCloudReceiverDirect(utils::KinectPointCloud::ConstPtr& pc);
+    // This function registeres to OnRGBD
+    void                        KinectRGBDReveicerRawDirect(utils::KinectRgbImage::Ptr rgb,
+                                                            utils::KinectRawDepthImage::Ptr depth);
+    void                        KinectRGBDReceiverFloatDirect(utils::KinectRgbImage::Ptr rgb,
+                                                              utils::KinectFloatDepthImage depth);
+    
 protected:
     utils::SettingsBinder       mBinder;
+    QString                     mSavePath;
 };
 
 } // end namespace gui

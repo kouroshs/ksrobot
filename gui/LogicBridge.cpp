@@ -27,11 +27,26 @@ namespace gui
 
 LogicBridge::LogicBridge(QObject* parent): QObject(parent)
 {
+    qRegisterMetaType<utils::KinectPointCloud::Ptr>("KinectPointCloud::Ptr");
+    qRegisterMetaType<utils::KinectRgbImage::Ptr>("KinectRgbImage::Ptr");
+    qRegisterMetaType<utils::KinectFloatDepthImage::Ptr>("KinectFloatDepthImage::Ptr");
+    qRegisterMetaType<utils::KinectRawDepthImage::Ptr>("KinectRawDepthImage::Ptr");
 }
 
 LogicBridge::~LogicBridge()
 {
 }
+
+QString LogicBridge::GetSavePath() const
+{
+    return mSavePath;
+}
+
+void LogicBridge::SaveKinectInput(const QString& path)
+{
+    mSavePath = path;
+}
+
 
 void LogicBridge::OnStart(const ExecControlData& data)
 {
@@ -40,6 +55,23 @@ void LogicBridge::OnStart(const ExecControlData& data)
 void LogicBridge::OnStop()
 {
     
+}
+
+void LogicBridge::KinectPointCloudReceiverDirect(utils::KinectPointCloud::ConstPtr& pc)
+{
+    //TODO: Emit the signal
+}
+
+void LogicBridge::KinectRGBDReceiverFloatDirect(utils::KinectRgbImage::Ptr rgb,
+                                                utils::KinectFloatDepthImage depth)
+{
+    //TODO: Emit the signal
+}
+
+void LogicBridge::KinectRGBDReveicerRawDirect(utils::KinectRgbImage::Ptr rgb,
+                                              utils::KinectRawDepthImage::Ptr depth)
+{
+    //TODO: Emit the signal
 }
 
 

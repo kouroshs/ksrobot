@@ -41,15 +41,43 @@ public:
     
     void                        ReadSettings();
     void                        WriteSettings();
-        
+    
     template<class X>
-    void                        AddVariableSetting(const std::string& name, X* varPtr, 
-                                                   const boost::optional<X>& defVal = boost::none);
+    void                        AddVariableSetting(const std::string& name, X* varPtr, const X& defVal)
+    {
+        AddVariableSettingInternal<X>(name, varPtr, boost::optional<X>(defVal));
+    }
+    template<class X>
+    void                        AddVariableSetting(const std::string& name, X* varPtr)
+    {
+        AddVariableSettingInternal<X>(name, varPtr, boost::none);
+    }
+    
     template <class X>
     void                        AddFunctionSetting(const std::string& name,
-                                           typename boost::function<X ()> getter, typename boost::function<void (X)> setter,
-                                           const boost::optional<X>& defVal = boost::none);
+                                           typename boost::function<X ()> getter,
+                                           typename boost::function<void (X)> setter, const X& defVal)
+    {
+        AddFunctionSettingInternal<X>(name, getter, setter, boost::optional<X>(defVal));
+    }
+    template <class X>
+    void                        AddFunctionSetting(const std::string& name,
+                                                   typename boost::function<X ()> getter, 
+                                                   typename boost::function<void (X)> setter)
+    {
+        AddFunctionSettingInternal<X>(name, getter, setter, boost::none);
+    }
 private:
+    template<class X>
+    void                        AddVariableSettingInternal(const std::string& name, X* varPtr, 
+                                                   const boost::optional<X>& defVal = boost::none);
+    template <class X>
+    void                        AddFunctionSettingInternal(const std::string& name,
+                                                   typename boost::function<X ()> getter, typename boost::function<void (X)> setter,
+                                                   const boost::optional<X>& defVal = boost::none);
+    
+    
+    
     class GetSetBase
     {
     public:
@@ -115,7 +143,7 @@ private:
 
 // INLINE IMPLEMENTATION
 template <class X>
-void SettingsBinder::AddFunctionSetting(const std::string& name,
+void SettingsBinder::AddFunctionSettingInternal(const std::string& name,
                                         boost::function<X ()> getter,
                                         boost::function<void (X)> setter,
                                         const boost::optional<X>& defVal)
@@ -130,9 +158,8 @@ void SettingsBinder::AddFunctionSetting(const std::string& name,
 }
 
 template<class X>
-void SettingsBinder::AddVariableSetting(const std::string& name, X* varPtr, const boost::optional<X>& defVal)
+void SettingsBinder::AddVariableSettingInternal(const std::string& name, X* varPtr, const boost::optional<X>& defVal)
 {
-    //TODO: IMPLEMENT
     GSVariable<X>* var = new GSVariable<X>(name, varPtr);
     mData.push_back(var);
     
