@@ -59,8 +59,12 @@ private:
                                                             utils::KinectRawDepthImage::Ptr depth);
     void                        KinectRGBDReceiverFloatDirect(utils::KinectRgbImage::Ptr rgb,
                                                               utils::KinectFloatDepthImage depth);
-    
 protected:
+    virtual void                connectNotify(const char* name);
+    virtual void                disconnectNotify(const char* name);
+protected:
+    int                         mQtImageCreatorReceivers;
+    
     utils::SettingsBinder       mBinder;
     QString                     mSavePath;
 };

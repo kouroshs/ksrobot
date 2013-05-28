@@ -25,7 +25,7 @@ namespace KSRobot
 namespace gui
 {
 
-LogicBridge::LogicBridge(QObject* parent): QObject(parent)
+LogicBridge::LogicBridge(QObject* parent): QObject(parent), mQtImageCreatorReceivers(0)
 {
     qRegisterMetaType<utils::KinectPointCloud::Ptr>("KinectPointCloud::Ptr");
     qRegisterMetaType<utils::KinectRgbImage::Ptr>("KinectRgbImage::Ptr");
@@ -45,6 +45,20 @@ QString LogicBridge::GetSavePath() const
 void LogicBridge::SaveKinectInput(const QString& path)
 {
     mSavePath = path;
+}
+
+void LogicBridge::connectNotify(const char* name)
+{
+    QObject::connectNotify(name);
+    if( QString(name) == SIGNAL(OnRGBD(QImage, QImage)) )
+        mQtImageCreatorReceivers++;
+}
+
+void LogicBridge::disconnectNotify(const char* name)
+{
+    QObject::disconnectNotify(name);
+    if( QString(name) == SIGNAL(OnRGBD(QImage, QImage)) )
+        mQtImageCreatorReceivers--;
 }
 
 
@@ -72,6 +86,18 @@ void LogicBridge::KinectRGBDReveicerRawDirect(utils::KinectRgbImage::Ptr rgb,
                                               utils::KinectRawDepthImage::Ptr depth)
 {
     //TODO: Emit the signal
+    //Two chekcs, one to save, and one to emit signals
+    if( mSavePath != "" )
+    {
+    }
+    
+    if( mQtImageCreatorReceivers )
+    {
+        QImage qrgb, qdepth;
+        //TODO: Complete this
+        
+        emit OnRGBD(qrgb, qdepth);
+    }
 }
 
 
