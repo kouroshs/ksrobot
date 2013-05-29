@@ -18,7 +18,7 @@
  *
  */
 
-#include "Worker.h"
+#include <utils/Worker.h>
 
 namespace KSRobot
 {
@@ -243,7 +243,8 @@ namespace utils
             mConsumerInfo->CondVar.notify_all();
         }
         
-        mExecThread.join();
+        if( mExecThread.joinable() )
+            mExecThread.join();
     }
     
     void Worker::ThreadEntry()

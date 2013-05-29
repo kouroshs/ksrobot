@@ -1,63 +1,185 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
-#include "ProgramOptions.h"
-#include "kinect/KinectInterface.h"
-#include "Worker.h"
+#include <utils/ProgramOptions.h>
+#include <utils/ExecCtrlData.h>
+#include <utils/Worker.h>
+#include <utils/kinect/KinectInterface.h>
 
 #include <boost/thread.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/signals2.hpp>
 
 #include <vector>
+
+#include <fovis/visual_odometry.hpp>
 
 namespace KSRobot
 {
 namespace utils
 {
 
-//TODO Add SLAM
+namespace detail
+{
+    class KinectThread;
+    class FovisThread;
+    class SAMThread;
+    class OctoMapThread;
+    class OMPLThread;
+    class CommThread;
+};
+    
 class Engine
 {
 public:
     Engine(const ProgramOptions::Ptr po);
     ~Engine();
     
-    void                                SetupKinect(const std::string& kinect);
-    void                                Start();
+    void                                Start(const ExecCtrlData& ed);
     void                                Stop();
     //TODO: Implement Pause, Resume
-    //TODO: Implement externat receivers.
-    //TODO: Implement clone method for KinectBaseImage
+    //TODO: Implement external receivers.
+//     boost::signals2::connection         RegisterKinectRGBDReceiver();
+//     boost::signals2::connection         RegisterKinectPointCloudReceiver();
+//     boost::signals2::connection         RegisterFovisReceiver();
+//     boost::signals2::connection         RegisterSAMReceiver();
+//     boost::signals2::connection         RegisterOctoMapReceiver();
+//     boost::signals2::connection         RegisterOMPLReceiver();
     
-    void                                SetKinectEnabled(bool bEnable);
-    bool                                GetKinectEnabled() const;
-    void                                SetFovisEnabled(bool bEnable);
-    bool                                GetFovisEnabled() const;
-    void                                SetOctoMapEnabled(bool bEnable);
-    bool                                GetOctoMapEnabled() const;
-
-    KinectInterface::Ptr                GetKinectInterface() { return mKinectInterface; }
-    
+    const ExecCtrlData&                 GetExecControlData() const;
     
 private:
+    // Setup functions
+    void                                SetupKinect();
+    void                                SetupFovis();
+    void                                SetupOctoMap();
+    void                                SetupOMPL();
+    void                                SetupSAM();
+    
+    
     void                                KinectRGBD(KinectRgbImage::Ptr rgb, KinectFloatDepthImage::Ptr depth);
     void                                KinectPC(const KinectPointCloud::ConstPtr& p);
 private:
-    ProgramOptions::Ptr                 mPO;
-    
-    //KinectDatasetReader                 mDatasetReader;
-    //KinectDeviceReader                  mDeviceReader;
-    
+    typedef boost::shared_ptr<fovis::VisualOdometry>  VisualOdometryPtr;
+
+    ProgramOptions::Ptr                 mPO;    
     KinectInterface::Ptr                mKinectInterface;
+    VisualOdometryPtr                   mVO;
     
-    bool                                mKinectEnabled;
-    bool                                mFovisEnabled;
-    bool                                mOctoMapEnabled;
+    ExecCtrlData                        mExecCtrl;
     
-    Worker                              mKinectWorker;
-    Worker                              mFovisWorker;
-    Worker                              mOctoMapWorker;
-    //Worker                              mPlannerWorker;
+    Worker::Ptr                         mKinectWorker;
+    Worker::Ptr                         mFovisWorker;
+    Worker::Ptr                         mSAMWorker;
+    Worker::Ptr                         mOctoMapWorker;
+    Worker::Ptr                         mOMPLWorker;
+    Worker::Ptr                         mCommWorker;
+    
+    friend class detail::KinectThread;
+    friend class detail::FovisThread;
+    friend class detail::SAMThread;
+    friend class detail::OctoMapThread;
+    friend class detail::OMPLThread;
+    friend class detail::CommThread;
+    
+    boost::shared_ptr<detail::KinectThread>           mKinectThread;
+    boost::shared_ptr<detail::FovisThread>            mFovisThread;
+    boost::shared_ptr<detail::SAMThread>              mSAMThread;
+    boost::shared_ptr<detail::OctoMapThread>          mOctoMapThread;
+    boost::shared_ptr<detail::OMPLThread>             mOMPLThread;
+    boost::shared_ptr<detail::CommThread>             mCommThread;
 };
+
+namespace detail
+{
+    class KinectThread : public IProducer
+    {
+    public:
+        KinectThread(Engine* eng) : mEngine(eng) {;}
+        
+        virtual void                Produce();
+        virtual void                OnProduceFinish();
+        
+        friend class Engine;
+        
+        Engine* mEngine;
+    };
+    
+    class FovisThread : public IConsumerProducer
+    {
+    public:
+        FovisThread(Engine* eng) : mEngine(eng) {;}
+        
+        virtual void                ConsumeFast();
+        virtual void                ConsumeComplete();
+        virtual void                OnConsumeStop();
+        virtual void                Produce();
+        virtual void                OnProduceFinish();
+
+        friend class Engine;
+        Engine* mEngine;
+    };
+    
+    class SAMThread : public IConsumerProducer
+    {
+    public:
+        SAMThread(Engine* eng) : mEngine(eng) {;}
+        
+        virtual void                ConsumeFast();
+        virtual void                ConsumeComplete();
+        virtual void                OnConsumeStop();
+        virtual void                Produce();
+        virtual void                OnProduceFinish();
+
+        friend class Engine;
+        Engine* mEngine;
+    };
+    
+    class OctoMapThread : public IConsumerProducer
+    {
+    public:
+        OctoMapThread(Engine* eng) : mEngine(eng) {;}
+        
+        virtual void                ConsumeFast();
+        virtual void                ConsumeComplete();
+        virtual void                OnConsumeStop();
+        virtual void                Produce();
+        virtual void                OnProduceFinish();
+
+        friend class Engine;
+        Engine* mEngine;
+    };
+    
+    class OMPLThread : public IConsumerProducer
+    {
+    public:
+        OMPLThread(Engine* eng) : mEngine(eng) {;}
+        virtual void                ConsumeFast();
+        virtual void                ConsumeComplete();
+        virtual void                OnConsumeStop();
+        virtual void                Produce();
+        virtual void                OnProduceFinish();
+
+        friend class Engine;
+        Engine* mEngine;
+    };
+    
+    class CommThread : public IConsumerProducer
+    {
+    public:
+        CommThread(Engine* eng) : mEngine(eng) {;}
+        
+        virtual void                ConsumeFast();
+        virtual void                ConsumeComplete();
+        virtual void                OnConsumeStop();
+        virtual void                Produce();
+        virtual void                OnProduceFinish();
+
+        friend class Engine;
+        Engine* mEngine;
+    };
+};
+
 
 } // end namespace utils
 } // end namespace KSRobot

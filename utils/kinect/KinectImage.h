@@ -64,6 +64,16 @@ public:
         return mHeight;
     }
 
+    size_t ScanLineIndex(int y) const
+    {
+        return y * GetStride();
+    }
+    
+    static size_t NexIndexUnsafe(size_t idx)
+    {
+        return idx + sizeof(X) * NumChannels;
+    }
+    
 private:
     ArrayType                                           mData;
     int                                                 mHeight;

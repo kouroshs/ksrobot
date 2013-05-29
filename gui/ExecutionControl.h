@@ -2,70 +2,16 @@
 #define KINECTDATACONTROL_H
 
 #include <utils/ProgramOptions.h>
-#include <gui/KWidgetBase.h>
 #include <utils/SettingsBinder.h>
-
+#include <utils/ExecCtrlData.h>
+#include <gui/KWidgetBase.h>
 #include <gui/ui_ExecutionControl.h>
+
 
 namespace KSRobot
 {
 namespace gui
 {
-
-class ExecControlData
-{
-public:
-    struct
-    {
-        bool            GetFromDevice;
-        std::string     SourceDevice;
-        std::string     SourceDir;
-    } Kinect;
-    
-    struct
-    {
-        bool            Enable;
-    } Fovis;
-    
-    struct
-    {
-        bool            Enable;
-    } iSAM;
-    
-    struct
-    {
-        bool            Enable;
-    } OctoMap;
-    
-    struct
-    {
-        bool            Enable;
-    } OMPL;
-    
-    struct
-    {
-        bool            Enable;
-        int             Port;
-        std::string     Address;
-    } Comm;
-    
-    struct
-    {
-        bool            ViewRGBD;
-        bool            ViewPCL;
-        bool            ViewFovis;
-        bool            ViewOctoMap;
-        bool            ViewOMPL;
-    } GUI;
-    
-    void                CheckConsistancy();
-    
-    void                EnableFovis(bool enable);
-    void                EnableSAM(bool enable);
-    void                EnableOctoMap(bool enable);
-    void                EnableOMPL(bool enable);
-    void                EnableComm(bool enable);
-};
 
 class ExecutionControl : public gui::KWidgetBase
 {
@@ -77,7 +23,7 @@ public:
     virtual void                                InitControl(utils::ProgramOptions::Ptr po);
 
 signals:
-    void                                        OnStart(const ExecControlData& data);
+    void                                        OnStart(const utils::ExecCtrlData& data);
     void                                        OnStop();
     
 private:
@@ -106,7 +52,7 @@ private slots:
     void on_mChkViewOMPL_clicked();
 private:
     Ui::ExecutionControl*                       mUI;
-    ExecControlData                             mData;
+    utils::ExecCtrlData                         mData;
     utils::SettingsBinder                       mBinderFns;
     utils::SettingsBinder                       mBinderVars;
 };

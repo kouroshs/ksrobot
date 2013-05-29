@@ -40,9 +40,9 @@ public:
     
     virtual ~IConsumer() {;}
     
-    virtual void                ConsumeFast()                   = 0;
-    virtual void                ConsumeComplete()               = 0;
-    virtual void                OnConsumeStop()                 = 0;
+    virtual void                ConsumeFast() {;}
+    virtual void                ConsumeComplete() {;}
+    virtual void                OnConsumeStop() {;}
 };
 
 class IProducer
@@ -53,8 +53,8 @@ public:
     
     virtual ~IProducer() {;}
     
-    virtual void                Produce()                       = 0;
-    virtual void                OnProduceFinish()               = 0;
+    virtual void                Produce() {;}
+    virtual void                OnProduceFinish() {;}
 };
 
 class IConsumerProducer : public IConsumer, public IProducer

@@ -20,6 +20,9 @@
 
 #include "LogicBridge.h"
 
+#include <utils/kinect/KinectDatasetReader.h>
+#include <utils/kinect/KinectDeviceReader.h>
+
 namespace KSRobot
 {
 namespace gui
@@ -62,7 +65,7 @@ void LogicBridge::disconnectNotify(const char* name)
 }
 
 
-void LogicBridge::OnStart(const ExecControlData& data)
+void LogicBridge::OnStart(const utils::ExecCtrlData& data)
 {
 }
 
@@ -79,7 +82,7 @@ void LogicBridge::KinectPointCloudReceiverDirect(utils::KinectPointCloud::ConstP
 void LogicBridge::KinectRGBDReceiverFloatDirect(utils::KinectRgbImage::Ptr rgb,
                                                 utils::KinectFloatDepthImage depth)
 {
-    //TODO: Emit the signal
+    // Normally I should not register this.
 }
 
 void LogicBridge::KinectRGBDReveicerRawDirect(utils::KinectRgbImage::Ptr rgb,
@@ -89,12 +92,50 @@ void LogicBridge::KinectRGBDReveicerRawDirect(utils::KinectRgbImage::Ptr rgb,
     //Two chekcs, one to save, and one to emit signals
     if( mSavePath != "" )
     {
+        //TODO: Save kinect data
     }
     
     if( mQtImageCreatorReceivers )
     {
-        QImage qrgb, qdepth;
-        //TODO: Complete this
+        QImage qrgb(rgb->GetWidth(), rgb->GetHeight(), QImage::Format_RGB32), 
+                qdepth(depth->GetWidth(), depth->GetHeight(), QImage::Format_RGB32);
+        
+        // Now fill the images
+        //NOTE: Assuming that the rgb and depth images have the same size
+        assert(rgb->GetHeight() == depth->GetHeight() &&
+                rgb->GetWidth() == depth->GetWidth());
+        
+        
+        const utils::KinectRgbImage::ArrayType& rgbArray = rgb->GetArray();
+        const utils::KinectRawDepthImage::ArrayType& depthArray = depth->GetArray();
+        
+        for(int y = 0; y < rgb->GetHeight(); y++)
+        {
+            uchar* rgbPtr = qrgb.scanLine(y);
+            uchar* depthPtr = qdepth.scanLine(y);
+            
+            size_t idxRgb = rgb->ScanLineIndex(y);
+            size_t idxDepth = depth->ScanLineIndex(y);
+            for(int x = 0; x < rgb->GetWidth(); x++)
+            {
+                // First do the rgb
+                rgbPtr[0] = rgbArray[idxRgb];
+                rgbPtr[1] = rgbArray[idxRgb + 1];
+                rgbPtr[2] = rgbArray[idxRgb + 2];
+                rgbPtr[3] = 0xFF;
+                
+                //Now convert depth values
+                depthPtr[0] = depthArray[idxDepth] / 10000 * 255;
+                depthPtr[1] = depthArray[idxDepth] / 10000 * 255;
+                depthPtr[2] = depthArray[idxDepth] / 10000 * 255;
+                depthPtr[3] = 0xFF;
+                
+                idxRgb = utils::KinectRgbImage::NexIndexUnsafe(idxRgb);
+                idxDepth = utils::KinectRawDepthImage::NexIndexUnsafe(idxDepth);
+                rgbPtr += 4;
+                depthPtr += 4;
+            }
+        }
         
         emit OnRGBD(qrgb, qdepth);
     }

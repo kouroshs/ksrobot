@@ -25,8 +25,8 @@
 
 #include <gui/ExecutionControl.h>
 #include <utils/SettingsBinder.h>
-#include <utils/kinect/KinectDatasetReader.h>
-#include <utils/kinect/KinectDeviceReader.h>
+#include <utils/kinect/KinectInterface.h>
+#include <utils/ExecCtrlData.h>
 
 namespace KSRobot
 {
@@ -47,7 +47,7 @@ signals:
     void                        OnRGBD(QImage rgb, QImage depth);
     
 public slots:
-    void                        OnStart(const ExecControlData& data);
+    void                        OnStart(const utils::ExecCtrlData& data);
     void                        OnStop();
     
 private slots:

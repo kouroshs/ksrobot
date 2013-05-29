@@ -1,4 +1,6 @@
 TODO: In case of SLAM update, how can we fix FOVIS pose? or is it necessary at all?
+(HIGH) Change Engine class to an interface, and make different version for single and multithreaded
+        versions.  // I think single threaded version has higher priority
 (HIGH) Change the name of utils namespace to common
 (HIGH) Motion estimation status, current position, position change. All in StatisticsContainer
 

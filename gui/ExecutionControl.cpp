@@ -12,81 +12,9 @@ using namespace KSRobot;
 using namespace gui;
 using namespace utils;
 
-void ExecControlData::EnableComm(bool enable)
-{
-//     if( !OMPL.Enable )
-//         throw std::runtime_error("Cannot enable communications while OMPL is disabled.");
-    Comm.Enable = enable; // for now no dependency
-}
-
-void ExecControlData::EnableFovis(bool enable)
-{
-//     if( !enable && (OctoMap.Enable || OMPL.Enable || iSAM.Enable) )
-//         throw std::runtime_error("Cannot disable Fovis. Cause : OctoMap|OMPL|iSAM");
-    Fovis.Enable = enable;
-}
-
-void ExecControlData::EnableSAM(bool enable)
-{
-    //NOTE: For now SAM is independent
-//     if( enable && !Fovis.Enable )
-//         throw std::runtime_error("Cannot enable iSAM while Fovis is disabled.");
-    iSAM.Enable = enable;
-}
-
-void ExecControlData::EnableOctoMap(bool enable)
-{
-//     if( enable && !Fovis.Enable )
-//         throw std::runtime_error("Cannot enable OctoMap while Fovis is disabled");
-//     
-//     if( !enable && OMPL.Enable )
-//         throw std::runtime_error("Cannot disable OctoMap while OMPL is set.");
-//     
-    OctoMap.Enable = enable;
-}
-
-void ExecControlData::EnableOMPL(bool enable)
-{
-//     if( !Fovis.Enable || !OctoMap.Enable )
-//         throw std::runtime_error("Cannot enable OMPLE. Cause: Fovis|OctoMap");
-//     
-    OMPL.Enable = enable;
-}
-
-void ExecControlData::CheckConsistancy()
-{
-    if( !Fovis.Enable )
-    {
-        if( OctoMap.Enable )
-            throw std::runtime_error("Cannot enable OctoMap while Fovis is disabled.");
-        if( iSAM.Enable )
-            throw std::runtime_error("Cannot enable iSAM while Fovis is disabled.");
-        if( Comm.Enable )
-            throw std::runtime_error("Cannot enable Communications while Fovis is disabled.");
-    }
-    
-    if( !OctoMap.Enable )
-    {
-        if( OMPL.Enable )
-            throw std::runtime_error("Cannot enable OMPL while OctoMap is disabled.");
-    }
-
-    if( !iSAM.Enable )
-    {
-        // For now iSAM is independent.
-    }
-    
-    if( !OMPL.Enable )
-    {
-        if( Comm.Enable )
-            throw std::runtime_error("Cannot enable Communications while OMPL is disabled.");
-    }
-}
-
-
 ExecutionControl::ExecutionControl(QWidget* parent, Qt::WindowFlags f) : KWidgetBase(parent, f)
 {
-    qRegisterMetaType<ExecControlData>("ExecControlData");
+    qRegisterMetaType<utils::ExecCtrlData>("ExecCtrlData");
 }
 
 ExecutionControl::~ExecutionControl()

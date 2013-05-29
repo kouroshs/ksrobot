@@ -1,6 +1,6 @@
 include_directories(../)
 
-set(UTILS_SRC SettingsBinder.cpp Worker.cpp ThreadContainer.cpp Engine.cpp ProgramOptions.cpp)
+set(UTILS_SRC ExecCtrlData.cpp SettingsBinder.cpp Worker.cpp ThreadContainer.cpp Engine.cpp ProgramOptions.cpp)
 add_subdirectory(kinect)
 
 add_library(utils STATIC ${UTILS_SRC})
