@@ -18,7 +18,7 @@
  *
  */
 
-#include "SettingsBinder.h"
+#include <common/SettingsBinder.h>
 
 namespace KSRobot
 {

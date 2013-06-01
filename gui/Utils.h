@@ -1,7 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <utils/ProgramOptions.h>
+#include <common/ProgramOptions.h>
 #include <QSize>
 #include <QRect>
 #include <QMargins>

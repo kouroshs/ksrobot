@@ -21,7 +21,7 @@
 #ifndef SETTINGSBINDER_H
 #define SETTINGSBINDER_H
 
-#include <utils/ProgramOptions.h>
+#include <common/ProgramOptions.h>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <vector>

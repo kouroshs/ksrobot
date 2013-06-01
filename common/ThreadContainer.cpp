@@ -17,7 +17,7 @@
  *
  */
 
-#include "ThreadContainer.h"
+#include <common/ThreadContainer.h>
 
 using boost::mutex;
 using boost::condition_variable;

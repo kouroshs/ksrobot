@@ -2,7 +2,7 @@
 #define IMAGECONTAINER_H
 
 #include <gui/KWidgetBase.h>
-#include <utils/ProgramOptions.h>
+#include <common/ProgramOptions.h>
 
 namespace KSRobot
 {

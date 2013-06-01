@@ -1,11 +1,12 @@
-#include "ExecutionControl.h"
+#include <gui/ExecutionControl.h>
+#include <gui/Utils.h>
 
 #include <QVBoxLayout>
 #include <QRect>
-#include "Utils.h"
 #include <QDebug>
 #include <QFileDialog>
 #include <QMessageBox>
+
 #include <boost/graph/graph_concepts.hpp>
 
 using namespace KSRobot;

@@ -1,4 +1,5 @@
-#include "KinectDatasetReader.h"
+#include <common/kinect/KinectDatasetReader.h>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/thread/thread.hpp>

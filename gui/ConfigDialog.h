@@ -3,7 +3,7 @@
 
 #include <QDialog>
 #include <gui/ImageContainer.h>
-#include <utils/ProgramOptions.h>
+#include <common/ProgramOptions.h>
 
 namespace KSRobot
 {

@@ -1,7 +1,7 @@
 #ifndef KINECTDATASETREADER_H
 #define KINECTDATASETREADER_H
 
-#include <utils/Defenitions.h>
+#include <common/Defenitions.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
@@ -18,7 +18,7 @@
 #include <pcl/io/image_grabber.h>
 #include <pcl/common/io.h>
 
-#include "KinectInterface.h"
+#include <common/kinect/KinectInterface.h>
 
 namespace KSRobot
 {

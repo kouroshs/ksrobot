@@ -1,7 +1,7 @@
 #ifndef STATISTICSCONTAINER_H
 #define STATISTICSCONTAINER_H
 
-#include <utils/ProgramOptions.h>
+#include <common/ProgramOptions.h>
 #include <gui/KWidgetBase.h>
 #include <QLabel>
 #include <QMap>

@@ -4,7 +4,7 @@
 #include <QTextEdit>
 #include <QPushButton>
 #include <QMap>
-#include <utils/ProgramOptions.h>
+#include <common/ProgramOptions.h>
 #include <gui/KWidgetBase.h>
 
 namespace KSRobot

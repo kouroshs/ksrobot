@@ -11,6 +11,6 @@ qt4_wrap_cpp(PROJ_MOC_FILES MainWindow.h ConfigDialog.h
 qt4_automoc(${GUI_SRCS})
 
 add_library(gui STATIC ${GUI_SRCS} ${PROJ_MOC_FILES})
-target_link_libraries(gui ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} fovis)
+target_link_libraries(gui ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
 #install(TARGETS gui RUNTIME DESTINATION bin)
  

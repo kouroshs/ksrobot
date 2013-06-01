@@ -18,7 +18,7 @@
  *
  */
 
-#include <utils/Worker.h>
+#include <common/Worker.h>
 
 namespace KSRobot
 {

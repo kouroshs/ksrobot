@@ -2,7 +2,7 @@
 #define VISUALIZERAPPLICATION_H
 
 #include <QApplication>
-#include <utils/ProgramOptions.h>
+#include <common/ProgramOptions.h>
 
 class VisualizerApplication : public QApplication
 {

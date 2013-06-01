@@ -18,7 +18,7 @@
  *
  */
 
-#include "KWidgetBase.h"
+#include <gui/KWidgetBase.h>
 
 KSRobot::gui::KWidgetBase::KWidgetBase(QWidget* parent, Qt::WindowFlags f): QWidget(parent, f)
 {

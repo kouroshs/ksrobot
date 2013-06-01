@@ -1,4 +1,4 @@
-#include "ProgramOptions.h"
+#include <common/ProgramOptions.h>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/graph/graph_concepts.hpp>

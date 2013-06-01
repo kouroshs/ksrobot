@@ -1,4 +1,4 @@
-#include "KinectDeviceReader.h"
+#include <common/kinect/KinectDeviceReader.h>
 #include <iostream>
 
 namespace KSRobot

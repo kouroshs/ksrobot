@@ -1,9 +1,9 @@
 #ifndef KINECTDATACONTROL_H
 #define KINECTDATACONTROL_H
 
-#include <utils/ProgramOptions.h>
-#include <utils/SettingsBinder.h>
-#include <utils/ExecCtrlData.h>
+#include <common/ProgramOptions.h>
+#include <common/SettingsBinder.h>
+#include <common/ExecCtrlData.h>
 #include <gui/KWidgetBase.h>
 #include <gui/ui_ExecutionControl.h>
 

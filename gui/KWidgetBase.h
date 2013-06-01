@@ -22,7 +22,7 @@
 #define KWIDGETBASE_H
 
 #include <QWidget>
-#include <utils/ProgramOptions.h>
+#include <common/ProgramOptions.h>
 
 namespace KSRobot
 {

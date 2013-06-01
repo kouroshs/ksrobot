@@ -1,8 +1,8 @@
 #ifndef KINECTINTERFACE_H
 #define KINECTINTERFACE_H
 
-#include <utils/ProgramOptions.h>
-#include "KinectImage.h"
+#include <common/ProgramOptions.h>
+#include <common/kinect/KinectImage.h>
 
 
 #include <boost/function.hpp>

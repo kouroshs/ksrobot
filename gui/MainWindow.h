@@ -36,7 +36,7 @@
 #include <gui/ExecutionControl.h>
 #include <gui/StatisticsContainer.h>
 
-#include <utils/ProgramOptions.h>
+#include <common/ProgramOptions.h>
 
 namespace KSRobot
 {

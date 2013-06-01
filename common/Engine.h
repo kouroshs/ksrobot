@@ -1,10 +1,10 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
-#include <utils/ProgramOptions.h>
-#include <utils/ExecCtrlData.h>
-#include <utils/Worker.h>
-#include <utils/kinect/KinectInterface.h>
+#include <common/ProgramOptions.h>
+#include <common/ExecCtrlData.h>
+#include <common/Worker.h>
+#include <common/kinect/KinectInterface.h>
 
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>

@@ -1,4 +1,4 @@
-#include "KinectInterface.h"
+#include <common/kinect/KinectInterface.h>
 
 namespace KSRobot
 {

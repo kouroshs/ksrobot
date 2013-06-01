@@ -1,7 +1,7 @@
-#include "Engine.h"
+#include <common/Engine.h>
 
-#include "kinect/KinectDatasetReader.h"
-#include "kinect/KinectDeviceReader.h"
+#include <common/kinect/KinectDatasetReader.h>
+#include <common/kinect/KinectDeviceReader.h>
 
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>

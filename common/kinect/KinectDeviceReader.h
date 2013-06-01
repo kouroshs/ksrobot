@@ -1,7 +1,7 @@
 #ifndef KINECTDEVICEREADER_H
 #define KINECTDEVICEREADER_H
 
-#include "KinectInterface.h"
+#include <common/kinect/KinectInterface.h>
 #include <pcl/io/openni_grabber.h>
 
 namespace KSRobot

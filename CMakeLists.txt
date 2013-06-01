@@ -42,6 +42,6 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 
-add_subdirectory(utils)
+add_subdirectory(common)
 add_subdirectory(gui)
 add_subdirectory(apps)

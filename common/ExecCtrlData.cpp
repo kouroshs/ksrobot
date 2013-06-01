@@ -18,7 +18,7 @@
  *
  */
 
-#include <utils/ExecCtrlData.h>
+#include <common/ExecCtrlData.h>
 #include <stdexcept>
 
 namespace KSRobot

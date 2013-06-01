@@ -9,14 +9,7 @@
 #include <QApplication>
 #include <gui/MainWindow.h>
 #include <apps/viewer/VisualizerApplication.h>
-#include <utils/ProgramOptions.h>
-
-using namespace boost::property_tree;
-using namespace std;
-
-using namespace KSRobot;
-using namespace gui;
-using namespace common;
+#include <common/ProgramOptions.h>
 
 int main(int argc, char** argv)
 {

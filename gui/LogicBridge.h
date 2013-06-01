@@ -24,9 +24,9 @@
 #include <QObject>
 
 #include <gui/ExecutionControl.h>
-#include <utils/SettingsBinder.h>
-#include <utils/kinect/KinectInterface.h>
-#include <utils/ExecCtrlData.h>
+#include <common/SettingsBinder.h>
+#include <common/kinect/KinectInterface.h>
+#include <common/ExecCtrlData.h>
 
 namespace KSRobot
 {
