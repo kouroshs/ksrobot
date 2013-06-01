@@ -16,7 +16,7 @@
 
 namespace KSRobot
 {
-namespace utils
+namespace common
 {
 
 namespace detail

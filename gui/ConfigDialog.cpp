@@ -2,7 +2,7 @@
 
 using namespace KSRobot::gui;
 
-ConfigDialog::ConfigDialog(QWidget* parent, Qt::WindowFlags f, KSRobot::utils::ProgramOptions::Ptr po) :
+ConfigDialog::ConfigDialog(QWidget* parent, Qt::WindowFlags f, KSRobot::common::ProgramOptions::Ptr po) :
     QDialog(parent, f), mGuiPO(po)
 {
     

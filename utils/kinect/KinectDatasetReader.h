@@ -22,7 +22,7 @@
 
 namespace KSRobot
 {
-namespace utils
+namespace common
 {
 
 class KinectDatasetReader : public KinectInterface

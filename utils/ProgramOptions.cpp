@@ -6,7 +6,7 @@
 #include <fstream>
 #include <iostream>
 
-using namespace KSRobot::utils;
+using namespace KSRobot::common;
 namespace bt = boost::property_tree;
 
 using namespace std;

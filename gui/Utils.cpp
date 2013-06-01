@@ -6,7 +6,7 @@ namespace KSRobot
 namespace gui
 {
 
-using utils::ProgramOptions;
+using common::ProgramOptions;
 
 template<class X>
 class QtTypeInterface : public ProgramOptions::UserTypeInterface

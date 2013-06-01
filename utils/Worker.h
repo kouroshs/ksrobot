@@ -29,7 +29,7 @@
 
 namespace KSRobot
 {
-namespace utils
+namespace common
 {
 
 class IConsumer

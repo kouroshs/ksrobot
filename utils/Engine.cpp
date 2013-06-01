@@ -8,7 +8,7 @@
 
 namespace KSRobot
 {
-namespace utils
+namespace common
 {
 
 namespace fs = boost::filesystem;
@@ -137,147 +137,147 @@ namespace detail
 
 void KinectThread::Produce()
 {
-    KSRobot::utils::IProducer::Produce();
+    KSRobot::common::IProducer::Produce();
 }
 
 void KinectThread::OnProduceFinish()
 {
-    KSRobot::utils::IProducer::OnProduceFinish();
+    KSRobot::common::IProducer::OnProduceFinish();
 }
 
 // Fovis Thread
 
 void FovisThread::ConsumeFast()
 {
-    KSRobot::utils::IConsumer::ConsumeFast();
+    KSRobot::common::IConsumer::ConsumeFast();
 }
 
 void FovisThread::ConsumeComplete()
 {
-    KSRobot::utils::IConsumer::ConsumeComplete();
+    KSRobot::common::IConsumer::ConsumeComplete();
 }
 
 void FovisThread::OnConsumeStop()
 {
-    KSRobot::utils::IConsumer::OnConsumeStop();
+    KSRobot::common::IConsumer::OnConsumeStop();
 }
 
 void FovisThread::Produce()
 {
-    KSRobot::utils::IProducer::Produce();
+    KSRobot::common::IProducer::Produce();
 }
 
 void FovisThread::OnProduceFinish()
 {
-    KSRobot::utils::IProducer::OnProduceFinish();
+    KSRobot::common::IProducer::OnProduceFinish();
 }
 
 // iSAM Thread
 
 void SAMThread::ConsumeFast()
 {
-    KSRobot::utils::IConsumer::ConsumeFast();
+    KSRobot::common::IConsumer::ConsumeFast();
 }
 
 void SAMThread::ConsumeComplete()
 {
-    KSRobot::utils::IConsumer::ConsumeComplete();
+    KSRobot::common::IConsumer::ConsumeComplete();
 }
 
 void SAMThread::OnConsumeStop()
 {
-    KSRobot::utils::IConsumer::OnConsumeStop();
+    KSRobot::common::IConsumer::OnConsumeStop();
 }
 
 void SAMThread::Produce()
 {
-    KSRobot::utils::IProducer::Produce();
+    KSRobot::common::IProducer::Produce();
 }
 
 void SAMThread::OnProduceFinish()
 {
-    KSRobot::utils::IProducer::OnProduceFinish();
+    KSRobot::common::IProducer::OnProduceFinish();
 }
 
 // OctoMap
 
 void OctoMapThread::ConsumeFast()
 {
-    KSRobot::utils::IConsumer::ConsumeFast();
+    KSRobot::common::IConsumer::ConsumeFast();
 }
 
 void OctoMapThread::ConsumeComplete()
 {
-    KSRobot::utils::IConsumer::ConsumeComplete();
+    KSRobot::common::IConsumer::ConsumeComplete();
 }
 
 void OctoMapThread::OnConsumeStop()
 {
-    KSRobot::utils::IConsumer::OnConsumeStop();
+    KSRobot::common::IConsumer::OnConsumeStop();
 }
 
 void OctoMapThread::Produce()
 {
-    KSRobot::utils::IProducer::Produce();
+    KSRobot::common::IProducer::Produce();
 }
 
 void OctoMapThread::OnProduceFinish()
 {
-    KSRobot::utils::IProducer::OnProduceFinish();
+    KSRobot::common::IProducer::OnProduceFinish();
 }
 
 // OMPL Thread
 
 void OMPLThread::ConsumeFast()
 {
-    KSRobot::utils::IConsumer::ConsumeFast();
+    KSRobot::common::IConsumer::ConsumeFast();
 }
 
 void OMPLThread::ConsumeComplete()
 {
-    KSRobot::utils::IConsumer::ConsumeComplete();
+    KSRobot::common::IConsumer::ConsumeComplete();
 }
 
 void OMPLThread::OnConsumeStop()
 {
-    KSRobot::utils::IConsumer::OnConsumeStop();
+    KSRobot::common::IConsumer::OnConsumeStop();
 }
 
 void OMPLThread::Produce()
 {
-    KSRobot::utils::IProducer::Produce();
+    KSRobot::common::IProducer::Produce();
 }
 
 void OMPLThread::OnProduceFinish()
 {
-    KSRobot::utils::IProducer::OnProduceFinish();
+    KSRobot::common::IProducer::OnProduceFinish();
 }
 
 // Comm thread
 
 void CommThread::ConsumeFast()
 {
-    KSRobot::utils::IConsumer::ConsumeFast();
+    KSRobot::common::IConsumer::ConsumeFast();
 }
 
 void CommThread::ConsumeComplete()
 {
-    KSRobot::utils::IConsumer::ConsumeComplete();
+    KSRobot::common::IConsumer::ConsumeComplete();
 }
 
 void CommThread::OnConsumeStop()
 {
-    KSRobot::utils::IConsumer::OnConsumeStop();
+    KSRobot::common::IConsumer::OnConsumeStop();
 }
 
 void CommThread::Produce()
 {
-    KSRobot::utils::IProducer::Produce();
+    KSRobot::common::IProducer::Produce();
 }
 
 void CommThread::OnProduceFinish()
 {
-    KSRobot::utils::IProducer::OnProduceFinish();
+    KSRobot::common::IProducer::OnProduceFinish();
 }
 
 } // end of namespace detail

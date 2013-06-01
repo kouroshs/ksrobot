@@ -50,7 +50,7 @@ public:
     MainWindow();
     virtual ~MainWindow();
 
-    void InitWindow(KSRobot::utils::ProgramOptions::Ptr root, KSRobot::utils::ProgramOptions::Ptr poGUI);
+    void InitWindow(KSRobot::common::ProgramOptions::Ptr root, KSRobot::common::ProgramOptions::Ptr poGUI);
     
 private slots:
     void                                ToggleAction(bool);
@@ -131,8 +131,8 @@ private:
     WidgetActionMap                     mWidActMap;
     
     
-    KSRobot::utils::ProgramOptions::Ptr mGuiPO;
-    KSRobot::utils::ProgramOptions::Ptr mRootPO;
+    KSRobot::common::ProgramOptions::Ptr mGuiPO;
+    KSRobot::common::ProgramOptions::Ptr mRootPO;
     
 private:
     static QVector<MainWindow*>         s_windowLogReceiverList;

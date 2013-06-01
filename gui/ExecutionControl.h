@@ -20,10 +20,10 @@ public:
     explicit ExecutionControl(QWidget* parent = 0, Qt::WindowFlags f = 0);
     virtual ~ExecutionControl();
     
-    virtual void                                InitControl(utils::ProgramOptions::Ptr po);
+    virtual void                                InitControl(common::ProgramOptions::Ptr po);
 
 signals:
-    void                                        OnStart(const utils::ExecCtrlData& data);
+    void                                        OnStart(const common::ExecCtrlData& data);
     void                                        OnStop();
     
 private:
@@ -52,9 +52,9 @@ private slots:
     void on_mChkViewOMPL_clicked();
 private:
     Ui::ExecutionControl*                       mUI;
-    utils::ExecCtrlData                         mData;
-    utils::SettingsBinder                       mBinderFns;
-    utils::SettingsBinder                       mBinderVars;
+    common::ExecCtrlData                         mData;
+    common::SettingsBinder                       mBinderFns;
+    common::SettingsBinder                       mBinderVars;
 };
 
 } // end namespace gui

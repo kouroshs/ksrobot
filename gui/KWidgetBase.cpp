@@ -28,7 +28,7 @@ KSRobot::gui::KWidgetBase::~KWidgetBase()
 {
 }
 
-void KSRobot::gui::KWidgetBase::InitControl(KSRobot::utils::ProgramOptions::Ptr po)
+void KSRobot::gui::KWidgetBase::InitControl(KSRobot::common::ProgramOptions::Ptr po)
 {
     mGuiPO = po;
 }

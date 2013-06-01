@@ -47,25 +47,25 @@ signals:
     void                        OnRGBD(QImage rgb, QImage depth);
     
 public slots:
-    void                        OnStart(const utils::ExecCtrlData& data);
+    void                        OnStart(const common::ExecCtrlData& data);
     void                        OnStop();
     
 private slots:
     
 private:
-    void                        KinectPointCloudReceiverDirect(utils::KinectPointCloud::ConstPtr& pc);
+    void                        KinectPointCloudReceiverDirect(common::KinectPointCloud::ConstPtr& pc);
     // This function registeres to OnRGBD
-    void                        KinectRGBDReveicerRawDirect(utils::KinectRgbImage::Ptr rgb,
-                                                            utils::KinectRawDepthImage::Ptr depth);
-    void                        KinectRGBDReceiverFloatDirect(utils::KinectRgbImage::Ptr rgb,
-                                                              utils::KinectFloatDepthImage depth);
+    void                        KinectRGBDReveicerRawDirect(common::KinectRgbImage::Ptr rgb,
+                                                            common::KinectRawDepthImage::Ptr depth);
+    void                        KinectRGBDReceiverFloatDirect(common::KinectRgbImage::Ptr rgb,
+                                                              common::KinectFloatDepthImage depth);
 protected:
     virtual void                connectNotify(const char* name);
     virtual void                disconnectNotify(const char* name);
 protected:
     int                         mQtImageCreatorReceivers;
     
-    utils::SettingsBinder       mBinder;
+    common::SettingsBinder       mBinder;
     QString                     mSavePath;
 };
 

@@ -16,7 +16,7 @@ using namespace std;
 
 using namespace KSRobot;
 using namespace gui;
-using namespace utils;
+using namespace common;
 
 int main(int argc, char** argv)
 {

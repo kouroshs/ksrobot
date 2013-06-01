@@ -24,7 +24,7 @@ using boost::condition_variable;
 
 namespace KSRobot
 {
-namespace utils
+namespace common
 {
 
 ThreadContainer::ThreadContainer()

@@ -12,7 +12,7 @@ ImageContainer::~ImageContainer()
 {
 }
 
-void ImageContainer::InitControl(KSRobot::utils::ProgramOptions::Ptr po)
+void ImageContainer::InitControl(KSRobot::common::ProgramOptions::Ptr po)
 {
     KSRobot::gui::KWidgetBase::InitControl(po);
     setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));

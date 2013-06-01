@@ -6,7 +6,7 @@
 
 namespace KSRobot
 {
-namespace utils
+namespace common
 {
 
 class KinectDeviceReader : public KinectInterface
@@ -15,7 +15,7 @@ public:
     typedef boost::shared_ptr<KinectDeviceReader>               Ptr;
     typedef boost::shared_ptr<const KinectDeviceReader>         ConstPtr;
     
-    KinectDeviceReader(utils::ProgramOptions::Ptr po);
+    KinectDeviceReader(common::ProgramOptions::Ptr po);
     virtual ~KinectDeviceReader();
     
     virtual void                        Initialize(const std::string& device);

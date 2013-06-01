@@ -14,7 +14,7 @@
 
 namespace KSRobot
 {
-namespace utils
+namespace common
 {
 
 using boost::lexical_cast;

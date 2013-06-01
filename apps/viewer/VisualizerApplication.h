@@ -13,10 +13,10 @@ public:
     std::string                         GetSettingsFileName() const { return mSettingsFileName; }
     void                                SetSettingsFileName(const std::string& fn);
     
-    KSRobot::utils::ProgramOptions::Ptr GetPO() { return mPO; }
+    KSRobot::common::ProgramOptions::Ptr GetPO() { return mPO; }
     
 private:
-    KSRobot::utils::ProgramOptions::Ptr mPO;
+    KSRobot::common::ProgramOptions::Ptr mPO;
     std::string                         mSettingsFileName;
 };
 

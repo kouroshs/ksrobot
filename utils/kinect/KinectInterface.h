@@ -13,7 +13,7 @@
 
 namespace KSRobot
 {
-namespace utils
+namespace common
 {
 
 typedef pcl::PointCloud<pcl::PointXYZRGBA>                                  KinectPointCloud;

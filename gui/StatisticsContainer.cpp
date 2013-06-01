@@ -37,7 +37,7 @@ StatisticsContainer::~StatisticsContainer()
 {
 }
 
-void StatisticsContainer::InitControl(utils::ProgramOptions::Ptr po)
+void StatisticsContainer::InitControl(common::ProgramOptions::Ptr po)
 {
     KSRobot::gui::KWidgetBase::InitControl(po);
 }

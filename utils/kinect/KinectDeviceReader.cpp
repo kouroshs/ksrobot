@@ -3,10 +3,10 @@
 
 namespace KSRobot
 {
-namespace utils
+namespace common
 {
 
-KinectDeviceReader::KinectDeviceReader(utils::ProgramOptions::Ptr po) : KinectInterface(po), mCurrRgb(new KinectRgbImage),
+KinectDeviceReader::KinectDeviceReader(common::ProgramOptions::Ptr po) : KinectInterface(po), mCurrRgb(new KinectRgbImage),
                                                                 mCurrDepthFloat(new KinectFloatDepthImage)
 {
 }

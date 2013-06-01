@@ -10,11 +10,11 @@
 
 using namespace KSRobot;
 using namespace gui;
-using namespace utils;
+using namespace common;
 
 ExecutionControl::ExecutionControl(QWidget* parent, Qt::WindowFlags f) : KWidgetBase(parent, f)
 {
-    qRegisterMetaType<utils::ExecCtrlData>("ExecCtrlData");
+    qRegisterMetaType<common::ExecCtrlData>("ExecCtrlData");
 }
 
 ExecutionControl::~ExecutionControl()

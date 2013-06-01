@@ -30,10 +30,10 @@ namespace gui
 
 LogicBridge::LogicBridge(QObject* parent): QObject(parent), mQtImageCreatorReceivers(0)
 {
-    qRegisterMetaType<utils::KinectPointCloud::Ptr>("KinectPointCloud::Ptr");
-    qRegisterMetaType<utils::KinectRgbImage::Ptr>("KinectRgbImage::Ptr");
-    qRegisterMetaType<utils::KinectFloatDepthImage::Ptr>("KinectFloatDepthImage::Ptr");
-    qRegisterMetaType<utils::KinectRawDepthImage::Ptr>("KinectRawDepthImage::Ptr");
+    qRegisterMetaType<common::KinectPointCloud::Ptr>("KinectPointCloud::Ptr");
+    qRegisterMetaType<common::KinectRgbImage::Ptr>("KinectRgbImage::Ptr");
+    qRegisterMetaType<common::KinectFloatDepthImage::Ptr>("KinectFloatDepthImage::Ptr");
+    qRegisterMetaType<common::KinectRawDepthImage::Ptr>("KinectRawDepthImage::Ptr");
 }
 
 LogicBridge::~LogicBridge()
@@ -65,7 +65,7 @@ void LogicBridge::disconnectNotify(const char* name)
 }
 
 
-void LogicBridge::OnStart(const utils::ExecCtrlData& data)
+void LogicBridge::OnStart(const common::ExecCtrlData& data)
 {
 }
 
@@ -74,21 +74,20 @@ void LogicBridge::OnStop()
     
 }
 
-void LogicBridge::KinectPointCloudReceiverDirect(utils::KinectPointCloud::ConstPtr& pc)
+void LogicBridge::KinectPointCloudReceiverDirect(common::KinectPointCloud::ConstPtr& pc)
 {
     //TODO: Emit the signal
 }
 
-void LogicBridge::KinectRGBDReceiverFloatDirect(utils::KinectRgbImage::Ptr rgb,
-                                                utils::KinectFloatDepthImage depth)
+void LogicBridge::KinectRGBDReceiverFloatDirect(common::KinectRgbImage::Ptr rgb,
+                                                common::KinectFloatDepthImage depth)
 {
     // Normally I should not register this.
 }
 
-void LogicBridge::KinectRGBDReveicerRawDirect(utils::KinectRgbImage::Ptr rgb,
-                                              utils::KinectRawDepthImage::Ptr depth)
+void LogicBridge::KinectRGBDReveicerRawDirect(common::KinectRgbImage::Ptr rgb,
+                                              common::KinectRawDepthImage::Ptr depth)
 {
-    //TODO: Emit the signal
     //Two chekcs, one to save, and one to emit signals
     if( mSavePath != "" )
     {
@@ -97,42 +96,45 @@ void LogicBridge::KinectRGBDReveicerRawDirect(utils::KinectRgbImage::Ptr rgb,
     
     if( mQtImageCreatorReceivers )
     {
-        QImage qrgb(rgb->GetWidth(), rgb->GetHeight(), QImage::Format_RGB32), 
-                qdepth(depth->GetWidth(), depth->GetHeight(), QImage::Format_RGB32);
-        
+        QImage qrgb(rgb->GetWidth(), rgb->GetHeight(), QImage::Format_RGB32),
+               qdepth(depth->GetWidth(), depth->GetHeight(), QImage::Format_RGB32);
         // Now fill the images
         //NOTE: Assuming that the rgb and depth images have the same size
         assert(rgb->GetHeight() == depth->GetHeight() &&
                 rgb->GetWidth() == depth->GetWidth());
         
+        const common::KinectRgbImage::ArrayType& rgbArray = rgb->GetArray();
+        const common::KinectRawDepthImage::ArrayType& depthArray = depth->GetArray();
         
-        const utils::KinectRgbImage::ArrayType& rgbArray = rgb->GetArray();
-        const utils::KinectRawDepthImage::ArrayType& depthArray = depth->GetArray();
-        
+        //NOTE: It is probably more cache friendly if we do rgb and depth copies seperately.
         for(int y = 0; y < rgb->GetHeight(); y++)
         {
             uchar* rgbPtr = qrgb.scanLine(y);
-            uchar* depthPtr = qdepth.scanLine(y);
-            
             size_t idxRgb = rgb->ScanLineIndex(y);
-            size_t idxDepth = depth->ScanLineIndex(y);
             for(int x = 0; x < rgb->GetWidth(); x++)
             {
-                // First do the rgb
                 rgbPtr[0] = rgbArray[idxRgb];
                 rgbPtr[1] = rgbArray[idxRgb + 1];
                 rgbPtr[2] = rgbArray[idxRgb + 2];
                 rgbPtr[3] = 0xFF;
                 
-                //Now convert depth values
+                idxRgb = common::KinectRgbImage::NexIndexUnsafe(idxRgb);
+                rgbPtr += 4;
+            }
+        }
+        
+        for(int y = 0; y < depth->GetHeight(); y++)
+        {
+            uchar* depthPtr = qdepth.scanLine(y);
+            size_t idxDepth = depth->ScanLineIndex(y);
+            for(int x = 0; x < depth->GetWidth(); x++)
+            {
                 depthPtr[0] = depthArray[idxDepth] / 10000 * 255;
                 depthPtr[1] = depthArray[idxDepth] / 10000 * 255;
                 depthPtr[2] = depthArray[idxDepth] / 10000 * 255;
                 depthPtr[3] = 0xFF;
                 
-                idxRgb = utils::KinectRgbImage::NexIndexUnsafe(idxRgb);
-                idxDepth = utils::KinectRawDepthImage::NexIndexUnsafe(idxDepth);
-                rgbPtr += 4;
+                idxDepth = common::KinectRawDepthImage::NexIndexUnsafe(idxDepth);
                 depthPtr += 4;
             }
         }

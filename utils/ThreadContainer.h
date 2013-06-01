@@ -26,7 +26,7 @@
 //extern gtsam::Point2 P;
 namespace KSRobot
 {
-namespace utils
+namespace common
 {
         
 class ThreadContainer

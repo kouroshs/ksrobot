@@ -22,7 +22,7 @@
 
 namespace KSRobot
 {
-namespace utils
+namespace common
 {
 
     #define SAFE_CALL(x)  if( (x) ) x();

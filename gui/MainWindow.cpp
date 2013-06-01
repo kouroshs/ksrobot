@@ -25,7 +25,7 @@ using std::cout;
 using std::flush;
 
 using namespace KSRobot::gui;
-using namespace KSRobot::utils;
+using namespace KSRobot::common;
 
 QVector<MainWindow*>  MainWindow::s_windowLogReceiverList;
 bool MainWindow::s_bHandlerInitialized = false;

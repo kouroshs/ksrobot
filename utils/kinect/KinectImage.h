@@ -6,7 +6,7 @@
 
 namespace KSRobot
 {
-namespace utils
+namespace common
 {
 //NOTE: This class is provided to remove OpenCV dependency.
 template<class X, int NumChannels>

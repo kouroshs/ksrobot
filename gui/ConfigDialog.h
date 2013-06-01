@@ -16,13 +16,13 @@ class ConfigDialog : public QDialog
 public:
     //TODO: Remove this, and setup Execution Control
     explicit ConfigDialog(QWidget* parent, Qt::WindowFlags f, 
-                          KSRobot::utils::ProgramOptions::Ptr po);
+                          KSRobot::common::ProgramOptions::Ptr po);
     virtual ~ConfigDialog();
     
 signals:
     void                                        ConfigChanged();
 private:
-    KSRobot::utils::ProgramOptions::Ptr         mGuiPO;
+    KSRobot::common::ProgramOptions::Ptr         mGuiPO;
     
 };
 

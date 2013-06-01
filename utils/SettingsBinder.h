@@ -28,7 +28,7 @@
 
 namespace KSRobot
 {
-namespace utils
+namespace common
 {
 
 class SettingsBinder

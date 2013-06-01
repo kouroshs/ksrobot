@@ -5,7 +5,7 @@
 
 namespace KSRobot
 {
-    namespace utils
+    namespace common
     {
         typedef boost::chrono::high_resolution_clock    Clock;
         typedef Clock::time_point                       TimePoint;

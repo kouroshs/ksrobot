@@ -23,7 +23,7 @@
 
 namespace KSRobot
 {
-namespace utils
+namespace common
 {
 
 void ExecCtrlData::EnableComm(bool enable)

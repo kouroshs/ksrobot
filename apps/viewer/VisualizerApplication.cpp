@@ -1,7 +1,7 @@
 #include "VisualizerApplication.h"
 
 VisualizerApplication::VisualizerApplication(int& argc, char** argv, int oa) :
-    QApplication(argc, argv, oa), mPO(new KSRobot::utils::ProgramOptions())
+    QApplication(argc, argv, oa), mPO(new KSRobot::common::ProgramOptions())
 {
 }
 

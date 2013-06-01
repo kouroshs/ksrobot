@@ -15,7 +15,7 @@ LogContainer::~LogContainer()
 {
 }
 
-void LogContainer::InitControl(KSRobot::utils::ProgramOptions::Ptr po)
+void LogContainer::InitControl(KSRobot::common::ProgramOptions::Ptr po)
 {
     KSRobot::gui::KWidgetBase::InitControl(po);
     mTextBox = new QTextEdit(this);
