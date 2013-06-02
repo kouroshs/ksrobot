@@ -25,7 +25,7 @@
 
 #include <gui/ExecutionControl.h>
 #include <common/SettingsBinder.h>
-#include <common/kinect/KinectInterface.h>
+#include <common/KinectInterface.h>
 #include <common/ExecCtrlData.h>
 
 namespace KSRobot

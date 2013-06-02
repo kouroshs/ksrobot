@@ -1,8 +1,8 @@
 #ifndef KINECTINTERFACE_H
 #define KINECTINTERFACE_H
 
-#include <common/ProgramOptions.h>
-#include <common/kinect/KinectImage.h>
+#include <common/Interface.h>
+#include <common/KinectImage.h>
 
 
 #include <boost/function.hpp>
@@ -18,7 +18,7 @@ namespace common
 
 typedef pcl::PointCloud<pcl::PointXYZRGBA>                                  KinectPointCloud;
 
-class KinectInterface
+class KinectInterface : public Interface
 {
 public:
     typedef boost::shared_ptr<KinectInterface>                                  Ptr;
@@ -38,8 +38,6 @@ public:
     virtual boost::signals2::connection RegisterRGBDRawCallback(boost::function<RGBDRawReceiverFn> fn) = 0;
     virtual boost::signals2::connection RegisterRGBDFloatCallback(boost::function<RGBDReceiverFn> fn) = 0;
     virtual boost::signals2::connection RegisterPointCloudCallback(boost::function<PointCloudReceiverFn> fn) = 0;
-protected:
-    ProgramOptions::Ptr                 mPO;
 };
 
 } // end namespace utils

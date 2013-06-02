@@ -4,7 +4,9 @@
 #include <common/ProgramOptions.h>
 #include <common/ExecCtrlData.h>
 #include <common/Worker.h>
-#include <common/kinect/KinectInterface.h>
+#include <common/KinectInterface.h>
+
+#include <common/FovisInterface.h>
 
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
@@ -12,7 +14,6 @@
 
 #include <vector>
 
-#include <fovis/visual_odometry.hpp>
 
 namespace KSRobot
 {
@@ -37,8 +38,7 @@ public:
     
     void                                Start(const ExecCtrlData& ed);
     void                                Stop();
-    //TODO: Implement Pause, Resume
-    //TODO: Implement external receivers.
+
 //     boost::signals2::connection         RegisterKinectRGBDReceiver();
 //     boost::signals2::connection         RegisterKinectPointCloudReceiver();
 //     boost::signals2::connection         RegisterFovisReceiver();
@@ -62,7 +62,7 @@ private:
 private:
     typedef boost::shared_ptr<fovis::VisualOdometry>  VisualOdometryPtr;
 
-    ProgramOptions::Ptr                 mPO;    
+    ProgramOptions::Ptr                 mPO;
     KinectInterface::Ptr                mKinectInterface;
     VisualOdometryPtr                   mVO;
     
@@ -179,7 +179,6 @@ namespace detail
         Engine* mEngine;
     };
 };
-
 
 } // end namespace utils
 } // end namespace KSRobot

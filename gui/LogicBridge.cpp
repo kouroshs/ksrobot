@@ -20,8 +20,8 @@
 
 #include "LogicBridge.h"
 
-#include <common/kinect/KinectDatasetReader.h>
-#include <common/kinect/KinectDeviceReader.h>
+#include <interfaces/KinectDatasetReader.h>
+#include <interfaces/KinectDeviceReader.h>
 
 namespace KSRobot
 {
