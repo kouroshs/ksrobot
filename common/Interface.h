@@ -1,6 +1,6 @@
 /*
  * <one line to give the library's name and an idea of what it does.>
- * Copyright (C) 2013  Kourosh <kourosh.sartipi@gmail.com>
+ * Copyright (C) 2013  Kourosh <email>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,35 +18,34 @@
  *
  */
 
-#include <interfaces/FovisInterface.h>
+#ifndef INTERFACE_H
+#define INTERFACE_H
+
+#include <common/ProgramOptions.h>
+#include <boost/shared_ptr.hpp>
 
 namespace KSRobot
 {
-namespace interfaces
+namespace common
 {
 
-FovisInterface::FovisInterface(common::ProgramOptions::Ptr po) : common::VisualOdometryInterface(po)
+class Interface
 {
-}
-
-FovisInterface::~FovisInterface()
-{
-}
-
-void FovisInterface::RegisterToKinect(common::KinectInterface::Ptr ki)
-{
-    // TODO: Get rectification data from kinect in here. Also initialize the fovis instance
-    ki->RegisterRGBDFloatCallback(boost::bind(&FovisInterface::ReceiverFn, this, _1, _2));
-    //TODO: Initialize fovis here
-    //mFovis.reset(new fovis::VisualOdometry(...));
-}
-
-void FovisInterface::ReceiverFn(common::KinectRgbImage::Ptr rgb, common::KinectFloatDepthImage::Ptr depth)
-{
-    //TODO: Complete this
+public:
+    typedef Interface                           this_type;
+    typedef boost::shared_ptr<this_type>        Ptr;
+    typedef boost::shared_ptr<const this_type>  ConstPtr;
     
-}
+    Interface(ProgramOptions::Ptr po);
+    virtual ~Interface();
+    
+    //TODO: Should I add Initialize, start and stop methods?
+    
+protected:
+    ProgramOptions::Ptr  mPO;
+};
 
-
-} // end namespace utils
+} // end namespace common
 } // end namespace KSRobot
+
+#endif // INTERFACE_H

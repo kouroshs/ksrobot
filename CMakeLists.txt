@@ -7,7 +7,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake-mod
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(EIGEN REQUIRED eigen3)
 
-find_package(Qt4 REQUIRED)
+SET(QT_USE_QTOPENGL TRUE)
+SET(QT_USE_QTNETWORK TRUE)
+
+find_package(Qt4 COMPONENTS QtCore QtGui QtNetwork REQUIRED)
 find_package(Boost COMPONENTS system filesystem thread date_time program_options chrono REQUIRED)
 find_package(OpenNI REQUIRED)
 

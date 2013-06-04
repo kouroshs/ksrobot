@@ -63,6 +63,9 @@ void MainWindow::InitWindow(ProgramOptions::Ptr root, ProgramOptions::Ptr poGUI)
     SetupUI();
     
     showMaximized();
+    
+    TempSocketWin* dlg = new TempSocketWin(this);
+    dlg->show();
 }
 
 std::string MainWindow::GetChildObjName(QObject* obj) const

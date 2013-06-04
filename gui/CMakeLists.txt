@@ -11,6 +11,6 @@ qt4_wrap_cpp(PROJ_MOC_FILES MainWindow.h ConfigDialog.h
 qt4_automoc(${GUI_SRCS})
 
 add_library(ksrobot_gui SHARED ${GUI_SRCS} ${PROJ_MOC_FILES})
-target_link_libraries(ksrobot_gui ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
+target_link_libraries(ksrobot_gui ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTNETWORK_LIBRARY})
 #install(TARGETS gui RUNTIME DESTINATION bin)
  

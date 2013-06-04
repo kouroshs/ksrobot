@@ -1,11 +1,10 @@
 (PRIORITY)                 Description
 ==========================================================================
 
-(HIGH) Add another namespace,  possible named components to encapsulate Engine and interfaces (DO I REALLY NEED TO DO IT? )
-(HIGH) Add a class for each sub component.
 (HIGH) Do sth when KinectDatasetReader finishes. should it send some kind of notification?
         - I should probably add a 'IsFinished' function to KinectInterface.
         - In multithreaded scenario, KinectInterface should emit a signal.
+(HIGH) How do interfaces and workers merge?
 (HIGH) Set kinect intrinsic params inside KinectDatasetReader.
 
 (MID) Implement controller.

@@ -1,6 +1,6 @@
 /*
  * <one line to give the library's name and an idea of what it does.>
- * Copyright (C) 2013  Kourosh <kourosh.sartipi@gmail.com>
+ * Copyright (C) 2013  Kourosh <email>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,35 +18,28 @@
  *
  */
 
-#include <interfaces/FovisInterface.h>
+#ifndef MAPPINGINTERFACE_H
+#define MAPPINGINTERFACE_H
+
+#include <common/Interface.h>
 
 namespace KSRobot
 {
-namespace interfaces
+namespace common
 {
 
-FovisInterface::FovisInterface(common::ProgramOptions::Ptr po) : common::VisualOdometryInterface(po)
+class MappingInterface : public Interface
 {
-}
+public:
+    typedef MappingInterface                  this_type;
+    typedef boost::shared_ptr<this_type>        Ptr;
+    typedef boost::shared_ptr<const this_type>  ConstPtr;
 
-FovisInterface::~FovisInterface()
-{
-}
+    MappingInterface(ProgramOptions::Ptr po);
+    virtual ~MappingInterface();
+};
 
-void FovisInterface::RegisterToKinect(common::KinectInterface::Ptr ki)
-{
-    // TODO: Get rectification data from kinect in here. Also initialize the fovis instance
-    ki->RegisterRGBDFloatCallback(boost::bind(&FovisInterface::ReceiverFn, this, _1, _2));
-    //TODO: Initialize fovis here
-    //mFovis.reset(new fovis::VisualOdometry(...));
-}
-
-void FovisInterface::ReceiverFn(common::KinectRgbImage::Ptr rgb, common::KinectFloatDepthImage::Ptr depth)
-{
-    //TODO: Complete this
-    
-}
-
-
-} // end namespace utils
+} // end namespace common
 } // end namespace KSRobot
+
+#endif // MAPPINGINTERFACE_H

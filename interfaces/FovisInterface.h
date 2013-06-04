@@ -35,7 +35,10 @@ public:
     FovisInterface(common::ProgramOptions::Ptr po);
     virtual ~FovisInterface();
     
-    
+    virtual void RegisterToKinect(common::KinectInterface::Ptr ki);
+
+protected:
+    void         ReceiverFn(common::KinectRgbImage::Ptr rgb, common::KinectFloatDepthImage::Ptr depth);
 protected:
     boost::shared_ptr<fovis::VisualOdometry>    mFovis;
 };

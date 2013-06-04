@@ -1,6 +1,6 @@
 /*
  * <one line to give the library's name and an idea of what it does.>
- * Copyright (C) 2013  Kourosh <kourosh.sartipi@gmail.com>
+ * Copyright (C) 2013  Kourosh <email>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,35 +18,20 @@
  *
  */
 
-#include <interfaces/FovisInterface.h>
+#include <common/PlannerInterface.h>
 
 namespace KSRobot
 {
-namespace interfaces
+namespace common
 {
 
-FovisInterface::FovisInterface(common::ProgramOptions::Ptr po) : common::VisualOdometryInterface(po)
-{
-}
-
-FovisInterface::~FovisInterface()
+PlannerInterface::PlannerInterface(ProgramOptions::Ptr po) : Interface(po)
 {
 }
 
-void FovisInterface::RegisterToKinect(common::KinectInterface::Ptr ki)
+PlannerInterface::~PlannerInterface()
 {
-    // TODO: Get rectification data from kinect in here. Also initialize the fovis instance
-    ki->RegisterRGBDFloatCallback(boost::bind(&FovisInterface::ReceiverFn, this, _1, _2));
-    //TODO: Initialize fovis here
-    //mFovis.reset(new fovis::VisualOdometry(...));
 }
 
-void FovisInterface::ReceiverFn(common::KinectRgbImage::Ptr rgb, common::KinectFloatDepthImage::Ptr depth)
-{
-    //TODO: Complete this
-    
-}
-
-
-} // end namespace utils
+} // end namespace common
 } // end namespace KSRobot
