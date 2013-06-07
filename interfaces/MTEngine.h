@@ -32,7 +32,7 @@ namespace interfaces
 class MTEngine : public common::EngineInterface
 {
 public:
-    MTEngine(common::ProgramOptions::Ptr po);
+    MTEngine(common::ProgramOptions::Ptr po, const std::string& name);
     virtual ~MTEngine();
 
     

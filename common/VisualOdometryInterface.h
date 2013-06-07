@@ -37,7 +37,7 @@ public:
     typedef boost::shared_ptr<this_type>        Ptr;
     typedef boost::shared_ptr<const this_type>  ConstPtr;
 
-    VisualOdometryInterface(ProgramOptions::Ptr po);
+    VisualOdometryInterface(ProgramOptions::Ptr po, const std::string& name);
     virtual ~VisualOdometryInterface();
     
 

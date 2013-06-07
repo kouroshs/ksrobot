@@ -1,7 +1,9 @@
 #ifndef KSROBOT_UTILS_DEFENITIONS_H
 #define KSROBOT_UTILS_DEFENITIONS_H
 
-#include <boost/chrono.hpp>
+#include <boost/chrono/duration.hpp>
+#include <boost/chrono/time_point.hpp>
+#include <boost/chrono/system_clocks.hpp>
 
 namespace KSRobot
 {
@@ -11,7 +13,7 @@ namespace KSRobot
         typedef Clock::time_point                       TimePoint;
         typedef Clock::duration                         Duration;
         
-        long Milliseconds(const Duration& dur)
+        inline long Milliseconds(const Duration& dur)
         {
             return boost::chrono::duration_cast<boost::chrono::milliseconds>(dur).count();
         }

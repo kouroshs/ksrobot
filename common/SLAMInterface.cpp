@@ -25,7 +25,7 @@ namespace KSRobot
 namespace common
 {
 
-SLAMInterface::SLAMInterface(ProgramOptions::Ptr po) : Interface(po)
+SLAMInterface::SLAMInterface(ProgramOptions::Ptr po, const std::string& name) : Interface(po, name)
 {
 }
 

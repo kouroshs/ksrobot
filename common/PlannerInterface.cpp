@@ -25,7 +25,7 @@ namespace KSRobot
 namespace common
 {
 
-PlannerInterface::PlannerInterface(ProgramOptions::Ptr po) : Interface(po)
+PlannerInterface::PlannerInterface(ProgramOptions::Ptr po, const std::string& name) : Interface(po, name)
 {
 }
 

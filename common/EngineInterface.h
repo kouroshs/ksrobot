@@ -34,8 +34,6 @@ namespace KSRobot
 namespace common
 {
 
-//TODO: ADD OTHER METHODS
-
 class EngineInterface : public Interface
 {
 public:
@@ -43,12 +41,10 @@ public:
     typedef boost::shared_ptr<this_type>        Ptr;
     typedef boost::shared_ptr<const this_type>  ConstPtr;
 
-    
-    EngineInterface(ProgramOptions::Ptr po);
+    EngineInterface(ProgramOptions::Ptr po, const std::string& name);
     virtual ~EngineInterface();
     
-    virtual void Start(const ExecCtrlData& data);
-    virtual void Stop();
+    inline void                         SetExecutionParams(const ExecCtrlData& data);
     
     KinectInterface::Ptr                GetKinectInterface() const { return mKinect; }
     VisualOdometryInterface::Ptr        GetVisualOdometryInterface() const { return mVO; }
@@ -66,6 +62,11 @@ protected:
     MappingInterface::Ptr               mMapper;
     PlannerInterface::Ptr               mPlanner;
 };
+
+inline void EngineInterface::SetExecutionParams(const ExecCtrlData& data)
+{
+    mExecCtrl = data;
+}
 
 } // end namespace common
 } // end namespace KSRobot

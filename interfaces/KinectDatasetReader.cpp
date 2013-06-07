@@ -24,9 +24,8 @@ using namespace Eigen;
 namespace fs = boost::filesystem;
 namespace gil = boost::gil;
 
-KinectDatasetReader::KinectDatasetReader(common::ProgramOptions::Ptr po) : KinectInterface(po), mCycle(0), mRunning(false),
-    mCurrPointCloud(new common::KinectPointCloud), mCurrRgb(new common::KinectRgbImage), mCurrDepthRaw(new common::KinectRawDepthImage),
-    mCurrDepthFloat(new common::KinectFloatDepthImage)
+KinectDatasetReader::KinectDatasetReader(common::ProgramOptions::Ptr po, const std::string& name) : KinectInterface(po, name), 
+    mCycle(0), mRunning(false)
 {
 }
 
@@ -43,9 +42,6 @@ static inline bool IsNear(double diff)
 
 void KinectDatasetReader::Initialize(const std::string& pathStr)
 {
-    mPerCycleSleep = mPO->GetInt("PerCycleSleepMiliSec", 0);
-    mTotalTime = mPO->GetInt("BetweenCycleTimeMiliSec", 33); // almost 30 Hz
-
     fs::path dirPath(pathStr);
     fs::path rgbIndexFile = dirPath / "rgb.txt";
     fs::path depthIndexFile = dirPath / "depth.txt";
@@ -73,6 +69,15 @@ void KinectDatasetReader::Initialize(const std::string& pathStr)
     mPointCloudGenerator.reset(new ImageGrabber(mDepthFiles.FileNames, 0, false));
     mPointCloudGenerator->setDepthImageUnits(5000.0f);
     mPointCloudGenerator->setRGBImageFiles(mRGBFiles.FileNames);
+    boost::function<void ( common::KinectPointCloud::Ptr)> f =
+        boost::bind(&KinectDatasetReader::PointCloudCallback, this, _1);
+    mPointCloudGenerator->registerCallback(f);
+}
+
+void KinectDatasetReader::PointCloudCallback(common::KinectPointCloud::Ptr pc)
+{
+    //TODO: For openni grabber it is safe, but I don't know for imagegrabber
+    mPC = pc;
 }
 
 void KinectDatasetReader::ReadIndexFile(ifstream& file, const fs::path& fullPath,
@@ -286,97 +291,25 @@ void KinectDatasetReader::CorrespondGroundTruth()
     mDepthFiles = dp;
 }
 
-boost::signals2::connection KinectDatasetReader::RegisterPointCloudCallback(boost::function<PointCloudReceiverFn> fn)
+bool KinectDatasetReader::RunSingleCycle()
 {
-    return mPointCloudGenerator->registerCallback(fn);
-}
-
-boost::signals2::connection KinectDatasetReader::RegisterRGBDFloatCallback(boost::function<RGBDReceiverFn> fn)
-{
-    return mRGBDReceivers.connect(fn);
-}
-
-boost::signals2::connection KinectDatasetReader::RegisterRGBDRawCallback(boost::function<RGBDRawReceiverFn> fn)
-{
-    return mRGBDRawReceivers.connect(fn);
-}
-
-
-void KinectDatasetReader::Start()
-{
-    mRunning = true;
-    mExecThread = boost::thread(boost::bind(&KinectDatasetReader::ThreadEntry, this));
-}
-
-void KinectDatasetReader::Stop()
-{
-    mRunning = false;
-    mExecThread.join();
-}
-
-bool KinectDatasetReader::IsRunning()
-{
-    return mRunning;
-}
-
-void KinectDatasetReader::ThreadEntry()
-{
-    //TODO: Add something to handle when it is finished.
-    while( mRunning && mCycle < mRGBFiles.FileNames.size() )
+    if( mCycle >= mRGBFiles.FileNames.size() )
     {
-        if( mPerCycleSleep != 0 )
-            boost::this_thread::sleep_for(boost::chrono::milliseconds(mPerCycleSleep));
-        if( mTotalTime != 0 )
-        {
-            common::Clock::time_point now = common::Clock::now();
-            common::Clock::duration dur = now - mLastTime;
-            int milisecs = common::Milliseconds(dur);
-
-            if( milisecs < mTotalTime )
-                boost::this_thread::sleep_for(boost::chrono::milliseconds(mTotalTime - milisecs));
-        }
-
-        //Now do the calculations
-        LoadNextFiles();
-        //This will trigger the callbacks registered to the pointcloud.
-        mPointCloudGenerator->start();
-        // Trigger RGBD callbacks
-        mRGBDReceivers(mCurrRgb, mCurrDepthFloat);
-        mRGBDRawReceivers(mCurrRgb, mCurrDepthRaw);
-        
-        mCycle++;
+        //TODO: This means dataset is finished. how can we send finished signal?
+        return false;
     }
-
-    mRunning = false;
+    
+    LockData();
+    
+    LoadNextFiles();
+    //This will trigger the callbacks registered to the pointcloud.
+    mPointCloudGenerator->start();
+    mCycle++;
+    
+    UnlockData();
+    return true;
 }
 
-// template <class X, int N, class pixel_type, bool Val, class Allocator>
-// void CopyToKinectImage(KinectBaseImage<X, N>& dst, gil::image<pixel_type, Val, Allocator>& src)
-// {
-//     typedef typename gil::image<pixel_type, Val, Allocator>   ImgType;
-//     typedef typename gil::view_type_from_pixel<pixel_type>::type            view_t;
-//     typedef typename view_t::x_iterator         x_iterator;
-// //    typedef  typename view_t::reference      pixel_type;
-//     
-//     typedef  KinectBaseImage<X, N>      DestImageType;
-//     typedef typename DestImageType::ArrayType   DestArrayType;
-//     
-//     DestArrayType& arr = dst.GetArray();
-//     
-//     view_t view = view_t(src);
-//     size_t index = 0;
-//     for(int i = 0; i < src.height(); i++)
-//     {
-//         x_iterator iter = view.row_begin(i);
-//         for(int j = 0; j < src.width(); j++)
-//         {
-//             pixel_type& pix = iter[j];
-//             for(int k = 0; k < DestImageType::Channels; k++)
-//                 arr[index++] = pix[k];
-//         }
-//     }
-// }
-// 
 static void CopyToKinectImage(common::KinectRgbImage::Ptr dst, gil::rgb8_image_t& src)
 {
     common::KinectRgbImage::ArrayType& arr = dst->GetArray();
@@ -426,23 +359,18 @@ static void CopyToKinectImage(common::KinectRawDepthImage::Ptr dst, gil::gray16_
 
 void KinectDatasetReader::LoadNextFiles()
 {
-    if( mRGBDRawReceivers.empty() && mRGBDReceivers.empty() )
-        return;
-    
     gil::rgb8_image_t rgb;
     gil::gray16_image_t depth;
     gil::png_read_image(mRGBFiles.FileNames[mCycle], rgb);
     gil::png_read_image(mDepthFiles.FileNames[mCycle], depth);
 
-    mCurrRgb->Create(rgb.width(), rgb.height());
-    mCurrDepthRaw->Create(depth.width(), depth.height());
-    mCurrDepthFloat->Create(depth.width(), depth.height());
+    mRgb->Create(rgb.width(), rgb.height());
+    mRawDepth->Create(depth.width(), depth.height());
+    mFloatDepth->Create(depth.width(), depth.height());
 
-    CopyToKinectImage(mCurrRgb, rgb);
-    if( !mRGBDRawReceivers.empty() )
-        CopyToKinectImage(mCurrDepthRaw, depth);
-    if( !mRGBDReceivers.empty() )
-        CopyToKinectImage(mCurrDepthFloat, depth);
+    CopyToKinectImage(mRgb, rgb);
+    CopyToKinectImage(mRawDepth, depth);
+    CopyToKinectImage(mFloatDepth, depth);
 }
 
 } // end namespace utils

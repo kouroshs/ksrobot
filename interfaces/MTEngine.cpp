@@ -25,7 +25,7 @@ namespace KSRobot
 namespace interfaces
 {
 
-MTEngine::MTEngine(common::ProgramOptions::Ptr po) : common::EngineInterface(po)
+MTEngine::MTEngine(common::ProgramOptions::Ptr po, const std::string& name) : common::EngineInterface(po, name)
 {
 }
 

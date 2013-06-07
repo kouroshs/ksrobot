@@ -23,6 +23,8 @@
 
 #include <common/VisualOdometryInterface.h>
 #include <fovis/visual_odometry.hpp>
+#include <fovis/depth_image.hpp>
+#include <boost/shared_array.hpp>
 
 namespace KSRobot
 {
@@ -32,15 +34,19 @@ namespace interfaces
 class FovisInterface : public common::VisualOdometryInterface
 {
 public:
-    FovisInterface(common::ProgramOptions::Ptr po);
+    FovisInterface(common::ProgramOptions::Ptr po, const std::string& name);
     virtual ~FovisInterface();
     
     virtual void RegisterToKinect(common::KinectInterface::Ptr ki);
 
-protected:
-    void         ReceiverFn(common::KinectRgbImage::Ptr rgb, common::KinectFloatDepthImage::Ptr depth);
+    virtual bool RunSingleCycle();
 protected:
     boost::shared_ptr<fovis::VisualOdometry>    mFovis;
+    boost::shared_ptr<fovis::DepthImage>        mDepthImage;
+    boost::shared_array<unsigned char>          mGrayImage;
+    
+    common::KinectInterface::Ptr                mKinect;
+    int                                         mLastKinectCycle;
 };
 
 #endif // FOVISINTERFACE_H

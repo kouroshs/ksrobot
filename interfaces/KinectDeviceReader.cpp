@@ -6,8 +6,24 @@ namespace KSRobot
 namespace interfaces
 {
 
-KinectDeviceReader::KinectDeviceReader(common::ProgramOptions::Ptr po) : KinectInterface(po), mCurrRgb(new common::KinectRgbImage()),
-                                                                mCurrDepthFloat(new common::KinectFloatDepthImage())
+//TODO: SOlve bugs in pcl about inline virtual.
+class GrabberHelper : public pcl::OpenNIGrabber
+{
+public:
+    GrabberHelper(const std::string& device_id = "", const Mode& depth_mode = OpenNI_Default_Mode, 
+                  const Mode& image_mode = OpenNI_Default_Mode) : pcl::OpenNIGrabber(device_id, depth_mode, image_mode) {;}
+    
+    virtual ~GrabberHelper() throw() {;}
+    
+    common::KinectPointCloud::Ptr GeneratePC(const boost::shared_ptr<openni_wrapper::Image> &image,
+                                             const boost::shared_ptr<openni_wrapper::DepthImage> &depth_image) const
+    {
+        return convertToXYZRGBPointCloud<pcl::PointXYZRGBA>(image, depth_image);
+    }
+    
+};
+
+KinectDeviceReader::KinectDeviceReader(common::ProgramOptions::Ptr po, const std::string& name) : common::KinectInterface(po, name)
 {
 }
 
@@ -17,29 +33,20 @@ KinectDeviceReader::~KinectDeviceReader()
 
 void KinectDeviceReader::Initialize(const std::string& device)
 {
-    mGrabber.reset(new pcl::OpenNIGrabber(device));
+    mGrabber.reset(new GrabberHelper(device));
+    boost::function<void (const boost::shared_ptr<openni_wrapper::Image>&, 
+                          const boost::shared_ptr<openni_wrapper::DepthImage>& , 
+                          float)> fn;
+    
+    fn = boost::bind(&KinectDeviceReader::RGBDCallback, this, _1, _2, _3);
+    mGrabber->registerCallback(fn);
 }
 
-bool KinectDeviceReader::IsRunning()
+bool KinectDeviceReader::ContinueExecution() const
 {
+    assert(mGrabber);
     return mGrabber->isRunning();
 }
-
-boost::signals2::connection KinectDeviceReader::RegisterPointCloudCallback(boost::function<KinectInterface::PointCloudReceiverFn> fn)
-{
-    return mGrabber->registerCallback(fn);
-}
-
-boost::signals2::connection KinectDeviceReader::RegisterRGBDFloatCallback(boost::function<KinectInterface::RGBDReceiverFn> fn)
-{
-    return mRGBDFloatReceivers.connect(fn);
-}
-
-boost::signals2::connection KinectDeviceReader::RegisterRGBDRawCallback(boost::function< KinectInterface::RGBDRawReceiverFn > fn)
-{
-    return mRGBDRawReceivers.connect(fn);
-}
-
 
 void KinectDeviceReader::Start()
 {
@@ -55,30 +62,20 @@ void KinectDeviceReader::RGBDCallback(const boost::shared_ptr<openni_wrapper::Im
                                       const boost::shared_ptr<openni_wrapper::DepthImage>& depth, 
                                       float /*invFocalLength*/)
 {
-    // Only do this if there is registered function
-    if( mRGBDFloatReceivers.empty() && mRGBDRawReceivers.empty() )
-        return;
+    LockData();
     
-    mCurrRgb->Create(rgb->getWidth(), rgb->getHeight());
-    rgb->fillRGB(rgb->getHeight(), rgb->getWidth(), mCurrRgb->GetArray().data());
-
-    if( !mRGBDFloatReceivers.empty() )
-    {
-        mCurrDepthFloat->Create(depth->getWidth(), depth->getHeight());
-        depth->fillDepthImage(depth->getHeight(), depth->getWidth(), mCurrDepthFloat->GetArray().data());
-    }
+    mRgb->Create(rgb->getWidth(), rgb->getHeight());
+    mFloatDepth->Create(depth->getWidth(), depth->getHeight());
+    mRawDepth->Create(depth->getWidth(), depth->getHeight());
     
-    if( !mRGBDRawReceivers.empty() )
-    {
-        mCurrDepthRaw->Create(depth->getWidth(), depth->getHeight());
-        depth->fillDepthImageRaw(depth->getHeight(), depth->getWidth(), mCurrDepthRaw->GetArray().data());
-    }
+    rgb->fillRGB(rgb->getHeight(), rgb->getWidth(), mRgb->GetArray().data());
+    depth->fillDepthImage(depth->getHeight(), depth->getWidth(), mFloatDepth->GetArray().data());
+    depth->fillDepthImageRaw(depth->getHeight(), depth->getWidth(), mRawDepth->GetArray().data());
     
-    mRGBDFloatReceivers(mCurrRgb, mCurrDepthFloat);
-    mRGBDRawReceivers(mCurrRgb, mCurrDepthRaw);
+    mPC = mGrabber->GeneratePC(rgb, depth);
+    
+    UnlockData();
 }
-
-
 
 } // end namespace utils
 } // end namespace KSRobot

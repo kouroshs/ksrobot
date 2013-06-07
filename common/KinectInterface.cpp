@@ -6,7 +6,8 @@ namespace common
 {
 
 
-KinectInterface::KinectInterface(ProgramOptions::Ptr po) : Interface(po)
+KinectInterface::KinectInterface(ProgramOptions::Ptr po, const std::string& name) : Interface(po, name), mPC(new KinectPointCloud()),
+    mRgb(new KinectRgbImage()), mRawDepth(new KinectRawDepthImage()), mFloatDepth(new KinectFloatDepthImage())
 {
 }
 

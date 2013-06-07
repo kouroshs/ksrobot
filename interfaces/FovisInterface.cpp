@@ -19,13 +19,15 @@
  */
 
 #include <interfaces/FovisInterface.h>
+#include <math.h>
 
 namespace KSRobot
 {
 namespace interfaces
 {
 
-FovisInterface::FovisInterface(common::ProgramOptions::Ptr po) : common::VisualOdometryInterface(po)
+FovisInterface::FovisInterface(common::ProgramOptions::Ptr po, const std::string& name) : 
+            common::VisualOdometryInterface(po, name), mLastKinectCycle(-1)
 {
 }
 
@@ -35,17 +37,54 @@ FovisInterface::~FovisInterface()
 
 void FovisInterface::RegisterToKinect(common::KinectInterface::Ptr ki)
 {
-    // TODO: Get rectification data from kinect in here. Also initialize the fovis instance
-    ki->RegisterRGBDFloatCallback(boost::bind(&FovisInterface::ReceiverFn, this, _1, _2));
-    //TODO: Initialize fovis here
-    //mFovis.reset(new fovis::VisualOdometry(...));
+    mKinect = ki;
+    //TODO: COMPLETE THIS.
+    fovis::VisualOdometryOptions opts;
+    fovis::CameraIntrinsicsParameters camParams;
+    int w, h;
+    
+    mFovis.reset(new fovis::VisualOdometry(NULL, opts));
+    mDepthImage.reset(new fovis::DepthImage(camParams, w, h));
+    mGrayImage.reset(new unsigned char[w * h]);
 }
 
-void FovisInterface::ReceiverFn(common::KinectRgbImage::Ptr rgb, common::KinectFloatDepthImage::Ptr depth)
+bool FovisInterface::RunSingleCycle()
 {
-    //TODO: Complete this
+    //Interface::ScopedLock kinectLock(mKinect.get());
+    Interface::ScopedLock fovisLock(this);
+    //TODO: Change fovis to make a local copy and do it fast!
     
+    mKinect->LockData();
+    if( mKinect->GetCycle() > mLastKinectCycle )
+    {
+        mDepthImage->setDepthImage(mKinect->GetFloatDepthImage()->GetArray().data());
+        
+        common::KinectRgbImage::ConstPtr rgb = mKinect->GetRgbImage();
+        size_t size = rgb->GetHeight() * rgb->GetWidth();
+        
+        const common::KinectRgbImage::ArrayType& array = rgb->GetArray();
+        
+        for(size_t i = 0; i < size; i++)
+        {
+            size_t startIndex = i * 3;
+            unsigned char r, g, b;
+            r = array[startIndex];
+            g = array[startIndex + 1];
+            b = array[startIndex + 2];
+            
+            mGrayImage[i] = (int)roundf(0.2125 * r + 0.7154 * g + 0.0721 * b);
+        }
+        mKinect->UnlockData();
+        
+        mFovis->processFrame(mGrayImage.get(), mDepthImage.get());
+        
+        return true;
+    }
+    mKinect->UnlockData();
+    // No new data
+    return false;
 }
+
 
 
 } // end namespace utils

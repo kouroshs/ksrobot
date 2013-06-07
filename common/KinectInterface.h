@@ -24,21 +24,43 @@ public:
     typedef boost::shared_ptr<KinectInterface>                                  Ptr;
     typedef boost::shared_ptr<const KinectInterface>                            ConstPtr;
     
-    typedef void (PointCloudReceiverFn)(const KinectPointCloud::ConstPtr&);
-    typedef void (RGBDReceiverFn)(KinectRgbImage::Ptr rgb, KinectFloatDepthImage::Ptr depth);
-    typedef void (RGBDRawReceiverFn)(KinectRgbImage::Ptr rgb, KinectRawDepthImage::Ptr depth);
-public:
-    KinectInterface(ProgramOptions::Ptr po);
+    KinectInterface(ProgramOptions::Ptr po, const std::string& name);
     virtual ~KinectInterface();
 
-    virtual void                        Initialize(const std::string& device) = 0;
-    virtual void                        Start() = 0;
-    virtual void                        Stop() = 0;
-    virtual bool                        IsRunning() = 0;
-    virtual boost::signals2::connection RegisterRGBDRawCallback(boost::function<RGBDRawReceiverFn> fn) = 0;
-    virtual boost::signals2::connection RegisterRGBDFloatCallback(boost::function<RGBDReceiverFn> fn) = 0;
-    virtual boost::signals2::connection RegisterPointCloudCallback(boost::function<PointCloudReceiverFn> fn) = 0;
+    virtual void                                Initialize(const std::string& device) = 0;
+    
+    //NOTE: Before calling any of these functions, you have to call LockData()
+    // Also you should make a copy of the data.
+    inline KinectPointCloud::ConstPtr           GetPointCloud() const;
+    inline KinectRgbImage::ConstPtr             GetRgbImage() const;
+    inline KinectRawDepthImage::ConstPtr        GetRawDepthImage() const;
+    inline KinectFloatDepthImage::ConstPtr      GetFloatDepthImage() const;
+protected:
+    KinectPointCloud::Ptr                       mPC;
+    KinectRgbImage::Ptr                         mRgb;
+    KinectRawDepthImage::Ptr                    mRawDepth;
+    KinectFloatDepthImage::Ptr                  mFloatDepth;
 };
+
+inline KinectPointCloud::ConstPtr KinectInterface::GetPointCloud() const
+{
+    return mPC;
+}
+
+inline KinectRgbImage::ConstPtr KinectInterface::GetRgbImage() const
+{
+    return mRgb;
+}
+
+inline KinectRawDepthImage::ConstPtr KinectInterface::GetRawDepthImage() const
+{
+    return mRawDepth;
+}
+
+inline KinectFloatDepthImage::ConstPtr KinectInterface::GetFloatDepthImage() const
+{
+    return mFloatDepth;
+}
 
 } // end namespace utils
 } // end namespace KSRobot

@@ -28,17 +28,12 @@ namespace interfaces
 class KinectDatasetReader : public common::KinectInterface
 {
 public:
-    KinectDatasetReader(common::ProgramOptions::Ptr po);
+    KinectDatasetReader(common::ProgramOptions::Ptr po, const std::string& name);
     virtual ~KinectDatasetReader();
 
     virtual void Initialize(const std::string& str);
-    virtual void                        Start();
-    virtual void                        Stop();
-    virtual bool                        IsRunning();
-    virtual boost::signals2::connection RegisterRGBDRawCallback(boost::function<RGBDRawReceiverFn> fn);
-    virtual boost::signals2::connection RegisterRGBDFloatCallback(boost::function<RGBDReceiverFn> fn);
-    virtual boost::signals2::connection RegisterPointCloudCallback(boost::function<PointCloudReceiverFn> fn);
     
+    virtual bool RunSingleCycle();
     
 //     void                SetPath                 (const std::string& path                );
 //     
@@ -89,9 +84,10 @@ private:
     
     void                CorrespondRGBDIndices   (                                       );
     void                CorrespondGroundTruth   (                                       );
+
+    //TODO: Test ImageGrabber
+    void                PointCloudCallback      (common::KinectPointCloud::Ptr pc);
     
-    //TODO: When finished, what to do?
-    void                ThreadEntry             (                                       );
 private:
     FileList                                    mRGBFiles;
     FileList                                    mDepthFiles;
@@ -115,10 +111,6 @@ private:
     common::KinectRgbImage::Ptr                 mCurrRgb;
     common::KinectRawDepthImage::Ptr            mCurrDepthRaw;
     common::KinectFloatDepthImage::Ptr          mCurrDepthFloat;
-
-    boost::signals2::signal<PointCloudReceiverFn>            mPointCloudReceivers;
-    boost::signals2::signal<RGBDReceiverFn>                  mRGBDReceivers;
-    boost::signals2::signal<RGBDRawReceiverFn>               mRGBDRawReceivers;
 };
 
 } // end namespace utils

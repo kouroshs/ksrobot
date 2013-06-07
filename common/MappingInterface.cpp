@@ -25,7 +25,7 @@ namespace KSRobot
 namespace common
 {
 
-MappingInterface::MappingInterface(ProgramOptions::Ptr po) : Interface(po)
+MappingInterface::MappingInterface(ProgramOptions::Ptr po, const std::string& name) : Interface(po, name)
 {
 
 }

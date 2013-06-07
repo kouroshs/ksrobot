@@ -25,22 +25,12 @@ namespace KSRobot
 namespace common
 {
 
-EngineInterface::EngineInterface(ProgramOptions::Ptr po): Interface(po)
+EngineInterface::EngineInterface(ProgramOptions::Ptr po, const std::string& name): Interface(po, name)
 {
 }
 
 EngineInterface::~EngineInterface()
 {
-}
-
-void EngineInterface::Start(const ExecCtrlData& data)
-{
-    mExecCtrl = data;
-}
-
-void EngineInterface::Stop()
-{
-    //For now, nothing
 }
 
 } // end namespace common

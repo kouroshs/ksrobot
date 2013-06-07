@@ -35,7 +35,7 @@ public:
     typedef boost::shared_ptr<this_type>        Ptr;
     typedef boost::shared_ptr<const this_type>  ConstPtr;
 
-    PlannerInterface(ProgramOptions::Ptr po);
+    PlannerInterface(ProgramOptions::Ptr po, const std::string& name);
     virtual ~PlannerInterface();
 };
 

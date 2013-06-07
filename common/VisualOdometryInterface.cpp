@@ -25,7 +25,7 @@ namespace KSRobot
 namespace common
 {
 
-VisualOdometryInterface::VisualOdometryInterface(ProgramOptions::Ptr po): Interface(po)
+VisualOdometryInterface::VisualOdometryInterface(ProgramOptions::Ptr po, const std::string& name): Interface(po, name)
 {
 }
 
