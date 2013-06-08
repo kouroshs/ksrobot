@@ -35,11 +35,18 @@ public:
     inline KinectRgbImage::ConstPtr             GetRgbImage() const;
     inline KinectRawDepthImage::ConstPtr        GetRawDepthImage() const;
     inline KinectFloatDepthImage::ConstPtr      GetFloatDepthImage() const;
+    
+    inline int                                  GetWidth() const;
+    inline int                                  GetHeight() const;
 protected:
     KinectPointCloud::Ptr                       mPC;
     KinectRgbImage::Ptr                         mRgb;
     KinectRawDepthImage::Ptr                    mRawDepth;
     KinectFloatDepthImage::Ptr                  mFloatDepth;
+    int                                         mWidth;
+    int                                         mHeight;
+    //TODO: Put sth for devisor, for example 5000 for datasetreader
+    //TODO: Add camera params to this class
 };
 
 inline KinectPointCloud::ConstPtr KinectInterface::GetPointCloud() const
@@ -60,6 +67,16 @@ inline KinectRawDepthImage::ConstPtr KinectInterface::GetRawDepthImage() const
 inline KinectFloatDepthImage::ConstPtr KinectInterface::GetFloatDepthImage() const
 {
     return mFloatDepth;
+}
+
+inline int KinectInterface::GetHeight() const
+{
+    return mHeight;
+}
+
+inline int KinectInterface::GetWidth() const
+{
+    return mWidth;
 }
 
 } // end namespace utils

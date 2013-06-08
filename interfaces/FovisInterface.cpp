@@ -27,8 +27,10 @@ namespace interfaces
 {
 
 FovisInterface::FovisInterface(common::ProgramOptions::Ptr po, const std::string& name) : 
-            common::VisualOdometryInterface(po, name), mLastKinectCycle(-1)
+            common::VisualOdometryInterface(po, name), mLastKinectCycle(-1),
+            mDataCopyTimer(new common::Timer("Data copying")), mFovisTimer(new common::Timer("ProcessFrame"))
 {
+    
 }
 
 FovisInterface::~FovisInterface()
@@ -39,8 +41,10 @@ void FovisInterface::RegisterToKinect(common::KinectInterface::Ptr ki)
 {
     mKinect = ki;
     //TODO: COMPLETE THIS.
-    fovis::VisualOdometryOptions opts;
+    fovis::VisualOdometryOptions opts = fovis::VisualOdometry::getDefaultOptions();
     fovis::CameraIntrinsicsParameters camParams;
+    memset(&camParams, 0, sizeof(camParams));
+    
     int w, h;
     
     mFovis.reset(new fovis::VisualOdometry(NULL, opts));
@@ -50,13 +54,13 @@ void FovisInterface::RegisterToKinect(common::KinectInterface::Ptr ki)
 
 bool FovisInterface::RunSingleCycle()
 {
-    //Interface::ScopedLock kinectLock(mKinect.get());
     Interface::ScopedLock fovisLock(this);
-    //TODO: Change fovis to make a local copy and do it fast!
     
     mKinect->LockData();
     if( mKinect->GetCycle() > mLastKinectCycle )
     {
+        mDataCopyTimer->Start();
+        
         mDepthImage->setDepthImage(mKinect->GetFloatDepthImage()->GetArray().data());
         
         common::KinectRgbImage::ConstPtr rgb = mKinect->GetRgbImage();
@@ -74,9 +78,12 @@ bool FovisInterface::RunSingleCycle()
             
             mGrayImage[i] = (int)roundf(0.2125 * r + 0.7154 * g + 0.0721 * b);
         }
+        mDataCopyTimer->Stop();
         mKinect->UnlockData();
-        
+
+        mFovisTimer->Start();
         mFovis->processFrame(mGrayImage.get(), mDepthImage.get());
+        mFovisTimer->Stop();
         
         return true;
     }

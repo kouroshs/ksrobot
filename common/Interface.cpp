@@ -52,8 +52,6 @@ void Interface::SpinOnce()
 void Interface::Start()
 {
     mCycles = 0;
-    mTotalTime = 0.0f;
-    mRunningTimes.clear();
     mThread = boost::thread(boost::bind(&Interface::ThreadEntry, this));
 }
 
@@ -67,22 +65,28 @@ void Interface::ThreadEntry()
 {
     while( ContinueExecution() )
     {
-        TimePoint tp1 = Clock::now();
-        bool executed = RunSingleCycle();
-        TimePoint tp2 = Clock::now();
-        
-        if( executed )
-        {
-            Duration dur = tp2 - tp1;
-            float timeInMillisecs = boost::chrono::duration_cast<boost::chrono::microseconds>(dur).count() / 1000.0f;
-            mTotalTime += timeInMillisecs;
-            mRunningTimes.push_back(timeInMillisecs);
-            mCycles++;
-        }
-        
+        RunSingleCycle();
         SpinOnce();
     }
 }
+
+void Interface::WriteRunningTimes(std::ostream& os)
+{
+    std::streamsize prec = os.precision(6);
+    
+    os << "Interface " << mName << " times:\n";
+    
+    for(size_t i = 0; i < mTimers.size(); i++)
+    {
+        Timer::Ptr t = mTimers[i];
+        
+        os << "Timer " << t->Name() << ": Average: " << t->GetAverageTime() << " Variance: " << 
+                t->GetTimeVariance() << std::endl;
+    }
+    
+    os.precision(prec);
+}
+
 
 } // end namespace common
 } // end namespace KSRobot

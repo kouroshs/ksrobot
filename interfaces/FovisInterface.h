@@ -22,6 +22,7 @@
 #define FOVISINTERFACE_H
 
 #include <common/VisualOdometryInterface.h>
+#include <common/Timer.h>
 #include <fovis/visual_odometry.hpp>
 #include <fovis/depth_image.hpp>
 #include <boost/shared_array.hpp>
@@ -47,6 +48,9 @@ protected:
     
     common::KinectInterface::Ptr                mKinect;
     int                                         mLastKinectCycle;
+    
+    common::Timer::Ptr                          mDataCopyTimer;
+    common::Timer::Ptr                          mFovisTimer;
 };
 
 #endif // FOVISINTERFACE_H

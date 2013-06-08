@@ -21,8 +21,9 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
-#include <common/ProgramOptions.h>
 #include <common/Defenitions.h>
+#include <common/ProgramOptions.h>
+#include <common/Timer.h>
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <boost/atomic.hpp>
@@ -75,13 +76,15 @@ public:
 
     inline int                  GetCycle() const;
     
-    inline float                GetAverageRunningTime() const;
-    inline std::vector<float>   GetRunningTimes() const;
-    
     inline std::string          GetName() const { return mName; }
     // This method is public, to enable running in single threaded context
     virtual bool                RunSingleCycle() = 0;
     
+    virtual void                WriteRunningTimes(std::ostream& os);
+    
+protected:
+    inline void                 RegisterTimer(Timer::Ptr timer);
+
 private:
     void                        ThreadEntry();
     void                        SpinOnce();
@@ -95,9 +98,9 @@ private:
     boost::thread               mThread;
     boost::mutex                mInternalDataGaurd;
     
+    std::vector<Timer::Ptr>     mTimers;
+    
     std::string                 mName;
-    std::vector<float>          mRunningTimes;
-    float                       mTotalTime;
     int                         mCycles;
 };
 
@@ -109,16 +112,6 @@ inline int Interface::GetCycle() const
 inline bool Interface::ContinueExecution() const
 {
     return mContinueExec.load();
-}
-
-inline float Interface::GetAverageRunningTime() const
-{
-    return mTotalTime / mCycles;
-}
-
-inline std::vector<float> Interface::GetRunningTimes() const
-{
-    return mRunningTimes;
 }
 
 inline void Interface::SetHZ(float hz)
@@ -140,6 +133,12 @@ inline void Interface::UnlockData()
 {
     mInternalDataGaurd.unlock();
 }
+
+inline void Interface::RegisterTimer(Timer::Ptr timer)
+{
+    mTimers.push_back(timer);
+}
+
 
 } // end namespace common
 } // end namespace KSRobot

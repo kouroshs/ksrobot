@@ -18,6 +18,21 @@ namespace KSRobot
             return boost::chrono::duration_cast<boost::chrono::milliseconds>(dur).count();
         }
         
+        inline long Microseconds(const Duration& dur)
+        {
+            return boost::chrono::duration_cast<boost::chrono::microseconds>(dur).count();
+        }
+        
+        inline long Nanoseconds(const Duration& dur)
+        {
+            return boost::chrono::duration_cast<boost::chrono::nanoseconds>(dur).count();
+        }
+        
+        inline double Seconds(const Duration& dur)
+        {
+            return (double)Nanoseconds(dur) / 1.0e9;
+        }
+        
     }
 }
 
