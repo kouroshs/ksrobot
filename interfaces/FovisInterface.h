@@ -40,12 +40,16 @@ public:
     
     virtual void RegisterToKinect(common::KinectInterface::Ptr ki);
 
+    virtual bool Converged();
+    virtual float GetError();
+    
     virtual bool RunSingleCycle();
 protected:
     boost::shared_ptr<fovis::VisualOdometry>    mFovis;
     boost::shared_ptr<fovis::DepthImage>        mDepthImage;
     boost::shared_array<unsigned char>          mGrayImage;
     
+    fovis::VisualOdometryOptions                mOptions;
     common::KinectInterface::Ptr                mKinect;
     int                                         mLastKinectCycle;
     

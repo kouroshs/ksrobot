@@ -2,11 +2,13 @@
 #define UTILS_H
 
 #include <common/ProgramOptions.h>
+#include <common/KinectImage.h>
 #include <QSize>
 #include <QRect>
 #include <QMargins>
 #include <QPoint>
 #include <QString>
+#include <QImage>
 #include <Eigen/Geometry>
 
 //#ifdef USE_SHORT_NAMES
@@ -62,6 +64,8 @@ public:
     
     static QString              IsometryToString(const Eigen::Isometry3d& iso);
 
+    static QImage               ConvertToQImage(common::KinectRgbImage::Ptr rgb);
+    static QImage               ConvertToQImage(common::KinectRawDepthImage::Ptr depth);
 };
 
 } // end namespace gui

@@ -40,8 +40,9 @@ public:
     VisualOdometryInterface(ProgramOptions::Ptr po, const std::string& name);
     virtual ~VisualOdometryInterface();
     
-
     virtual void        RegisterToKinect(KinectInterface::Ptr ki) = 0;    
+    virtual bool        Converged() = 0;
+    virtual float       GetError() = 0;
 };
 
 } // end namespace common

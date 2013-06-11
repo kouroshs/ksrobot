@@ -21,6 +21,23 @@ typedef pcl::PointCloud<pcl::PointXYZRGBA>                                  Kine
 class KinectInterface : public Interface
 {
 public:
+    
+    struct CameraParameters
+    {
+        int                 Width;
+        int                 Height;
+        float               FocalX;
+        float               FocalY;
+        float               CenterX;
+        float               CenterY;
+        float               K1;
+        float               K2;
+        float               K3;
+        float               P1;
+        float               P2;
+    };
+    
+    
     typedef boost::shared_ptr<KinectInterface>                                  Ptr;
     typedef boost::shared_ptr<const KinectInterface>                            ConstPtr;
     
@@ -36,15 +53,15 @@ public:
     inline KinectRawDepthImage::ConstPtr        GetRawDepthImage() const;
     inline KinectFloatDepthImage::ConstPtr      GetFloatDepthImage() const;
     
-    inline int                                  GetWidth() const;
-    inline int                                  GetHeight() const;
+    inline CameraParameters                     GetCameraParams() const;
 protected:
     KinectPointCloud::Ptr                       mPC;
     KinectRgbImage::Ptr                         mRgb;
     KinectRawDepthImage::Ptr                    mRawDepth;
     KinectFloatDepthImage::Ptr                  mFloatDepth;
-    int                                         mWidth;
-    int                                         mHeight;
+    
+    CameraParameters                            mParams;
+    
     //TODO: Put sth for devisor, for example 5000 for datasetreader
     //TODO: Add camera params to this class
 };
@@ -69,15 +86,11 @@ inline KinectFloatDepthImage::ConstPtr KinectInterface::GetFloatDepthImage() con
     return mFloatDepth;
 }
 
-inline int KinectInterface::GetHeight() const
+inline KinectInterface::CameraParameters KinectInterface::GetCameraParams() const
 {
-    return mHeight;
+    return mParams;
 }
 
-inline int KinectInterface::GetWidth() const
-{
-    return mWidth;
-}
 
 } // end namespace utils
 } // end namespace KSRobot

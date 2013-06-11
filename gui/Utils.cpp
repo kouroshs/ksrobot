@@ -236,6 +236,54 @@ QString Utils::IsometryToString(const Eigen::Isometry3d& m)
     return QString(result);
 }
 
+QImage Utils::ConvertToQImage(KSRobot::common::KinectRgbImage::Ptr rgb)
+{
+    QImage qrgb(rgb->GetWidth(), rgb->GetHeight(), QImage::Format_RGB32);
+    const common::KinectRgbImage::ArrayType& rgbArray = rgb->GetArray();
+    
+    for(int y = 0; y < rgb->GetHeight(); y++)
+    {
+        uchar* rgbPtr = qrgb.scanLine(y);
+        size_t idxRgb = rgb->ScanLineIndex(y);
+        for(int x = 0; x < rgb->GetWidth(); x++)
+        {
+            rgbPtr[0] = rgbArray[idxRgb];
+            rgbPtr[1] = rgbArray[idxRgb + 1];
+            rgbPtr[2] = rgbArray[idxRgb + 2];
+            rgbPtr[3] = 0xFF;
+            
+            idxRgb = common::KinectRgbImage::NexIndexUnsafe(idxRgb);
+            rgbPtr += 4;
+        }
+    }
+    
+    return qrgb;
+}
+
+QImage Utils::ConvertToQImage(KSRobot::common::KinectRawDepthImage::Ptr depth)
+{
+    QImage qdepth(depth->GetWidth(), depth->GetHeight(), QImage::Format_RGB32);
+    const common::KinectRawDepthImage::ArrayType& depthArray = depth->GetArray();
+    
+    for(int y = 0; y < depth->GetHeight(); y++)
+    {
+        uchar* depthPtr = qdepth.scanLine(y);
+        size_t idxDepth = depth->ScanLineIndex(y);
+        for(int x = 0; x < depth->GetWidth(); x++)
+        {
+            depthPtr[0] = depthArray[idxDepth] / 10000 * 255;
+            depthPtr[1] = depthArray[idxDepth] / 10000 * 255;
+            depthPtr[2] = depthArray[idxDepth] / 10000 * 255;
+            depthPtr[3] = 0xFF;
+                
+            idxDepth = common::KinectRawDepthImage::NexIndexUnsafe(idxDepth);
+            depthPtr += 4;
+        }
+    }
+    
+    return qdepth;
+}
+
 
 
 } // end namespace gui

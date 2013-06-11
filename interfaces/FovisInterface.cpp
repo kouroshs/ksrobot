@@ -41,14 +41,14 @@ void FovisInterface::RegisterToKinect(common::KinectInterface::Ptr ki)
 {
     mKinect = ki;
     //TODO: COMPLETE THIS.
-    fovis::VisualOdometryOptions opts = fovis::VisualOdometry::getDefaultOptions();
+    mOptions = fovis::VisualOdometry::getDefaultOptions();
     fovis::CameraIntrinsicsParameters camParams;
     memset(&camParams, 0, sizeof(camParams));
     
     int w, h;
     
-    mFovis.reset(new fovis::VisualOdometry(NULL, opts));
-    mDepthImage.reset(new fovis::DepthImage(camParams, w, h));
+    mFovis.reset(new fovis::VisualOdometry(NULL, mOptions));
+    mDepthImage.reset(new fovis::DepthImage(camParams, mKinect->GetCameraParams().Width, mKinect->GetCameraParams().Height));
     mGrayImage.reset(new unsigned char[w * h]);
 }
 
@@ -90,6 +90,16 @@ bool FovisInterface::RunSingleCycle()
     mKinect->UnlockData();
     // No new data
     return false;
+}
+
+bool FovisInterface::Converged()
+{
+    return mFovis->getMotionEstimateStatus() == fovis::SUCCESS;
+}
+
+float FovisInterface::GetError()
+{
+    return 0;
 }
 
 
