@@ -55,28 +55,26 @@ bool ICPInterface::RunSingleCycle()
 {
     if( common::VisualOdometryInterface::RunSingleCycle() == false )
         return false;
+
+    Interface::ScopedLock lock(this);
     
-    LockData();
+    if( mLastPointCloud.get() == 0 )
+    {
+        mLastPointCloud = mCurrPointCloud;
+        return false; // can produce data in the next frame
+    }
     
-        if( mLastPointCloud.get() == 0 )
-        {
-            mLastPointCloud = mCurrPointCloud;
-            return false; // can produce data in the next frame
-        }
-        
-        mImpl->ICP.setInputSource(mLastPointCloud);
-        mImpl->ICP.setInputTarget(mCurrPointCloud);
-        
-        mOdomTimer->Start();
-            mImpl->ICP.align(mAlignedCloud);
-            
-            mMotionEstimate = mImpl->ICP.getFinalTransformation().cast<double>();
-            mGlobalPose = mGlobalPose * mMotionEstimate;            
-        mOdomTimer->Stop();
-        
-        IncrementCycle();
+    mImpl->ICP.setInputSource(mLastPointCloud);
+    mImpl->ICP.setInputTarget(mCurrPointCloud);
     
-    UnlockData();
+    mOdomTimer->Start();
+        mImpl->ICP.align(mAlignedCloud);
+        mMotionEstimate = mImpl->ICP.getFinalTransformation().cast<double>();
+        mGlobalPose = mGlobalPose * mMotionEstimate;            
+    mOdomTimer->Stop();
+    
+    FinishCycle();
+    
     return true;
 }
 

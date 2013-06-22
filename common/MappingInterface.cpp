@@ -175,7 +175,7 @@ bool MappingInterface::RunSingleCycle()
     }
     
     if( count != 0 )
-        IncrementCycle();
+        FinishCycle();
     
     return (count != 0);
 }
