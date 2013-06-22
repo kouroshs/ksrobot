@@ -19,13 +19,20 @@
  */
 
 #include <interfaces/ICPInterface.h>
+#include <pcl/registration/icp.h>
 
 namespace KSRobot
 {
 namespace interfaces
 {
 
-ICPInterface::ICPInterface(const std::string& name): common::VisualOdometryInterface(name)
+class ICPInterface::Impl
+{
+public:
+    pcl::IterativeClosestPoint<pcl::PointXYZRGBA, pcl::PointXYZRGBA>    ICP;
+};
+    
+ICPInterface::ICPInterface(const std::string& name): common::VisualOdometryInterface(name), mImpl(new Impl)
 {
     SetWithNormals(false);
 }
@@ -57,13 +64,13 @@ bool ICPInterface::RunSingleCycle()
             return false; // can produce data in the next frame
         }
         
-        mICP->setInputCloud(mLastPointCloud);
-        mICP->setInputTarget(mCurrPointCloud);
+        mImpl->ICP.setInputSource(mLastPointCloud);
+        mImpl->ICP.setInputTarget(mCurrPointCloud);
         
         mOdomTimer->Start();
-            mICP->align(mAlignedCloud);
+            mImpl->ICP.align(mAlignedCloud);
             
-            mMotionEstimate = mICP->getFinalTransformation().cast<double>();
+            mMotionEstimate = mImpl->ICP.getFinalTransformation().cast<double>();
             mGlobalPose = mGlobalPose * mMotionEstimate;            
         mOdomTimer->Stop();
         
@@ -80,16 +87,16 @@ bool ICPInterface::IsThisCycleKeyframe()
 
 void ICPInterface::SetWithNormals(bool b)
 {
-    typedef pcl::IterativeClosestPointWithNormals<pcl::PointXYZRGBA, pcl::PointXYZRGBA>  ICPNormalsType;
+//     typedef pcl::IterativeClosestPointWithNormals<pcl::PointXYZRGBA, pcl::PointXYZRGBA>  ICPNormalsType;
     mWithNormals = b;
-    if( mWithNormals )
-    {
-        //mICP.reset(new ICPNormalsType);
-    }
-    else
-    {
-        mICP.reset(new ICPAlgo);;
-    }
+//     if( mWithNormals )
+//     {
+//         //mICP.reset(new ICPNormalsType);
+//     }
+//     else
+//     {
+//         mICP.reset(new ICPAlgo);;
+//     }
 }
 
 

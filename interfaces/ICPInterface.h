@@ -22,7 +22,6 @@
 #define ICPINTERFACE_H
 
 #include <common/VisualOdometryInterface.h>
-#include <pcl/registration/icp.h>
 
 namespace KSRobot
 {
@@ -49,8 +48,8 @@ public:
     inline bool                         WithNormals() const;
     void                                SetWithNormals(bool b);
 private:
-    typedef pcl::IterativeClosestPoint<pcl::PointXYZRGBA, pcl::PointXYZRGBA> ICPAlgo;
-    ICPAlgo::Ptr                        mICP;
+    class Impl;
+    boost::shared_ptr<Impl>             mImpl;
     common::KinectPointCloud::ConstPtr  mLastPointCloud;
     common::KinectPointCloud            mAlignedCloud;
     

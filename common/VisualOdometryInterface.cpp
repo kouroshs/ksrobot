@@ -27,6 +27,7 @@ namespace common
 
 VisualOdometryInterface::VisualOdometryInterface(const std::string& name): Interface(name),
     mMotionEstimate(Eigen::Isometry3d::Identity()), mCurrRelativeMotion(Eigen::Isometry3d::Identity()),
+    mLastKeypointPose(Eigen::Isometry3d::Identity()),
     mLastKinectCycle(-1), mOdomTimer(new Timer("Odometry time"))
 {
     RegisterTimer(mOdomTimer);
@@ -68,6 +69,25 @@ void VisualOdometryInterface::NotifyKeyframeReceivers()
     {
         mKeypointReceivers();
     }
+}
+
+void VisualOdometryInterface::FinishCycle()
+{
+    Interface::FinishCycle();
+    if( IsThisCycleKeyframe() )
+    {
+        Keypoint kp;
+        kp.GlobalPose = mGlobalPose;
+        kp.RelativeMotion = mLastKeypointPose.inverse() * mGlobalPose;
+        mKeypoints.push_back(kp);
+        mCurrRelativeMotion = Eigen::Isometry3d::Identity();
+        mLastKeypointPose = mGlobalPose;
+    }
+    else
+    {
+        mCurrRelativeMotion = mLastKeypointPose.inverse() * mGlobalPose;
+    }
+    NotifyKeyframeReceivers();
 }
 
 

@@ -89,6 +89,10 @@ protected:
 
     virtual void                ThreadEntry();
     virtual void                SpinOnce();
+    
+    // To be called at the end of RunSingleCycle (in case it's return val is true) to do finilization tasks.
+    // Other classes can override it, but must call Interface::FinishCycle
+    virtual void                FinishCycle();
     void                        IncrementCycle() { mCycles++; }
 protected:
     int                         mSleepMillisecs;

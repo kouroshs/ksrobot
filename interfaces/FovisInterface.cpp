@@ -80,7 +80,6 @@ public:
     
 FovisInterface::FovisInterface(const std::string& name) : 
             common::VisualOdometryInterface(name), 
-            mLastKeypointPose(Eigen::Isometry3d::Identity()),
             mDataCopyTimer(new common::Timer("Data copying"))
 {
     RegisterTimer(mDataCopyTimer);
@@ -125,34 +124,13 @@ bool FovisInterface::RunSingleCycle()
     mDataCopyTimer->Stop();
 
     mOdomTimer->Start();
-    
-    mImpl->mFovis->processFrame(mImpl->mGrayImage, mImpl->mDepthImage);
-    mMotionEstimate = mImpl->mFovis->getMotionEstimate();
-    
-    //TODO: MOVE HERE TO VISUAL ODOMETRY
-    mGlobalPose = mImpl->mFovis->getPose();
-    if( IsThisCycleKeyframe() )
-    {
-        common::VisualOdometryInterface::Keypoint kp;
-        kp.GlobalPose = mGlobalPose;
-        kp.RelativeMotion = mLastKeypointPose.inverse() * mGlobalPose;
-        mKeypoints.push_back(kp);
-        mCurrRelativeMotion = Eigen::Isometry3d::Identity();
-        mLastKeypointPose = mGlobalPose;
-    }
-    else
-    {
-        mCurrRelativeMotion = mLastKeypointPose.inverse() * mGlobalPose;
-    }
-    
-    if( IsThisCycleKeyframe() )
-    {
-        //TODO: Extract features, and save them for SLAM frontends(or backends, I don't know).
-    }
+        mImpl->mFovis->processFrame(mImpl->mGrayImage, mImpl->mDepthImage);
+        mMotionEstimate = mImpl->mFovis->getMotionEstimate();
+        //mGlobalPose = mImpl->mFovis->getPose();
     mOdomTimer->Stop();
-
-    NotifyKeyframeReceivers();
-    IncrementCycle();
+    
+    FinishCycle();
+    
     return true;
 }
 

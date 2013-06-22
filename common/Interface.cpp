@@ -107,5 +107,11 @@ void Interface::WriteSettings(ProgramOptions::Ptr po)
 {
 }
 
+void Interface::FinishCycle()
+{
+    IncrementCycle();
+}
+
+
 } // end namespace common
 } // end namespace KSRobot

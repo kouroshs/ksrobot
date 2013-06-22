@@ -92,11 +92,15 @@ public:
     inline boost::signals2::connection          RegisterKeyframeReceiver(boost::function<void()> fn);
 protected:
     void                                        NotifyKeyframeReceivers();
+    // For VO, this function should be called after a motion estimate is calculated. 
+    // It will update internal values such as global pose.
+    virtual void                                FinishCycle();
 protected:
     KinectInterface::Ptr                        mKinect;
     Eigen::Isometry3d                           mMotionEstimate;
     Eigen::Isometry3d                           mCurrRelativeMotion;
     Eigen::Isometry3d                           mGlobalPose;
+    Eigen::Isometry3d                           mLastKeypointPose;
     KeypointVector                              mKeypoints;
     
     int                                         mLastKinectCycle;

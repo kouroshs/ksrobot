@@ -46,7 +46,6 @@ public:
 protected:
     class FovisImpl;
     boost::shared_ptr<FovisImpl>                mImpl;
-    Eigen::Isometry3d                           mLastKeypointPose;
 
     common::Timer::Ptr                          mDataCopyTimer;
 };
