@@ -41,7 +41,7 @@ public:
     typedef boost::shared_ptr<this_type>        Ptr;
     typedef boost::shared_ptr<const this_type>  ConstPtr;
 
-    EngineInterface(ProgramOptions::Ptr po, const std::string& name);
+    EngineInterface(const std::string& name);
     virtual ~EngineInterface();
     
     inline void                         SetExecutionParams(const ExecCtrlData& data);
@@ -52,7 +52,7 @@ public:
     MappingInterface::Ptr               GetMappingInterface() const { return mMapper; }
     PlannerInterface::Ptr               GetPlannerInterface() const { return mPlanner; }
     
-    
+    virtual void                        Initialize();
 protected:
     ExecCtrlData                        mExecCtrl;
     
@@ -65,6 +65,7 @@ protected:
 
 inline void EngineInterface::SetExecutionParams(const ExecCtrlData& data)
 {
+    data.CheckConsistancy();
     mExecCtrl = data;
 }
 

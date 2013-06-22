@@ -25,6 +25,9 @@ public:
 signals:
     void                                        OnStart(const common::ExecCtrlData& data);
     void                                        OnStop();
+
+public slots:
+    void                                        GuiStop();
     
 private:
     void                                        BindSettings();
@@ -35,6 +38,7 @@ private:
     
     void                                        BindValueToName(const std::string& name, QAbstractButton* btn);
 private slots:
+    
     void on_mBtnStart_clicked();
     void on_mBtnStop_clicked();
     void on_mRdBtnKinectDevice_clicked();
@@ -51,7 +55,7 @@ private slots:
     void on_mChkViewOctomap_clicked();
     void on_mChkViewOMPL_clicked();
 private:
-    Ui::ExecutionControl*                       mUI;
+    Ui::ExecutionControl*                        mUI;
     common::ExecCtrlData                         mData;
     common::SettingsBinder                       mBinderFns;
     common::SettingsBinder                       mBinderVars;

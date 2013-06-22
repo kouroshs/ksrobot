@@ -1,5 +1,7 @@
 #include <gui/ImageContainer.h>
 #include <QResizeEvent>
+#include <QPainter>
+#include <QPaintEvent>
 #include <iostream>
 
 using namespace KSRobot::gui;
@@ -26,4 +28,17 @@ QSize ImageContainer::minimumSizeHint() const
 QSize ImageContainer::sizeHint() const
 {
     return minimumSizeHint();
+}
+
+void ImageContainer::DrawImage(const QImage& img)
+{
+    mImage = img;
+    update();
+}
+
+void ImageContainer::paintEvent(QPaintEvent* evt)
+{
+    QWidget::paintEvent(evt);
+    QPainter p(this);
+    p.drawImage(rect(), mImage, mImage.rect());
 }

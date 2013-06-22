@@ -23,9 +23,8 @@
 
 #include <common/VisualOdometryInterface.h>
 #include <common/Timer.h>
-#include <fovis/visual_odometry.hpp>
-#include <fovis/depth_image.hpp>
 #include <boost/shared_array.hpp>
+#include <Eigen/Geometry>
 
 namespace KSRobot
 {
@@ -35,26 +34,21 @@ namespace interfaces
 class FovisInterface : public common::VisualOdometryInterface
 {
 public:
-    FovisInterface(common::ProgramOptions::Ptr po, const std::string& name);
+    FovisInterface(const std::string& name);
     virtual ~FovisInterface();
     
-    virtual void RegisterToKinect(common::KinectInterface::Ptr ki);
+    virtual void        RegisterToKinect(common::KinectInterface::Ptr ki);
 
-    virtual bool Converged();
-    virtual float GetError();
-    
-    virtual bool RunSingleCycle();
+    virtual bool        Converged();
+    virtual float       GetConvergenceError();
+    virtual bool        IsThisCycleKeyframe();
+    virtual bool        RunSingleCycle();
 protected:
-    boost::shared_ptr<fovis::VisualOdometry>    mFovis;
-    boost::shared_ptr<fovis::DepthImage>        mDepthImage;
-    boost::shared_array<unsigned char>          mGrayImage;
-    
-    fovis::VisualOdometryOptions                mOptions;
-    common::KinectInterface::Ptr                mKinect;
-    int                                         mLastKinectCycle;
-    
+    class FovisImpl;
+    boost::shared_ptr<FovisImpl>                mImpl;
+    Eigen::Isometry3d                           mLastKeypointPose;
+
     common::Timer::Ptr                          mDataCopyTimer;
-    common::Timer::Ptr                          mFovisTimer;
 };
 
 #endif // FOVISINTERFACE_H

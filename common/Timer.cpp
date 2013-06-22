@@ -20,13 +20,14 @@
 
 #include <common/Timer.h>
 #include <boost/chrono.hpp>
+#include <sstream>
 
 namespace KSRobot
 {
 namespace common
 {
 
-Timer::Timer(const std::string& name) : mTimerName(name), mCycles(0), mTotalTime(0.0), mTotalSquaredTime(0.0)
+Timer::Timer(const std::string& name) : mTimerName(name)
 {
 }
 
@@ -37,7 +38,6 @@ Timer::~Timer()
 void Timer::Start()
 {
     mStartTime = Clock::now();
-    mCycles++;
 }
 
 void Timer::Stop()
@@ -45,10 +45,21 @@ void Timer::Stop()
     TimePoint now = Clock::now();
     Duration d = now - mStartTime;
     
-    double time = Seconds(d);
-    mTotalTime += time;
-    mTotalSquaredTime += time * time;
+    // Durations will be measured in milliseconds
+    double time = Milliseconds(d);
+    mAccumulator(time);
 }
+
+std::string Timer::ToString(int prec) const
+{
+    std::stringstream ss;
+    ss.precision(prec);
+    ss << mTimerName << ": Total Time " << GetTotalTime() << "(ms) Average Time " << GetAverageTime() <<
+         "(ms) Variance " << GetTimeVariance() << "(ms) Min Time " << GetMinTime() << "(ms) Max Time " << GetMaxTime() << 
+         "(ms) Total Calls " << GetNumCalls();
+    return ss.str();
+}
+
 
 } // end namespace common
 } // end namespace KSRobot

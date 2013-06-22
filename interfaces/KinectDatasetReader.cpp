@@ -1,17 +1,14 @@
 #include <interfaces/KinectDatasetReader.h>
 
+#include <boost/filesystem.hpp>
+#include <boost/thread.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/date_time.hpp>
-#include <boost/gil/gil_all.hpp>
-#include <boost/gil/extension/io/png_dynamic_io.hpp>
-#include <boost/static_assert.hpp>
 #include <cmath>
 
 #include <pcl/point_cloud.h> //basic pcl includes
 #include <pcl/point_types.h>
-#include <pcl/io/image_grabber.h>
 
 namespace KSRobot
 {
@@ -22,18 +19,19 @@ using boost::lexical_cast;
 using namespace std;
 using namespace Eigen;
 namespace fs = boost::filesystem;
-namespace gil = boost::gil;
 
-KinectDatasetReader::KinectDatasetReader(common::ProgramOptions::Ptr po, const std::string& name) : KinectInterface(po, name), 
-    mCycle(0), mRunning(false)
+KinectDatasetReader::KinectDatasetReader(const std::string& name) : KinectInterface(name), 
+    mRunning(false), mTimerLoadTimes(new common::Timer("Image load times")),
+    mTimerPCGenerator(new common::Timer("PointCloud generation time"))
 {
+    RegisterTimer(mTimerLoadTimes);
+    RegisterTimer(mTimerPCGenerator);
 }
 
 KinectDatasetReader::~KinectDatasetReader()
 {
 }
 
-//TODO: Change this as a configuration constant
 #define KINECT_TIME_DIFFERENCE (0.5 / 30.0)
 static inline bool IsNear(double diff)
 {
@@ -43,13 +41,17 @@ static inline bool IsNear(double diff)
 void KinectDatasetReader::Initialize(const std::string& pathStr)
 {
     fs::path dirPath(pathStr);
+    
+    if( dirPath == "" || !fs::exists(dirPath) )
+        throw std::runtime_error("(KinectDatasetReader::Initialize) Path does not exist.");
+    
     fs::path rgbIndexFile = dirPath / "rgb.txt";
     fs::path depthIndexFile = dirPath / "depth.txt";
     fs::path gtPath = dirPath / "groundtruth.txt";
-
+    
     ifstream depthFile(depthIndexFile.string().c_str(), ios::in);
     ifstream rgbFile(rgbIndexFile.string().c_str(), ios::in);
-
+    
     ReadIndexFile(rgbFile, dirPath, mRGBFiles.TimeStamps, mRGBFiles.FileNames);
     rgbFile.close();
     ReadIndexFile(depthFile, dirPath, mDepthFiles.TimeStamps, mDepthFiles.FileNames);
@@ -63,21 +65,24 @@ void KinectDatasetReader::Initialize(const std::string& pathStr)
     CorrespondRGBDIndices();
     // Now check those indexes with ground truth data.
     CorrespondGroundTruth();
-    //TODO: Add some code to move the ground truth to (0,0,0), (0,0,0)
+    MoveGroundTruthsToOrigin();
 
-    // Now create point cloud generator
-    mPointCloudGenerator.reset(new ImageGrabber(mDepthFiles.FileNames, 0, false));
-    mPointCloudGenerator->setDepthImageUnits(5000.0f);
-    mPointCloudGenerator->setRGBImageFiles(mRGBFiles.FileNames);
-    boost::function<void ( common::KinectPointCloud::Ptr)> f =
-        boost::bind(&KinectDatasetReader::PointCloudCallback, this, _1);
-    mPointCloudGenerator->registerCallback(f);
+    memset(&mParams, 0, sizeof(mParams));
+    mParams.Width = 640;
+    mParams.Height = 480;
+    mParams.FocalX = 528.49404721f;
+    mParams.FocalY = 528.49404721f;
+    mParams.CenterX = mParams.Width / 2;
+    mParams.CenterY = mParams.Height / 2;
 }
 
-void KinectDatasetReader::PointCloudCallback(common::KinectPointCloud::Ptr pc)
+void KinectDatasetReader::MoveGroundTruthsToOrigin()
 {
-    //TODO: For openni grabber it is safe, but I don't know for imagegrabber
-    mPC = pc;
+    Eigen::Isometry3d origin = mGroundTruth[0].LocalTransform;
+    origin = origin.inverse();
+    
+    for(size_t i = 0; i < mGroundTruth.size(); i++)
+        mGroundTruth[i].LocalTransform = mGroundTruth[i].LocalTransform * origin;
 }
 
 void KinectDatasetReader::ReadIndexFile(ifstream& file, const fs::path& fullPath,
@@ -131,17 +136,25 @@ void KinectDatasetReader::ReadGroundTruthData(ifstream& file,
         }
 
         GroundTruthInfo gt;
-
+        Eigen::Vector3d vect;
+        Eigen::Quaterniond rot;
+        
         gt.TimeStamp = lexical_cast<double>(strs[0]);
+        
+        
         for(int i = 0; i < 3; i++)
-            gt.Position[i] = lexical_cast<float>(strs[i + 1]);
+            vect[i] = lexical_cast<double>(strs[i + 1]);
 
         // in form of wxyz
-        gt.Rotation = Quaternionf(lexical_cast<float>(strs[7]),
-                                  lexical_cast<float>(strs[4]),
-                                  lexical_cast<float>(strs[5]),
-                                  lexical_cast<float>(strs[6]));
+        rot = Quaterniond(lexical_cast<double>(strs[7]),
+                                  lexical_cast<double>(strs[4]),
+                                  lexical_cast<double>(strs[5]),
+                                  lexical_cast<double>(strs[6]));
 
+        gt.LocalTransform.setIdentity();
+        gt.LocalTransform.rotate(rot);
+        gt.LocalTransform.translate(vect);
+        
         gtInfo.push_back(gt);
     }
 }
@@ -266,7 +279,6 @@ void KinectDatasetReader::CorrespondGroundTruth()
         }
         else
         {
-            //TODO: In future, maybe add interpolation for gt data if not available for curr cycle?
             iCurrRGBDIndex++;
         }
         loopCount++;
@@ -293,85 +305,49 @@ void KinectDatasetReader::CorrespondGroundTruth()
 
 bool KinectDatasetReader::RunSingleCycle()
 {
-    if( mCycle >= mRGBFiles.FileNames.size() )
+    if( GetCycle() >= mRGBFiles.FileNames.size() )
     {
-        //TODO: This means dataset is finished. how can we send finished signal?
+        mContinueExec.store(false); // finish execution of kinect.
         return false;
     }
     
     LockData();
-    
-    LoadNextFiles();
-    //This will trigger the callbacks registered to the pointcloud.
-    mPointCloudGenerator->start();
-    mCycle++;
-    
+        LoadNextFiles();
     UnlockData();
+    IncrementCycle();
     return true;
-}
-
-static void CopyToKinectImage(common::KinectRgbImage::Ptr dst, gil::rgb8_image_t& src)
-{
-    common::KinectRgbImage::ArrayType& arr = dst->GetArray();
-    gil::rgb8_view_t view = gil::view(src);
-    size_t index = 0;
-    for(int i = 0; i < src.height(); i++)
-    {
-        gil::rgb8_view_t::x_iterator iter = view.row_begin(i);
-        for(int j = 0; j < src.width(); j++)
-        {
-            gil::rgb8_pixel_t& pix = iter[j];
-            for(int k = 0; k < common::KinectRgbImage::Channels; k++)
-                arr[index++] = pix[k];
-        }
-    }
-}
-
-static void CopyToKinectImage(common::KinectFloatDepthImage::Ptr dst, gil::gray16_image_t& src)
-{
-    common::KinectFloatDepthImage::ArrayType& arr = dst->GetArray();
-    gil::gray16_view_t view = gil::view(src);
-    size_t index = 0;
-    for(int i = 0; i < src.height(); i++)
-    {
-        gil::gray16_view_t::x_iterator iter = view.row_begin(i);
-        for(int j = 0; j < src.width(); j++)
-        {
-            arr[index++] = static_cast<float>(iter[j]) / 5.0f;
-        }
-    }
-}
-
-static void CopyToKinectImage(common::KinectRawDepthImage::Ptr dst, gil::gray16_image_t& src)
-{
-    common::KinectRawDepthImage::ArrayType& arr = dst->GetArray();
-    gil::gray16_view_t view = gil::view(src);
-    size_t index = 0;
-    for(int i = 0; i < src.height(); i++)
-    {
-        gil::gray16_view_t::x_iterator iter = view.row_begin(i);
-        for(int j = 0; j < src.width(); j++)
-        {
-            arr[index++] = iter[j] / 5;
-        }
-    }
 }
 
 void KinectDatasetReader::LoadNextFiles()
 {
-    gil::rgb8_image_t rgb;
-    gil::gray16_image_t depth;
-    gil::png_read_image(mRGBFiles.FileNames[mCycle], rgb);
-    gil::png_read_image(mDepthFiles.FileNames[mCycle], depth);
-
-    mRgb->Create(rgb.width(), rgb.height());
-    mRawDepth->Create(depth.width(), depth.height());
-    mFloatDepth->Create(depth.width(), depth.height());
-
-    CopyToKinectImage(mRgb, rgb);
-    CopyToKinectImage(mRawDepth, depth);
-    CopyToKinectImage(mFloatDepth, depth);
+    mTimerLoadTimes->Start();
+    
+    mRgb = common::KinectImageDiskIO::LoadRgbFromFile(mRGBFiles.FileNames[GetCycle()]);
+    mRawDepth = common::KinectImageDiskIO::LoadDepthFromFile(mDepthFiles.FileNames[GetCycle()]);
+    
+    mFloatDepth.reset(new common::KinectFloatDepthImage);
+    mFloatDepth->Create(mRawDepth->GetWidth(), mRawDepth->GetHeight());
+    
+    for(int i = 0; i < mRawDepth->GetNumElements(); i++)
+        mFloatDepth->GetArray()[i] = mRawDepth->GetArray()[i] / 1000.0f;
+    
+    mTimerLoadTimes->Stop();
+    
+    mTimerPCGenerator->Start();
+    mPC = common::KinectInterface::GeneratePointCloudFromImages(mRgb, mRawDepth, mParams);
+    mTimerPCGenerator->Stop();
 }
+
+Eigen::Isometry3d KinectDatasetReader::GetCurrentGroundTruth()
+{
+    return mGroundTruth[GetCycle()].LocalTransform;
+}
+
+bool KinectDatasetReader::ProvidesGroundTruth()
+{
+    return true;
+}
+
 
 } // end namespace utils
 } // end namespace KSRobot

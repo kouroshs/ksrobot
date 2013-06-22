@@ -13,10 +13,25 @@
 
 #include <iostream>
 
+#include <gui/ImageContainer.h>
+#include <gui/LogContainer.h>
+#include <gui/ExecutionControl.h>
+#include <gui/StatisticsContainer.h>
+#include <gui/PointCloudViewer.h>
+#include <gui/Utils.h>
+#include <gui/LogicBridge.h>
+
+
+#include <QAction>
+#include <QMdiArea>
+#include <QMdiSubWindow>
+#include <QMenu>
+#include <QMenuBar>
+#include <QEvent>
+#include <QLabel>
+#include <QToolBar>
 #include <QDebug>
 #include <QMessageBox>
-#include <QLabel>
-#include <QVector>
 #include <QMetaObject>
 #include <QResizeEvent>
 #include <QSignalMapper>
@@ -61,11 +76,26 @@ void MainWindow::InitWindow(ProgramOptions::Ptr root, ProgramOptions::Ptr poGUI)
     CreateToolbars();
     CreateStatusbar();
     SetupUI();
+
+    SetupLogic();
     
     showMaximized();
+}
+
+void MainWindow::SetupLogic()
+{
+    mLogic = new LogicBridge(this);
+    SET_QTOBJECTNAME(mLogic);
     
-    TempSocketWin* dlg = new TempSocketWin(this);
-    dlg->show();
+    mLogic->SetRGBDSkip(5);
+    mLogic->SetPointCloudSkip(5);
+    
+    connect(mExecControl, SIGNAL(OnStart(common::ExecCtrlData)), mLogic, SLOT(OnStart(common::ExecCtrlData)));
+    connect(mExecControl, SIGNAL(OnStop()), mLogic, SLOT(OnStop()));
+    connect(mLogic, SIGNAL(OnError(QString)), this, SLOT(OnLogicError(QString)), Qt::QueuedConnection);
+//     connect(mLogic, SIGNAL(OnPointCloud(common::KinectPointCloud::ConstPtr)), 
+//             mPCViewer, SLOT(UpdataPointCloud(common::KinectPointCloud::ConstPtr)), Qt::QueuedConnection);
+    connect(mLogic, SIGNAL(OnRGBD(QImage,QImage)), this, SLOT(OnRGBD(QImage,QImage)), Qt::QueuedConnection);
 }
 
 std::string MainWindow::GetChildObjName(QObject* obj) const
@@ -79,10 +109,6 @@ void MainWindow::CreateActions()
     SET_QTOBJECTNAME(mActQuit);
     mActQuit->setStatusTip(tr("Closes the application"));
     connect(mActQuit, SIGNAL(triggered()), this, SLOT(close()));
-    mActConfig = new QAction(tr("Config"), this);
-    SET_QTOBJECTNAME(mActConfig);
-    mActConfig->setStatusTip(tr("Opens configuration dialog"));
-    connect(mActConfig, SIGNAL(triggered(bool)), this, SLOT(ShowConfig(bool)));
     
     mActPointCloud = new QAction(tr("Point Cloud"), this);
     SET_QTOBJECTNAME(mActPointCloud);
@@ -123,7 +149,6 @@ void MainWindow::CreateMenus()
     // Settings menu
     mMenuSettings = menuBar()->addMenu(tr("Settings"));
     SET_QTOBJECTNAME(mMenuSettings);
-    mMenuSettings->addAction(mActConfig);
 
     // Windows menu
     mMenuWindows = menuBar()->addMenu(tr("Windows"));
@@ -169,7 +194,6 @@ void MainWindow::CreateToolbars()
     
     mToolbarSettings = addToolBar(tr("Settings"));
     SET_QTOBJECTNAME(mToolbarSettings);
-    mToolbarSettings->addAction(mActConfig);
     
     mToolbarWindows = addToolBar(tr("Windows"));
     SET_QTOBJECTNAME(mToolbarWindows);
@@ -190,10 +214,6 @@ void MainWindow::InitControl(KWidgetBase* wid)
 void MainWindow::SetupUI()
 {
     //First create widgets, later we will add them to mdi.
-    mConfigDialog = new ConfigDialog(this, 0, mGuiPO);
-    SET_QTOBJECTNAME(mConfigDialog);
-    connect(mConfigDialog, SIGNAL(ConfigChanged()), this, SLOT(ConfigChanged()));
-    
     mLogContainer = new LogContainer(this);
     SET_QTOBJECTNAME(mLogContainer);
     InitControl(mLogContainer);
@@ -213,6 +233,10 @@ void MainWindow::SetupUI()
     mStatisticsContainer = new StatisticsContainer(this);
     SET_QTOBJECTNAME(mStatisticsContainer);
     InitControl(mStatisticsContainer);
+    
+    mPCViewer = new PointCloudViewer(this);
+    SET_QTOBJECTNAME(mPCViewer);
+    mPCViewer->setAttribute(Qt::WA_DeleteOnClose, false);
     
     qDebug() << "(MainWindow::SetupUI) No containers for PointCloud and map.";
     
@@ -238,7 +262,7 @@ void MainWindow::SetupUI()
     SET_QTOBJECTNAME(mMdiMapView);
     InitMdiSubWindow(mMdiMapView, tr("Map Viewer"), mActMapView);
     
-    mMdiPointCloud = mMdiArea->addSubWindow(new QLabel("PointCloudView", this));
+    mMdiPointCloud = mMdiArea->addSubWindow(mPCViewer);
     SET_QTOBJECTNAME(mMdiPointCloud);
     InitMdiSubWindow(mMdiPointCloud, tr("PointCloud Viewer"), mActPointCloud);
     
@@ -307,26 +331,28 @@ void MainWindow::ToggleAction(bool bShow)
     mGuiPO->PutBool(GetChildObjName(wid) + ".Checked", bShow);
 }
 
-void MainWindow::ShowConfig(bool bShow)
-{
-    (void)bShow;
-    qDebug() << "(MainWindow::ShowConfig) Method not implemented.";
-}
-
 void MainWindow::About()
 {
     QMessageBox::about(this, tr("About KSRobot"), tr("This program is designed and implemented by Kourosh Sartipi\n" 
             "This is my M.Sc. thesis implementation."));
 }
 
+void MainWindow::OnLogicError(const QString& str)
+{
+    QMessageBox::critical(this, tr("Logic Error"), str);
+    emit mExecControl->GuiStop();
+}
+
 void MainWindow::Cleanup()
 {
 }
 
-void MainWindow::ConfigChanged()
+void MainWindow::OnRGBD(QImage rgb, QImage depth)
 {
-    qDebug() << "(MainWindow::ConfigChanged) Implement this method.";
+    mRgbContainer->DrawImage(rgb);
+    mDepthContainer->DrawImage(depth);
 }
+
 
 bool MainWindow::eventFilter(QObject* obj, QEvent* event)
 {
@@ -352,8 +378,11 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* event)
 void MainWindow::closeEvent(QCloseEvent* event)
 {
     // Save settings here!
+    std::cout << "MainWindow::closeEvent\n" << std::flush;
+    mLogic->OnStop();
+    std::cout << "mLogic->OnStop\n" << std::flush;
+    
     SaveCheckableAction(mActRgbView);
-    SaveCheckableAction(mActConfig);
     SaveCheckableAction(mActDepthView);
     SaveCheckableAction(mActExecControlView);
     SaveCheckableAction(mActLogView);

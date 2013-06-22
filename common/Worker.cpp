@@ -210,6 +210,7 @@ namespace common
          *        mListenerMap.erase(iter);
          }*/
         //NOTE: Dont really think it is necessary for my thesis.
+        (void)id;
         boost::throw_exception(std::runtime_error("(Worker::DetachListener) NOT IMPLEMENTED."));
     }
     
@@ -243,7 +244,7 @@ namespace common
             mConsumerInfo->CondVar.notify_all();
         }
         
-        if( mExecThread.joinable() )
+        if( wait && mExecThread.joinable() )
             mExecThread.join();
     }
     
@@ -267,7 +268,6 @@ namespace common
     {
         if( IsConsumer() )
         {
-            //TODO: always check if the consumer is exiting after wait.
             //First check for spurious wakeups
             if( (mConsumerInfo->LastSignalTime < mLastConsumedSignalTime) && 
                 mLastConsumedSignalTime != TimePoint() )

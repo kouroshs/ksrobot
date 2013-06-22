@@ -1,5 +1,5 @@
-#ifndef KSROBOT_UTILS_KINECT_KINECTIMAGE_H
-#define KSROBOT_UTILS_KINECT_KINECTIMAGE_H
+#ifndef KSROBOT_COMMON_KINECT_KINECTIMAGE_H
+#define KSROBOT_COMMON_KINECT_KINECTIMAGE_H
 
 #include <boost/shared_ptr.hpp>
 #include <vector>
@@ -8,16 +8,16 @@ namespace KSRobot
 {
 namespace common
 {
-//NOTE: This class is provided to remove OpenCV dependency.
-template<class X, int NumChannels>
+
+template<class X, int NumChannels, class Allocator = std::allocator<X> >
 class KinectBaseImage
 {
 private:
-    typedef KinectBaseImage<X, NumChannels>                ThisType;
+    typedef KinectBaseImage<X, NumChannels>             ThisType;
 public:
     typedef typename boost::shared_ptr<ThisType>        Ptr;
     typedef typename boost::shared_ptr<const ThisType>  ConstPtr;
-    typedef typename std::vector<X>                     ArrayType;
+    typedef typename std::vector<X, Allocator >                     ArrayType;
     
     static const int Channels = NumChannels;
 public:
@@ -49,6 +49,16 @@ public:
         return mData;
     }
 
+    const X& At(int index) const
+    {
+        return mData[index];
+    }
+    
+    X& At(int index)
+    {
+        return mData[index];
+    }
+    
     int GetWidth() const
     {
         return mWidth;
@@ -64,14 +74,19 @@ public:
         return mHeight;
     }
 
-    size_t ScanLineIndex(int y) const
+    int GetNumElements() const
     {
-        return y * GetStride();
+        return mHeight * mWidth * Channels;
     }
     
-    static size_t NexIndexUnsafe(size_t idx)
+    size_t ScanLineIndex(int y) const
     {
-        return idx + sizeof(X) * NumChannels;
+        return y * mWidth * NumChannels;
+    }
+    
+    static size_t NextIndexUnsafe(size_t idx)
+    {
+        return idx + NumChannels;
     }
     
 private:
@@ -83,7 +98,18 @@ private:
 typedef KinectBaseImage<unsigned char, 3>               KinectRgbImage;
 typedef KinectBaseImage<unsigned short, 1>              KinectRawDepthImage;
 typedef KinectBaseImage<float, 1>                       KinectFloatDepthImage;
+
+class KinectImageDiskIO
+{
+public:
+    static void                         SaveToFileRgb(const std::string& file, KinectRgbImage::ConstPtr rgb);
+    static void                         SaveToFileDepth(const std::string& file, KinectRawDepthImage::ConstPtr depth);
+    
+    static KinectRgbImage::Ptr          LoadRgbFromFile(const std::string& file);
+    static KinectRawDepthImage::Ptr     LoadDepthFromFile(const std::string& file);
+};
+
 } // end of namespace utils
 } // end of namespace KSRobot
 
-#endif //KSROBOT_UTILS_KINECT_KINECTIMAGE_H
+#endif //KSROBOT_COMMON_KINECT_KINECTIMAGE_H

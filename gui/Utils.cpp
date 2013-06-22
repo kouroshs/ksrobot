@@ -1,5 +1,12 @@
 #include <gui/Utils.h>
+#include <common/KinectInterface.h>
 #include <stdio.h>
+
+#include <QMetaType>
+#include <QColor>
+
+#include <pcl/point_cloud.h> //basic pcl includes
+#include <pcl/point_types.h>
 
 namespace KSRobot
 {
@@ -138,6 +145,9 @@ public:
 
 #define ADD_TYPE(T) ProgramOptions::AddUserType<T>(static_cast<ProgramOptions::UserTypeInterface*>(new QtTypeInterface<T>()))
 
+
+//Q_DECLARE_METATYPE(common::KinectPointCloud::Ptr);
+
 void Utils::RegisterDefaultQtTypes()
 {
     ADD_TYPE(QString);
@@ -145,7 +155,9 @@ void Utils::RegisterDefaultQtTypes()
     ADD_TYPE(QMargins);
     ADD_TYPE(QRect);
     ADD_TYPE(QSize);
-}
+    
+    qRegisterMetaType<common::KinectPointCloud::Ptr>("common::KinectPointCloud::Ptr");
+    qRegisterMetaType<common::KinectPointCloud::ConstPtr>("common::KinectPointCloud::ConstPtr");}
 
 QSize Utils::ReadSize(ProgramOptions::Ptr po, const std::string& name, const QSize& defaultVal)
 {
@@ -236,7 +248,7 @@ QString Utils::IsometryToString(const Eigen::Isometry3d& m)
     return QString(result);
 }
 
-QImage Utils::ConvertToQImage(KSRobot::common::KinectRgbImage::Ptr rgb)
+QImage Utils::ConvertToQImage(KSRobot::common::KinectRgbImage::ConstPtr rgb)
 {
     QImage qrgb(rgb->GetWidth(), rgb->GetHeight(), QImage::Format_RGB32);
     const common::KinectRgbImage::ArrayType& rgbArray = rgb->GetArray();
@@ -252,7 +264,7 @@ QImage Utils::ConvertToQImage(KSRobot::common::KinectRgbImage::Ptr rgb)
             rgbPtr[2] = rgbArray[idxRgb + 2];
             rgbPtr[3] = 0xFF;
             
-            idxRgb = common::KinectRgbImage::NexIndexUnsafe(idxRgb);
+            idxRgb = common::KinectRgbImage::NextIndexUnsafe(idxRgb);
             rgbPtr += 4;
         }
     }
@@ -260,10 +272,14 @@ QImage Utils::ConvertToQImage(KSRobot::common::KinectRgbImage::Ptr rgb)
     return qrgb;
 }
 
-QImage Utils::ConvertToQImage(KSRobot::common::KinectRawDepthImage::Ptr depth)
+QImage Utils::ConvertToQImage(KSRobot::common::KinectRawDepthImage::ConstPtr depth)
 {
     QImage qdepth(depth->GetWidth(), depth->GetHeight(), QImage::Format_RGB32);
     const common::KinectRawDepthImage::ArrayType& depthArray = depth->GetArray();
+    
+    const float MaxDepth = 8000.0f;
+    
+    qdepth.fill(QColor(0xff,0xff,0xff));
     
     for(int y = 0; y < depth->GetHeight(); y++)
     {
@@ -271,12 +287,44 @@ QImage Utils::ConvertToQImage(KSRobot::common::KinectRawDepthImage::Ptr depth)
         size_t idxDepth = depth->ScanLineIndex(y);
         for(int x = 0; x < depth->GetWidth(); x++)
         {
-            depthPtr[0] = depthArray[idxDepth] / 10000 * 255;
-            depthPtr[1] = depthArray[idxDepth] / 10000 * 255;
-            depthPtr[2] = depthArray[idxDepth] / 10000 * 255;
+            unsigned char r = 0xFF, g = 0xFF, b = 0xFF;
+            if( depthArray[idxDepth] != 0 )
+            {
+                float val = (float)depthArray[idxDepth] / MaxDepth;
+                if( val > 1.0f )
+                    val = 1.0f;
+                
+                if( val < 0.25f )
+                {
+                    r = 0;
+                    g = (4 * val) * 255;
+                }
+                else if( val < 0.5f )
+                {
+                    r = 0;
+                    b = (1 + 4 * (0.25f - val)) * 255;
+                }
+                else if( val < 0.75f )
+                {
+                    r = 4 * (val - 0.5f) * 255;
+                    b = 0;
+                }
+                else
+                {
+                    g = (1 + 4 * (0.75f - val)) * 255;
+                    b = 0;
+                }
+            }
+            else
+            {
+                r = g = b = 0;
+            }
+            depthPtr[0] = r;
+            depthPtr[1] = g;
+            depthPtr[2] = b;
             depthPtr[3] = 0xFF;
                 
-            idxDepth = common::KinectRawDepthImage::NexIndexUnsafe(idxDepth);
+            idxDepth = common::KinectRawDepthImage::NextIndexUnsafe(idxDepth);
             depthPtr += 4;
         }
     }

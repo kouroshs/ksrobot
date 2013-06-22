@@ -1,8 +1,10 @@
 #include "VisualizerApplication.h"
+#include <gui/Utils.h>
 
 VisualizerApplication::VisualizerApplication(int& argc, char** argv, int oa) :
     QApplication(argc, argv, oa), mPO(new KSRobot::common::ProgramOptions())
 {
+    KSRobot::gui::Utils::RegisterDefaultQtTypes();
 }
 
 VisualizerApplication::~VisualizerApplication()

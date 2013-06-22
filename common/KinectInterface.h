@@ -41,7 +41,7 @@ public:
     typedef boost::shared_ptr<KinectInterface>                                  Ptr;
     typedef boost::shared_ptr<const KinectInterface>                            ConstPtr;
     
-    KinectInterface(ProgramOptions::Ptr po, const std::string& name);
+    KinectInterface(const std::string& name);
     virtual ~KinectInterface();
 
     virtual void                                Initialize(const std::string& device) = 0;
@@ -54,6 +54,14 @@ public:
     inline KinectFloatDepthImage::ConstPtr      GetFloatDepthImage() const;
     
     inline CameraParameters                     GetCameraParams() const;
+    inline float                                UnitsPerMeter() const;
+    
+    virtual bool                                ProvidesGroundTruth() = 0;
+    virtual Eigen::Isometry3d                   GetCurrentGroundTruth() = 0;
+    
+    static KinectPointCloud::Ptr                GeneratePointCloudFromImages(KinectRgbImage::Ptr rgb, 
+                                                                   KinectRawDepthImage::Ptr depth, 
+                                                                   const CameraParameters& camParams);    
 protected:
     KinectPointCloud::Ptr                       mPC;
     KinectRgbImage::Ptr                         mRgb;
@@ -61,9 +69,6 @@ protected:
     KinectFloatDepthImage::Ptr                  mFloatDepth;
     
     CameraParameters                            mParams;
-    
-    //TODO: Put sth for devisor, for example 5000 for datasetreader
-    //TODO: Add camera params to this class
 };
 
 inline KinectPointCloud::ConstPtr KinectInterface::GetPointCloud() const
@@ -90,7 +95,6 @@ inline KinectInterface::CameraParameters KinectInterface::GetCameraParams() cons
 {
     return mParams;
 }
-
 
 } // end namespace utils
 } // end namespace KSRobot

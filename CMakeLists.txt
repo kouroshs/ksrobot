@@ -13,18 +13,21 @@ SET(QT_USE_QTNETWORK TRUE)
 find_package(Qt4 COMPONENTS QtCore QtGui QtNetwork REQUIRED)
 find_package(Boost COMPONENTS system filesystem thread date_time program_options chrono REQUIRED)
 find_package(OpenNI REQUIRED)
-
-find_package(PCL 1.7 COMPONENTS common io REQUIRED)
-
-#find_package(OpenCV REQUIRED)
+find_package(PCL 1.7 REQUIRED)
+find_package(VTK REQUIRED)
+find_package(octomap REQUIRED)
+find_package(TBB REQUIRED)
 
 # Use thread safe boost components
 set(Boost_USE_MULTITHREADED ON)
 
-set(GLOBAL_LIBRARIES ${PCL_LIBRARIES} ${Boost_LIBRARIES})
+set(GLOBAL_LIBRARIES ${PCL_LIBRARIES} ${Boost_LIBRARIES} ${TBB_LIBRARIES})
+
+include(${VTK_USE_FILE})
+
 
 include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} 
-                    ${Boost_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS} 
+                    ${Boost_INCLUDE_DIR}
                     ${EIGEN_INCLUDE_DIRS} ${OpenNI_INCLUDE_DIRS}
                     ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
@@ -35,7 +38,7 @@ include_directories(./)
 
 #Set compiler flags, currently only supported for GNU GCC
 if(CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -Wextra -Wno-reorder -Wno-enum-compare")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -Wall -Wextra -Wno-reorder -Wno-enum-compare")
     #set(CMAKE_EXE_LINKER_FLAGS "-s")  ## Strip binary
 endif()
 

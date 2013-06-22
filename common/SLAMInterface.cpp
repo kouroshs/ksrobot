@@ -19,19 +19,50 @@
  */
 
 #include <common/SLAMInterface.h>
+#include <gtsam/global_includes.h>
+#include <gtsam/nonlinear/NonlinearFactorGraph.h>
 
 namespace KSRobot
 {
 namespace common
 {
 
-SLAMInterface::SLAMInterface(ProgramOptions::Ptr po, const std::string& name) : Interface(po, name)
+SLAMInterface::SLAMInterface(const std::string& name) : Interface(name), mLastKeyframe(-1), 
+    mGraph(new gtsam::NonlinearFactorGraph())
 {
+    mLoops.set_capacity(10);
 }
 
 SLAMInterface::~SLAMInterface()
 {
 }
+
+void SLAMInterface::RegisterToVO(VisualOdometryInterface::Ptr vo)
+{
+    mVO = vo;
+    mConnections.push_back(mVO->RegisterKeyframeReceiver(boost::bind(&SLAMInterface::OnKeyframeDetected, this)));
+}
+
+void SLAMInterface::ReadFromFile(const std::string& filename)
+{
+    //TODO: Implement
+}
+
+void SLAMInterface::OnLoopDetected(const LoopDetector::LoopClosure& lc)
+{
+
+}
+
+void SLAMInterface::RegisterToLoopDetector(LoopDetector::Ptr ld)
+{
+    ld->RegisterLoopReceiver(boost::bind(&SLAMInterface::OnLoopDetected, this, _1));
+}
+
+void SLAMInterface::OnKeyframeDetected()
+{
+    //TODO: ADD TO KEYFRAME QUEUE
+}
+
 
 } // end namespace common
 } // end namespace KSRobot

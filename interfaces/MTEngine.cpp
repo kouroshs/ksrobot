@@ -19,19 +19,73 @@
  */
 
 #include <interfaces/MTEngine.h>
+#include <interfaces/KinectDatasetReader.h>
+#include <interfaces/KinectDeviceReader.h>
+#include <interfaces/FovisInterface.h>
 
 namespace KSRobot
 {
 namespace interfaces
 {
 
-MTEngine::MTEngine(common::ProgramOptions::Ptr po, const std::string& name) : common::EngineInterface(po, name)
+MTEngine::MTEngine(const std::string& name) : common::EngineInterface(name)
 {
 }
 
 MTEngine::~MTEngine()
 {
 }
+
+void MTEngine::Initialize()
+{
+    common::EngineInterface::Initialize();
+    
+    if( mExecCtrl.Kinect.GetFromDevice )
+    {
+        mKinect.reset(new KinectDeviceReader("KinectDevice"));
+        mKinect->Initialize(mExecCtrl.Kinect.SourceDevice);
+    }
+    else
+    {
+        mKinect.reset(new KinectDatasetReader("KinectDataset"));
+        mKinect->Initialize(mExecCtrl.Kinect.SourceDir);
+    }
+    
+    //NOTE: ICP visual odometry is only for testing, so there is no need to implement differently
+    mVO.reset(new FovisInterface("Fovis"));
+    mVO->RegisterToKinect(mKinect);
+    
+    //Set HZ
+    //TODO: Add these params to ProgramOptions?
+    mKinect->SetHZ(33); // this is only for dataset reader
+    mVO->SetHZ(5);
+}
+
+void MTEngine::Start()
+{
+    //DO NOT CALL EngineInterface::Start, we are not using a thread for engine execution!
+    mKinect->Start();
+    mVO->Start();
+    mContinueExec.store(true);
+}
+
+void MTEngine::Stop()
+{
+    //DO NOT CALL EngineInterface::Stop
+    if( mContinueExec == false )
+        return;
+    
+    mContinueExec.store(false);
+    mVO->Stop();
+    mKinect->Stop();
+    
+}
+
+bool MTEngine::RunSingleCycle()
+{
+    return false; // forcing a single cycle run on a multithreaded engine has no meaning
+}
+
 
 } // end namespace common
 } // end namespace KSRobot

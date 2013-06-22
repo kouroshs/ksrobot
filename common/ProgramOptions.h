@@ -42,7 +42,6 @@ public:
     ProgramOptions(const ProgramOptions& other);
     ~ProgramOptions();
     
-    //TODO: Remove dependency on boost::any, and make them of boost::optional type.
     template<class X>
     static void                         AddUserType(UserTypeInterface* newType)
     {
@@ -94,7 +93,7 @@ private:
         
         if( !ref && !defVal )
         {
-            throw std::runtime_error("(ProgramOptions::GetValInternal) Variable '" + mStrPrefix + name +
+            throw std::runtime_error("(ProgramOptions::GetValInternal<true_type>) Variable '" + mStrPrefix + name +
                             "' is not defined and no default value is provided.");
         }
         else if( !ref )
@@ -133,7 +132,6 @@ private:
     template<class X>
     void PutValInternal(const std::string& name, const X& val, boost::false_type)
     {
-        //TODO: Implement this
         UserTypeInterface* iface = FindInterface(typeid(X).name());
         assert(iface);
         iface->Put(StartNode(name), boost::any(val));
@@ -151,7 +149,6 @@ private:
     std::string                         mStrPrefix;
     boost::shared_ptr<MutexType>        mGaurd;
 
-    //TODO: Complete here
     typedef std::map<std::string, UserTypeInterface*>   UserTypesMap;
     static UserTypesMap                 mUserTypesMap;
     static MutexType                    mUserTypesGaurd;

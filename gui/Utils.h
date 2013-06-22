@@ -64,8 +64,8 @@ public:
     
     static QString              IsometryToString(const Eigen::Isometry3d& iso);
 
-    static QImage               ConvertToQImage(common::KinectRgbImage::Ptr rgb);
-    static QImage               ConvertToQImage(common::KinectRawDepthImage::Ptr depth);
+    static QImage               ConvertToQImage(common::KinectRgbImage::ConstPtr rgb);
+    static QImage               ConvertToQImage(common::KinectRawDepthImage::ConstPtr depth);
 };
 
 } // end namespace gui

@@ -22,11 +22,13 @@
 #define LOGICBRIDGE_H
 
 #include <QObject>
+#include <QVector3D>
 
 #include <gui/ExecutionControl.h>
 #include <common/SettingsBinder.h>
-#include <common/KinectInterface.h>
+#include <common/EngineInterface.h>
 #include <common/ExecCtrlData.h>
+
 
 namespace KSRobot
 {
@@ -40,33 +42,65 @@ public:
     explicit LogicBridge(QObject* parent = 0);
     ~LogicBridge();
 
-    void                        SaveKinectInput(const QString& path);
-    QString                     GetSavePath() const;
+    void                                SaveKinectInputTo(const QString& path);
+    QString                             GetSavePath() const;
+    
+    common::EngineInterface::Ptr        GetEngine() { return mEngine; }
+    
+    void                                SetRGBDSkip(int skip) { mSkipRGBD.Skip = skip; }
+    int                                 GetRGBDSkip() const { return mSkipRGBD.Skip; }
+    
+    void                                SetPointCloudSkip(int s) { mSkipPC.Skip = s; }
+    int                                 GetPointCloudSkip() const { return mSkipPC.Skip; }
     
 signals:
-    void                        OnRGBD(QImage rgb, QImage depth);
-    
+    void                                ExecutionFinished();
+    void                                OnRGBD(QImage rgb, QImage depth);
+    void                                OnPointCloud(common::KinectPointCloud::ConstPtr pc);
+    void                                OnVisualOdometry(QVector3D motionEstimate);
+    void                                OnError(const QString& err);
 public slots:
-    void                        OnStart(const common::ExecCtrlData& data);
-    void                        OnStop();
+    void                                OnStart(const common::ExecCtrlData& data);
+    void                                OnStop();
     
-private slots:
+private slots:    
     
-private:
-    void                        KinectPointCloudReceiverDirect(common::KinectPointCloud::ConstPtr& pc);
-    // This function registeres to OnRGBD
-    void                        KinectRGBDReveicerRawDirect(common::KinectRgbImage::Ptr rgb,
-                                                            common::KinectRawDepthImage::Ptr depth);
-    void                        KinectRGBDReceiverFloatDirect(common::KinectRgbImage::Ptr rgb,
-                                                              common::KinectFloatDepthImage depth);
+    
 protected:
-    virtual void                connectNotify(const char* name);
-    virtual void                disconnectNotify(const char* name);
-protected:
-    int                         mQtImageCreatorReceivers;
+    virtual void                        connectNotify(const char* sig);
+    virtual void                        disconnectNotify(const char* sig);
     
-    common::SettingsBinder       mBinder;
-    QString                     mSavePath;
+    void                                OnKinectNewDataReceive();
+    void                                OnKinectFinish();
+    void                                OnFovisCycleComplete();
+protected:
+    class SkipParams
+    {
+    public:
+        int                             Skip;
+        int                             CurrCount;
+        
+        bool                            ShouldSkip()
+        {
+            if( Skip == 0 ) return false;
+            if( ++CurrCount == Skip )
+            {
+                CurrCount = 0;
+                return false;
+            }
+            return true;
+        }
+        
+        SkipParams() : Skip(0), CurrCount(0) {;}
+    };
+    
+    SkipParams                          mSkipRGBD;
+    SkipParams                          mSkipPC;
+    
+    int                                 mNumKinectReceiversConnected;
+    common::SettingsBinder              mBinder;
+    QString                             mSavePath;
+    common::EngineInterface::Ptr        mEngine;
 };
 
 } // end namespace gui

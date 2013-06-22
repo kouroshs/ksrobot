@@ -23,7 +23,11 @@
 
 #include <string>
 #include <boost/shared_ptr.hpp>
-#include <boost/graph/graph_concepts.hpp>
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/max.hpp>
+#include <boost/accumulators/statistics/min.hpp>
+#include <boost/accumulators/statistics/mean.hpp>
+#include <boost/accumulators/statistics/moment.hpp>
 #include <common/Defenitions.h>
 
 namespace KSRobot
@@ -40,41 +44,65 @@ public:
     Timer(const std::string& name);
     ~Timer();
     
+    void                        Start();
+    void                        Stop();
     
-    void                    Start();
-    void                    Stop();
+    inline double               GetAverageTime() const;
+    inline double               GetTimeVariance() const;
+    inline size_t               GetNumCalls() const;
+    inline double               GetMaxTime() const;
+    inline double               GetMinTime() const;
+    inline double               GetTotalTime() const;
     
-    inline double           GetAverageTime() const;
-    inline double           GetTimeVariance() const;
+    inline std::string          Name() const;
     
-    inline std::string      Name() const;
-    
+    std::string                 ToString(int precision = 3) const;
 private:
-    std::string      mTimerName;
+    std::string                 mTimerName;
     
-    TimePoint        mStartTime;
+    TimePoint                   mStartTime;
     
-    size_t           mCycles;
-    double           mTotalTime;
-    double           mTotalSquaredTime;
+    typedef boost::accumulators::accumulator_set<double, boost::accumulators::features<boost::accumulators::tag::min, 
+            boost::accumulators::tag::max, boost::accumulators::tag::mean, boost::accumulators::tag::moment<2> > > AccType;
     
+    AccType                     mAccumulator;
 };
 
 inline double Timer::GetAverageTime() const
 {
-    return mTotalTime / mCycles;
+    return boost::accumulators::extract::mean(mAccumulator);
 }
 
 inline double Timer::GetTimeVariance() const
 {
-    double ave = GetAverageTime();
-    return (mTotalSquaredTime * mTotalSquaredTime - ave * ave) / mCycles;
+    return boost::accumulators::moment<2>(mAccumulator);
 }
 
 inline std::string Timer::Name() const
 {
     return mTimerName;
 }
+
+inline double Timer::GetMaxTime() const
+{
+    return boost::accumulators::extract::max(mAccumulator);
+}
+
+inline double Timer::GetMinTime() const
+{
+    return boost::accumulators::extract::min(mAccumulator);
+}
+
+inline size_t Timer::GetNumCalls() const
+{
+    return boost::accumulators::extract::count(mAccumulator);
+}
+
+inline double Timer::GetTotalTime() const
+{
+    return GetNumCalls() * GetAverageTime();
+}
+
 
 } // end namespace common
 } // end namespace KSRobot

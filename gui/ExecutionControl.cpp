@@ -31,7 +31,6 @@ void ExecutionControl::InitControl(ProgramOptions::Ptr po)
     mUI->setupUi(this);
     mUI->retranslateUi(this);
     
-    //TODO: Change this, should be inside kinect
     if( mGuiPO->GetString("DefaultSource", std::string("file")) == "kinect" )
         mUI->mRdBtnKinectDevice->setChecked(true);
     else
@@ -73,55 +72,12 @@ void ExecutionControl::InitControl(ProgramOptions::Ptr po)
 
 void ExecutionControl::ReadSettings()
 {
-    //Kinect
-    mData.Kinect.GetFromDevice = mGuiPO->GetBool("Kinect.GetFromDevice", false);
-    mData.Kinect.SourceDevice = mGuiPO->GetString("Kinect.SourceDevice", std::string(""));
-    mData.Kinect.SourceDir = mGuiPO->GetString("Kinect.SourceDir", 
-                                               std::string("/windows/E/Datasets/rgbd_dataset_freiburg2_pioneer_slam/"));
-    //FOVIS
-    mData.Fovis.Enable = mGuiPO->GetBool("Fovis.Enable", false);
-    //iSAM
-    mData.iSAM.Enable = mGuiPO->GetBool("iSAM.Enable", false);
-    //OctoMap
-    mData.OctoMap.Enable = mGuiPO->GetBool("OctoMap.Enable", false);
-    //OMPL
-    mData.OMPL.Enable = mGuiPO->GetBool("OMPL.Enable", false);
-    //Comm
-    mData.Comm.Enable = mGuiPO->GetBool("Comm.Enable", false);
-    mData.Comm.Port = mGuiPO->GetInt("Comm.Port", 0); //TODO: change default
-    mData.Comm.Address = mGuiPO->GetString("Comm.Address", std::string("127.0.0.1"));
-    //GUI
-    mData.GUI.ViewFovis = mGuiPO->GetBool("GUI.ViewFovis", false);
-    mData.GUI.ViewOctoMap = mGuiPO->GetBool("GUI.ViewOctoMap", false);
-    mData.GUI.ViewOMPL = mGuiPO->GetBool("GUI.ViewOMPL", false);
-    mData.GUI.ViewPCL = mGuiPO->GetBool("GUI.ViewPCL", false);
-    mData.GUI.ViewRGBD = mGuiPO->GetBool("GUI.ViewRGBD", false);
+    mBinderVars.ReadSettings();
 }
 
 void ExecutionControl::SaveSettings()
 {
-    //Kinect
-    mGuiPO->PutBool("Kinect.GetFromDevice", mData.Kinect.GetFromDevice);
-    if( mData.Kinect.GetFromDevice )
-        mGuiPO->PutString("Kinect.SourceDevice", mUI->mKinectDevPath->text().toStdString());
-    else
-        mGuiPO->PutString("Kinect.SourceDir", mUI->mKinectDevPath->text().toStdString());
-    //FOVIS
-    mGuiPO->PutBool("Fovis.Enable", mUI->mChkEnableFovis->isChecked());
-    //iSAM
-    mGuiPO->PutBool("iSAM.Enable", mUI->mChkEnableSAM->isChecked());
-    //OctoMap
-    mGuiPO->PutBool("OctoMap.Enable", mUI->mChkEnableOctomap->isChecked());
-    //OMPL
-    mGuiPO->PutBool("OMPL.Enable", mUI->mChkEnableOMPL->isChecked());
-    //Comm
-    mGuiPO->PutBool("Comm.Enable", mUI->mChkEnableComm->isChecked());
-    //GUI
-    mGuiPO->PutBool("GUI.ViewFovis", mUI->mChkViewFovisResults->isChecked());
-    mGuiPO->PutBool("GUI.ViewOctoMap", mUI->mChkViewOctomap->isChecked());
-    mGuiPO->PutBool("GUI.ViewOMPL", mUI->mChkViewOMPL->isChecked());
-    mGuiPO->PutBool("GUI.ViewPCL", mUI->mChkViewPointCloud->isChecked());
-    mGuiPO->PutBool("GUI.ViewRGBD", mUI->mChkViewRGBD->isChecked());
+    mBinderFns.WriteSettings();
 }
 
 void ExecutionControl::BindSettings()
@@ -154,23 +110,8 @@ bool ExecutionControl::UpdateUIFromData()
             mUI->mKinectDevPath->setText(mData.Kinect.SourceDir.c_str());
         }
         
-        //mUI->mKinectDevPath->setText(mData.Kinect.Source.c_str());
-        // Update FOVIS
-        mUI->mChkEnableFovis->setChecked(mData.Fovis.Enable);
-        // Update iSAM
-        mUI->mChkEnableSAM->setChecked(mData.iSAM.Enable);
-        // Update OctoMap
-        mUI->mChkEnableOctomap->setChecked(mData.OctoMap.Enable);
-        // Update OMPL
-        mUI->mChkEnableOMPL->setChecked(mData.OMPL.Enable);
-        // Update Comm
-        mUI->mChkEnableComm->setChecked(mData.Comm.Enable);
+        mBinderFns.ReadSettings();
         
-        mUI->mChkViewFovisResults->setChecked(mData.GUI.ViewFovis);
-        mUI->mChkViewOctomap->setChecked(mData.GUI.ViewOctoMap);
-        mUI->mChkViewOMPL->setChecked(mData.GUI.ViewOMPL);
-        mUI->mChkViewPointCloud->setChecked(mData.GUI.ViewPCL);
-        mUI->mChkViewRGBD->setChecked(mData.GUI.ViewRGBD);
     }
     catch(std::runtime_error& re)
     {
@@ -183,7 +124,6 @@ bool ExecutionControl::UpdateUIFromData()
 
 bool ExecutionControl::UpdateDataFromUI()
 {
-    //TODO: Implement this.
     try
     {
         // Update Kinect
@@ -192,24 +132,9 @@ bool ExecutionControl::UpdateDataFromUI()
             mData.Kinect.SourceDevice = mUI->mKinectDevPath->text().toStdString();
         else
             mData.Kinect.SourceDir = mUI->mKinectDevPath->text().toStdString();
-        // Update Fovis
-        mData.EnableFovis(mUI->mChkEnableFovis->isChecked());
-        // Update iSAM
-        mData.EnableSAM(mUI->mChkEnableSAM->isChecked());
-        // Update OctoMap
-        mData.EnableOctoMap(mUI->mChkEnableOctomap->isChecked());
-        // Update OMPL
-        mData.EnableOMPL(mUI->mChkEnableOMPL->isChecked());
-        // Update Commserver
-        mData.EnableComm(mUI->mChkEnableComm->isChecked());
-        
-        // Update GUI settings
-        mData.GUI.ViewFovis = mUI->mChkViewFovisResults->isChecked();
-        mData.GUI.ViewOctoMap = mUI->mChkViewOctomap->isChecked();
-        mData.GUI.ViewOMPL = mUI->mChkViewOMPL->isChecked();
-        mData.GUI.ViewPCL = mUI->mChkViewPointCloud->isChecked();
-        mData.GUI.ViewRGBD = mUI->mChkViewRGBD->isChecked();
-        
+
+        mBinderFns.WriteSettings(); // write to po
+        mBinderVars.ReadSettings(); // read data from po
         mData.CheckConsistancy();
     }
     catch(std::runtime_error& re)
@@ -235,7 +160,11 @@ void ExecutionControl::on_mBtnStart_clicked()
 void ExecutionControl::on_mBtnStop_clicked()
 {
     emit OnStop();
-    
+    GuiStop();
+}
+
+void ExecutionControl::GuiStop()
+{
     mUI->mTabSettings->setEnabled(true);
     mUI->mBtnStart->setEnabled(true);
     mUI->mBtnStop->setEnabled(false);

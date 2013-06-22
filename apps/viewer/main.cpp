@@ -9,7 +9,6 @@
 #include <QApplication>
 #include <gui/MainWindow.h>
 #include <apps/viewer/VisualizerApplication.h>
-#include <common/ProgramOptions.h>
 
 int main(int argc, char** argv)
 {

@@ -25,13 +25,51 @@ namespace KSRobot
 namespace common
 {
 
-VisualOdometryInterface::VisualOdometryInterface(ProgramOptions::Ptr po, const std::string& name): Interface(po, name)
+VisualOdometryInterface::VisualOdometryInterface(const std::string& name): Interface(name),
+    mMotionEstimate(Eigen::Isometry3d::Identity()), mCurrRelativeMotion(Eigen::Isometry3d::Identity()),
+    mLastKinectCycle(-1), mOdomTimer(new Timer("Odometry time"))
 {
+    RegisterTimer(mOdomTimer);
 }
 
 VisualOdometryInterface::~VisualOdometryInterface()
 {
 }
+
+void VisualOdometryInterface::RegisterToKinect(KinectInterface::Ptr ki)
+{
+    mKinect = ki;
+}
+
+bool VisualOdometryInterface::RunSingleCycle()
+{
+    Interface::ScopedLock lock(this);
+    mKinect->LockData();
+    
+    if( mKinect->GetCycle() <= mLastKinectCycle )
+    {
+        mKinect->UnlockData();
+        return false;
+    }
+    
+    mCurrFloatDepth = mKinect->GetFloatDepthImage();
+    mCurrRawDepth = mKinect->GetRawDepthImage();
+    mCurrRgb = mKinect->GetRgbImage();
+    mCurrPointCloud = mKinect->GetPointCloud();
+    
+    mLastKinectCycle = mKinect->GetCycle();
+    mKinect->UnlockData();
+    return true;
+}
+
+void VisualOdometryInterface::NotifyKeyframeReceivers()
+{
+    if( IsThisCycleKeyframe() )
+    {
+        mKeypointReceivers();
+    }
+}
+
 
 } // end namespace common
 } // end namespace KSRobot

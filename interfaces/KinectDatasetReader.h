@@ -3,9 +3,6 @@
 
 #include <common/Defenitions.h>
 
-#include <boost/filesystem.hpp>
-#include <boost/thread.hpp>
-
 #include <string>
 #include <vector>
 #include <exception>
@@ -15,10 +12,16 @@
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
 
-#include <pcl/io/image_grabber.h>
-#include <pcl/common/io.h>
-
 #include <common/KinectInterface.h>
+
+namespace boost
+{
+    class thread;
+    namespace filesystem
+    {
+        class path;
+    }
+};
 
 namespace KSRobot
 {
@@ -28,23 +31,15 @@ namespace interfaces
 class KinectDatasetReader : public common::KinectInterface
 {
 public:
-    KinectDatasetReader(common::ProgramOptions::Ptr po, const std::string& name);
+    KinectDatasetReader(const std::string& name);
     virtual ~KinectDatasetReader();
 
-    virtual void Initialize(const std::string& str);
+    virtual void                        Initialize(const std::string& str);
     
-    virtual bool RunSingleCycle();
-    
-//     void                SetPath                 (const std::string& path                );
-//     
-//     void                GetCurrentFileNames     (std::string& rgb, std::string& depth   ) const;
-//     
-//     virtual bool                        Initialize();
-//     virtual void                        Cleanup();
-//     virtual bool                        CaptureFrame();
-//     virtual double                      GetTimeStamp();
-//     virtual void                        ExportImage(cv::Mat& rgb, cv::Mat& depth);
-    
+    virtual bool                        RunSingleCycle();
+
+    virtual bool                        ProvidesGroundTruth();
+    virtual Eigen::Isometry3d           GetCurrentGroundTruth();
 private:
     struct FileList
     {
@@ -66,8 +61,7 @@ private:
     struct GroundTruthInfo
     {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-        Eigen::Quaternionf              Rotation;
-        Eigen::Vector3f                 Position;
+        Eigen::Isometry3d               LocalTransform;
         double                          TimeStamp;
     };
 
@@ -84,33 +78,22 @@ private:
     
     void                CorrespondRGBDIndices   (                                       );
     void                CorrespondGroundTruth   (                                       );
+    void                MoveGroundTruthsToOrigin(                                       );
 
-    //TODO: Test ImageGrabber
-    void                PointCloudCallback      (common::KinectPointCloud::Ptr pc);
-    
 private:
     FileList                                    mRGBFiles;
     FileList                                    mDepthFiles;
     std::vector<GroundTruthInfo>                mGroundTruth;
     
-    size_t                                      mCycle;
-    
     int                                         mPerCycleSleep;
     int                                         mTotalTime;
     common::TimePoint                           mLastTime;
     
-    typedef pcl::ImageGrabber<pcl::PointXYZRGBA> ImageGrabber;
-    typedef boost::shared_ptr<ImageGrabber>      ImageGrabberPtr;
-    
-    ImageGrabberPtr                             mPointCloudGenerator;
-    common::KinectPointCloud::Ptr               mCurrPointCloud;
-    
     volatile bool                               mRunning;
     boost::thread                               mExecThread;
     
-    common::KinectRgbImage::Ptr                 mCurrRgb;
-    common::KinectRawDepthImage::Ptr            mCurrDepthRaw;
-    common::KinectFloatDepthImage::Ptr          mCurrDepthFloat;
+    common::Timer::Ptr                          mTimerLoadTimes;
+    common::Timer::Ptr                          mTimerPCGenerator;
 };
 
 } // end namespace utils

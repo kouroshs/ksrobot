@@ -1,13 +1,13 @@
 #include <interfaces/KinectDeviceReader.h>
 #include <iostream>
+#include <pcl/io/openni_grabber.h>
 
 namespace KSRobot
 {
 namespace interfaces
 {
 
-//TODO: SOlve bugs in pcl about inline virtual.
-class GrabberHelper : public pcl::OpenNIGrabber
+class KinectDeviceReader::GrabberHelper : public pcl::OpenNIGrabber
 {
 public:
     GrabberHelper(const std::string& device_id = "", const Mode& depth_mode = OpenNI_Default_Mode, 
@@ -23,7 +23,7 @@ public:
     
 };
 
-KinectDeviceReader::KinectDeviceReader(common::ProgramOptions::Ptr po, const std::string& name) : common::KinectInterface(po, name)
+KinectDeviceReader::KinectDeviceReader(const std::string& name) : common::KinectInterface(name)
 {
 }
 
@@ -62,19 +62,39 @@ void KinectDeviceReader::RGBDCallback(const boost::shared_ptr<openni_wrapper::Im
                                       const boost::shared_ptr<openni_wrapper::DepthImage>& depth, 
                                       float /*invFocalLength*/)
 {
+    assert(rgb->getHeight() == depth->getHeight() && rgb->getWidth() == depth->getWidth());
+    
     LockData();
+    
+    mRgb.reset(new common::KinectRgbImage());
+    mRawDepth.reset(new common::KinectRawDepthImage());
+    mFloatDepth.reset(new common::KinectFloatDepthImage());
     
     mRgb->Create(rgb->getWidth(), rgb->getHeight());
     mFloatDepth->Create(depth->getWidth(), depth->getHeight());
     mRawDepth->Create(depth->getWidth(), depth->getHeight());
     
     rgb->fillRGB(rgb->getHeight(), rgb->getWidth(), mRgb->GetArray().data());
-    depth->fillDepthImage(depth->getHeight(), depth->getWidth(), mFloatDepth->GetArray().data());
+    //depth->fillDepthImage(depth->getHeight(), depth->getWidth(), mFloatDepth->GetArray().data());
     depth->fillDepthImageRaw(depth->getHeight(), depth->getWidth(), mRawDepth->GetArray().data());
+    for(size_t i = 0; i < depth->getWidth() * depth->getHeight(); i++)
+        mFloatDepth->GetArray()[i] = mRawDepth->GetArray()[i] / 1000.0f; // convert to mters.
     
     mPC = mGrabber->GeneratePC(rgb, depth);
     
+    IncrementCycle();
     UnlockData();
+}
+
+Eigen::Isometry3d KinectDeviceReader::GetCurrentGroundTruth()
+{
+    throw std::runtime_error("(KinectDeviceReader::GetCurrentGroundTruth) No ground truth information is provided.");
+    return Eigen::Isometry3d::Identity();
+}
+
+bool KinectDeviceReader::ProvidesGroundTruth()
+{
+    return false;
 }
 
 } // end namespace utils

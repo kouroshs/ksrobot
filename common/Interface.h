@@ -22,12 +22,13 @@
 #define INTERFACE_H
 
 #include <common/Defenitions.h>
-#include <common/ProgramOptions.h>
 #include <common/Timer.h>
+#include <common/ProgramOptions.h>
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <boost/atomic.hpp>
 #include <boost/thread.hpp>
+#include <boost/signals2.hpp>
 #include <boost/graph/graph_concepts.hpp>
 
 namespace KSRobot
@@ -38,7 +39,6 @@ namespace common
 class Interface
 {
 public:
-    
     class ScopedLock
     {
         Interface* iface;
@@ -55,13 +55,11 @@ public:
         }
     };
     
-    friend class ScopedLock;
-    
     typedef Interface                           this_type;
     typedef boost::shared_ptr<this_type>        Ptr;
     typedef boost::shared_ptr<const this_type>  ConstPtr;
     
-    Interface(ProgramOptions::Ptr po, const std::string& name);
+    Interface(const std::string& name);
     virtual ~Interface();
     
     inline void                 SetHZ(float hz);
@@ -70,7 +68,7 @@ public:
     virtual void                Start();
     virtual void                Stop();
     
-    inline virtual bool         ContinueExecution() const;
+    virtual bool                ContinueExecution() const;
     inline void                 LockData();
     inline void                 UnlockData();
 
@@ -79,39 +77,40 @@ public:
     inline std::string          GetName() const { return mName; }
     // This method is public, to enable running in single threaded context
     virtual bool                RunSingleCycle() = 0;
-    
     virtual void                WriteRunningTimes(std::ostream& os);
     
+    virtual void                ReadSettings(ProgramOptions::Ptr po);
+    virtual void                WriteSettings(ProgramOptions::Ptr po);
+    
+    boost::signals2::connection RegisterOnFinishReceiver(boost::function<void()> fn);
+    boost::signals2::connection RegisterOnCycleCompleteReceiver(boost::function<void ()> fn);
 protected:
     inline void                 RegisterTimer(Timer::Ptr timer);
 
-private:
-    void                        ThreadEntry();
-    void                        SpinOnce();
-    
+    virtual void                ThreadEntry();
+    virtual void                SpinOnce();
+    void                        IncrementCycle() { mCycles++; }
 protected:
-    ProgramOptions::Ptr         mPO;
     int                         mSleepMillisecs;
-private:
     TimePoint                   mLastTime;
     boost::atomic<bool>         mContinueExec;
     boost::thread               mThread;
     boost::mutex                mInternalDataGaurd;
-    
     std::vector<Timer::Ptr>     mTimers;
-    
     std::string                 mName;
     int                         mCycles;
+    
+    typedef boost::signals2::signal<void()>  SignalType;
+    SignalType                  mOnFinishSignal;
+    SignalType                  mOnCycleCompleteSignal;
+    
+    typedef std::vector<boost::signals2::connection>  ConnectionList;
+    ConnectionList              mConnections;
 };
 
 inline int Interface::GetCycle() const
 {
     return mCycles;
-}
-
-inline bool Interface::ContinueExecution() const
-{
-    return mContinueExec.load();
 }
 
 inline void Interface::SetHZ(float hz)

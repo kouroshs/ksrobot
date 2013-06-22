@@ -32,10 +32,13 @@ namespace interfaces
 class MTEngine : public common::EngineInterface
 {
 public:
-    MTEngine(common::ProgramOptions::Ptr po, const std::string& name);
+    MTEngine(const std::string& name);
     virtual ~MTEngine();
 
-    
+    virtual void                Initialize();
+    virtual void                Start();
+    virtual void                Stop();
+    virtual bool                RunSingleCycle();
 };
 
 } // end namespace common

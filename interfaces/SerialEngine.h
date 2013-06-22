@@ -31,7 +31,7 @@ namespace interfaces
 class SerialEngine : public common::EngineInterface
 {
 public:
-    SerialEngine(common::ProgramOptions::Ptr po, const std::string& name);
+    SerialEngine(const std::string& name);
     virtual ~SerialEngine();
 
 };

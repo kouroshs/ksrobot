@@ -46,12 +46,6 @@ void LogContainer::InitControl(KSRobot::common::ProgramOptions::Ptr po)
     //default colors
     mDefaultTextColor = Qt::black;
     
-    if( m_sColorMap.size() == 0 )
-    {
-        //TODO: COMPLETE COLOR LOOKUP FROM PO
-        //m_sColorMap["black"] = 
-    }
-    
     mColorMap[LT_LOG] = Qt::black;
     mChannelEnabled[LT_LOG] = true;
     mPreString[LT_LOG] = "LOG: ";

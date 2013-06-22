@@ -67,7 +67,7 @@ void ExecCtrlData::EnableOMPL(bool enable)
     OMPL.Enable = enable;
 }
 
-void ExecCtrlData::CheckConsistancy()
+void ExecCtrlData::CheckConsistancy() const
 {
     if( !Fovis.Enable )
     {

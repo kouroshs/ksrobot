@@ -5,7 +5,6 @@
 #include <gui/KWidgetBase.h>
 #include <QLabel>
 #include <QMap>
-//TODO: Add this widget plus an action to MainWindow
 
 namespace KSRobot
 {

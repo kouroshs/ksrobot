@@ -22,6 +22,17 @@
 #define SLAMINTERFACE_H
 
 #include <common/Interface.h>
+#include <common/VisualOdometryInterface.h>
+#include <common/LoopDetector.h>
+#include <tbb/concurrent_queue.h>
+#include <Eigen/Geometry>
+//NOTE: For now this is implemented using gtsam. maybe later extend the interface inside interfaces?
+
+//Forward declarations in here.
+namespace gtsam
+{
+    class NonlinearFactorGraph;
+};
 
 namespace KSRobot
 {
@@ -35,8 +46,23 @@ public:
     typedef boost::shared_ptr<this_type>        Ptr;
     typedef boost::shared_ptr<const this_type>  ConstPtr;
 
-    SLAMInterface(ProgramOptions::Ptr po, const std::string& name);
+    SLAMInterface(const std::string& name);
     virtual ~SLAMInterface();
+    
+    //THIS IS FOR TEST ONLY!
+    virtual void                                ReadFromFile(const std::string& filename);
+    
+    virtual void                                RegisterToVO(VisualOdometryInterface::Ptr vo);
+    virtual void                                RegisterToLoopDetector(LoopDetector::Ptr ld);
+private:
+    void                                        OnKeyframeDetected();
+    void                                        OnLoopDetected(const LoopDetector::LoopClosure& lc);// called from visual odometry
+protected:
+    VisualOdometryInterface::Ptr                                mVO;
+    int                                                         mLastKeyframe;
+    boost::shared_ptr<gtsam::NonlinearFactorGraph>              mGraph;
+    tbb::concurrent_bounded_queue<LoopDetector::LoopClosure>    mLoops;
+    //tbb::concurrent_bounded_queue<Keyframe>                   mKeyframes;
 };
 
 } // end namespace common

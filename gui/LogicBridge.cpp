@@ -18,22 +18,30 @@
  *
  */
 
-#include "LogicBridge.h"
+#include <iostream>
 
-#include <interfaces/KinectDatasetReader.h>
-#include <interfaces/KinectDeviceReader.h>
+#include <gui/LogicBridge.h>
+#include <gui/Utils.h>
+
+#include <interfaces/MTEngine.h>
+#include <interfaces/SerialEngine.h>
+
+#include <boost/filesystem.hpp>
+
+#include <exception>
+#include <sstream>
+
+using std::cout;
+using std::flush;
+using std::endl;
 
 namespace KSRobot
 {
 namespace gui
 {
 
-LogicBridge::LogicBridge(QObject* parent): QObject(parent), mQtImageCreatorReceivers(0)
+LogicBridge::LogicBridge(QObject* parent): QObject(parent), mNumKinectReceiversConnected(0)
 {
-    qRegisterMetaType<common::KinectPointCloud::Ptr>("KinectPointCloud::Ptr");
-    qRegisterMetaType<common::KinectRgbImage::Ptr>("KinectRgbImage::Ptr");
-    qRegisterMetaType<common::KinectFloatDepthImage::Ptr>("KinectFloatDepthImage::Ptr");
-    qRegisterMetaType<common::KinectRawDepthImage::Ptr>("KinectRawDepthImage::Ptr");
 }
 
 LogicBridge::~LogicBridge()
@@ -45,102 +53,129 @@ QString LogicBridge::GetSavePath() const
     return mSavePath;
 }
 
-void LogicBridge::SaveKinectInput(const QString& path)
+void LogicBridge::SaveKinectInputTo(const QString& path)
 {
     mSavePath = path;
 }
 
-void LogicBridge::connectNotify(const char* name)
-{
-    QObject::connectNotify(name);
-    if( QString(name) == SIGNAL(OnRGBD(QImage, QImage)) )
-        mQtImageCreatorReceivers++;
-}
-
-void LogicBridge::disconnectNotify(const char* name)
-{
-    QObject::disconnectNotify(name);
-    if( QString(name) == SIGNAL(OnRGBD(QImage, QImage)) )
-        mQtImageCreatorReceivers--;
-}
-
-
 void LogicBridge::OnStart(const common::ExecCtrlData& data)
 {
+    try
+    {
+        if( mEngine.get() )
+            mEngine->Stop();
+        mEngine.reset(new interfaces::MTEngine("MTEngine"));
+        mEngine->SetExecutionParams(data);
+        mEngine->Initialize();
+        
+        mEngine->GetKinectInterface()->RegisterOnCycleCompleteReceiver(boost::bind(&LogicBridge::OnKinectNewDataReceive, this));
+        mEngine->GetKinectInterface()->RegisterOnFinishReceiver(boost::bind(&LogicBridge::OnKinectFinish, this));
+        mEngine->GetVisualOdometryInterface()->RegisterOnCycleCompleteReceiver(boost::bind(&LogicBridge::OnFovisCycleComplete, this));
+    }
+    catch(std::exception& ex)
+    {
+        emit OnError(QString(ex.what()));
+    }
+    catch(...)
+    {
+        emit OnError(QString("Unknown Error"));
+    }
+    
+    try
+    {
+        mEngine->Start();
+    }
+    catch(std::exception& ex)
+    {
+        emit OnError(QString(ex.what()));
+    }
+    catch(...)
+    {
+        emit OnError(QString("(LogicBridge::OnStart) Unknown Error"));
+    }
 }
 
 void LogicBridge::OnStop()
 {
+    OnKinectFinish();
+}
+
+void LogicBridge::connectNotify(const char* sig)
+{
+    QObject::connectNotify(sig);
+    if( sig != NULL && strcmp(sig, SIGNAL(OnRGBD(QImage,QImage))) == 0 )
+        mNumKinectReceiversConnected++;
+}
+
+void LogicBridge::disconnectNotify(const char* sig)
+{
+    QObject::disconnectNotify(sig);
+    if( sig != NULL && strcmp(sig, SIGNAL(OnRGBD(QImage,QImage))) == 0 )
+        mNumKinectReceiversConnected--;
+}
+
+void LogicBridge::OnKinectFinish()
+{
+    try
+    {
+        if( mEngine.get() )
+            mEngine->Stop();
+    }
+    catch(std::exception& ex)
+    {
+        emit OnError(QString(ex.what()));
+    }
+    catch(...)
+    {
+        emit OnError(QString("(LogicBridge::OnKinectFinish) Unknown Error"));
+    }
+    emit ExecutionFinished();
+}
+
+void LogicBridge::OnKinectNewDataReceive()
+{
+    mEngine->GetKinectInterface()->LockData();
+    common::KinectRgbImage::ConstPtr rgb = mEngine->GetKinectInterface()->GetRgbImage();
+    common::KinectRawDepthImage::ConstPtr depth = mEngine->GetKinectInterface()->GetRawDepthImage();
+    mEngine->GetKinectInterface()->UnlockData();
     
-}
-
-void LogicBridge::KinectPointCloudReceiverDirect(common::KinectPointCloud::ConstPtr& pc)
-{
-    //TODO: Emit the signal
-}
-
-void LogicBridge::KinectRGBDReceiverFloatDirect(common::KinectRgbImage::Ptr rgb,
-                                                common::KinectFloatDepthImage depth)
-{
-    // Normally I should not register this.
-}
-
-void LogicBridge::KinectRGBDReveicerRawDirect(common::KinectRgbImage::Ptr rgb,
-                                              common::KinectRawDepthImage::Ptr depth)
-{
-    //Two chekcs, one to save, and one to emit signals
     if( mSavePath != "" )
     {
-        //TODO: Save kinect data
+        std::stringstream ssPartialFileName;
+        common::TimePoint t = common::Clock::now();
+        long nanosecs = common::Nanoseconds(t.time_since_epoch());
+        double save_time = (double)nanosecs * 10e-9;
+        boost::filesystem::path prgb(mSavePath.toStdString()), pdepth(mSavePath.toStdString());
+        prgb /= "rgb";
+        pdepth /= "depth";
+        
+        ssPartialFileName << std::fixed << std::setprecision(6);
+        ssPartialFileName << save_time;
+        
+        prgb /= ssPartialFileName.str() + ".png";
+        pdepth /= ssPartialFileName.str() + ".png";
+        
+        common::KinectImageDiskIO::SaveToFileRgb(prgb.string(), rgb);
+        common::KinectImageDiskIO::SaveToFileDepth(pdepth.string(), depth);
     }
     
-    if( mQtImageCreatorReceivers )
+    if( mNumKinectReceiversConnected && !mSkipPC.ShouldSkip() )
     {
-        QImage qrgb(rgb->GetWidth(), rgb->GetHeight(), QImage::Format_RGB32),
-               qdepth(depth->GetWidth(), depth->GetHeight(), QImage::Format_RGB32);
-        // Now fill the images
-        //NOTE: Assuming that the rgb and depth images have the same size
-        assert(rgb->GetHeight() == depth->GetHeight() &&
-                rgb->GetWidth() == depth->GetWidth());
-        
-        const common::KinectRgbImage::ArrayType& rgbArray = rgb->GetArray();
-        const common::KinectRawDepthImage::ArrayType& depthArray = depth->GetArray();
-        
-        //NOTE: It is probably more cache friendly if we do rgb and depth copies seperately.
-        for(int y = 0; y < rgb->GetHeight(); y++)
-        {
-            uchar* rgbPtr = qrgb.scanLine(y);
-            size_t idxRgb = rgb->ScanLineIndex(y);
-            for(int x = 0; x < rgb->GetWidth(); x++)
-            {
-                rgbPtr[0] = rgbArray[idxRgb];
-                rgbPtr[1] = rgbArray[idxRgb + 1];
-                rgbPtr[2] = rgbArray[idxRgb + 2];
-                rgbPtr[3] = 0xFF;
-                
-                idxRgb = common::KinectRgbImage::NexIndexUnsafe(idxRgb);
-                rgbPtr += 4;
-            }
-        }
-        
-        for(int y = 0; y < depth->GetHeight(); y++)
-        {
-            uchar* depthPtr = qdepth.scanLine(y);
-            size_t idxDepth = depth->ScanLineIndex(y);
-            for(int x = 0; x < depth->GetWidth(); x++)
-            {
-                depthPtr[0] = depthArray[idxDepth] / 10000 * 255;
-                depthPtr[1] = depthArray[idxDepth] / 10000 * 255;
-                depthPtr[2] = depthArray[idxDepth] / 10000 * 255;
-                depthPtr[3] = 0xFF;
-                
-                idxDepth = common::KinectRawDepthImage::NexIndexUnsafe(idxDepth);
-                depthPtr += 4;
-            }
-        }
-        
+        QImage qrgb, qdepth;
+        qrgb = Utils::ConvertToQImage(rgb);
+        qdepth = Utils::ConvertToQImage(depth);
         emit OnRGBD(qrgb, qdepth);
     }
+    
+    if( !mSkipPC.ShouldSkip() )
+        emit OnPointCloud(mEngine->GetKinectInterface()->GetPointCloud());
+}
+
+void LogicBridge::OnFovisCycleComplete()
+{
+    Eigen::Isometry3d motion = mEngine->GetVisualOdometryInterface()->GetMotionEstimate();
+    Eigen::Vector3d v = motion.translation();
+    emit OnVisualOdometry(QVector3D(v[0], v[1], v[2]));
 }
 
 

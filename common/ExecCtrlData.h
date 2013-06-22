@@ -74,7 +74,7 @@ public:
         bool            ViewOMPL;
     } GUI;
     
-    void                CheckConsistancy();
+    void                CheckConsistancy() const;
     
     void                EnableFovis(bool enable);
     void                EnableSAM(bool enable);
