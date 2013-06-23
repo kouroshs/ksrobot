@@ -71,8 +71,11 @@ public:
     virtual void                                RegisterToKinect(KinectInterface::Ptr ki);
     virtual bool                                Converged() = 0;
     virtual float                               GetConvergenceError() = 0;
+
+    virtual void                                ReadSettings(ProgramOptions::Ptr po);
+    virtual void                                WriteSettings(ProgramOptions::Ptr po);
     
-    virtual bool                                IsThisCycleKeyframe() = 0;
+    inline  bool                                IsThisCycleKeyframe() const;
     
     //NOTE: Important! must be called from children!
     virtual bool                                RunSingleCycle();
@@ -91,9 +94,11 @@ public:
 
     inline boost::signals2::connection          RegisterKeyframeReceiver(boost::function<void()> fn);
 protected:
+    void                                        ProjectToGround();
     void                                        NotifyKeyframeReceivers();
     // For VO, this function should be called after a motion estimate is calculated. 
     // It will update internal values such as global pose.
+    virtual void                                CheckForKeyframe();
     virtual void                                FinishCycle();
 protected:
     KinectInterface::Ptr                        mKinect;
@@ -104,6 +109,11 @@ protected:
     KeypointVector                              mKeypoints;
     
     int                                         mLastKinectCycle;
+    double                                      mMaxKeyframesDist;
+    double                                      mMaxKeyframesAngle;
+    double                                      mRobotHeight;
+    bool                                        mIsCycleKeyframe;
+    bool                                        mProjectOnGround;
     
     KinectPointCloud::ConstPtr                  mCurrPointCloud;
     KinectRgbImage::ConstPtr                    mCurrRgb;
@@ -164,6 +174,10 @@ boost::signals2::connection VisualOdometryInterface::RegisterKeyframeReceiver(bo
     return mKeypointReceivers.connect(fn);
 }
 
+inline bool VisualOdometryInterface::IsThisCycleKeyframe() const
+{
+    return mIsCycleKeyframe;
+}
 
 } // end namespace common
 } // end namespace KSRobot

@@ -78,11 +78,6 @@ bool ICPInterface::RunSingleCycle()
     return true;
 }
 
-bool ICPInterface::IsThisCycleKeyframe()
-{
-    return true; // for now. //TODO: Change this later. // and possibly move it to visual odometry class
-}
-
 void ICPInterface::SetWithNormals(bool b)
 {
 //     typedef pcl::IterativeClosestPointWithNormals<pcl::PointXYZRGBA, pcl::PointXYZRGBA>  ICPNormalsType;

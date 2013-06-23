@@ -41,9 +41,13 @@ public:
 
     virtual bool        Converged();
     virtual float       GetConvergenceError();
-    virtual bool        IsThisCycleKeyframe();
+    
     virtual bool        RunSingleCycle();
 protected:
+    
+    virtual void        CheckForKeyframe();
+protected:
+    
     class FovisImpl;
     boost::shared_ptr<FovisImpl>                mImpl;
 

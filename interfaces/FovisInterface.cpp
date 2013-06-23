@@ -148,20 +148,14 @@ float FovisInterface::GetConvergenceError()
 #define M_PI 3.14159265358979323846
 #endif//M_PI
 
-bool FovisInterface::IsThisCycleKeyframe()
+void FovisInterface::CheckForKeyframe()
 {
-    return true;
+    VisualOdometryInterface::CheckForKeyframe();
+    if( mIsCycleKeyframe )
+        return; // no need to check anymore.
+    
     if( mImpl->mFovis->getChangeReferenceFrames() )
-        return true;
-    //TODO: Make these parameters, possibly inside ProgramOptions?
-    const double tolTrans = 1.0; // Translation tolerance
-    const double tolAngle = 30.0 * M_PI / 180.0;
-    if( mCurrRelativeMotion.translation().squaredNorm() > tolTrans )
-        return true;
-    
-    //TODO: Implement rotational key frames.
-    
-    return false;
+        mIsCycleKeyframe = true; // TODO: Should I make this cycle keyframe or the next one?
 }
 
 

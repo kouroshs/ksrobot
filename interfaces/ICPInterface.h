@@ -41,7 +41,6 @@ public:
     //virtual void                RegisterToKinect(common::KinectInterface::Ptr ki);
     virtual bool                        Converged();
     virtual float                       GetConvergenceError();
-    virtual bool                        IsThisCycleKeyframe();
     
     virtual bool                        RunSingleCycle();
     
