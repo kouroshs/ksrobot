@@ -155,7 +155,7 @@ void FovisInterface::CheckForKeyframe()
         return; // no need to check anymore.
     
     if( mImpl->mFovis->getChangeReferenceFrames() )
-        mIsCycleKeyframe = true; // TODO: Should I make this cycle keyframe or the next one?
+        mIsCycleKeyframe = true; // TODO: Should I make this cycle keyframe or the next one? does it really matter?
 }
 
 

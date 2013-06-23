@@ -70,7 +70,6 @@ bool ICPInterface::RunSingleCycle()
     mOdomTimer->Start();
         mImpl->ICP.align(mAlignedCloud);
         mMotionEstimate = mImpl->ICP.getFinalTransformation().cast<double>();
-        mGlobalPose = mGlobalPose * mMotionEstimate;            
     mOdomTimer->Stop();
     
     FinishCycle();

@@ -39,8 +39,9 @@ VisualOdometryInterface::VisualOdometryInterface(const std::string& name): Inter
     mIsCycleKeyframe(true), // first cycle is always keyframe
     mLastKinectCycle(-1), mOdomTimer(new Timer("Odometry time"))
 {
-    mGlobalPose.translation()[1] = mRobotHeight;
     RegisterTimer(mOdomTimer);
+    if( mProjectOnGround )
+        mGlobalPose.translation()[1] = mRobotHeight;
 }
 
 VisualOdometryInterface::~VisualOdometryInterface()
@@ -136,9 +137,7 @@ void VisualOdometryInterface::ProjectToGround()
 //     mCurrRelativeMotion = newTrans;
     mCurrRelativeMotion.translation()[1] = 0; // Set change in this direction to zero
     double tetha = ExtractRotationAngle(mCurrRelativeMotion.rotation());
-    mCurrRelativeMotion.linear() = Eigen::AngleAxisd(tetha, Eigen::Vector3d::UnitY()).toRotationMatrix();
-    
-    
+    mCurrRelativeMotion.linear() = Eigen::AngleAxisd(tetha, Eigen::Vector3d::UnitY()).toRotationMatrix(); 
 }
 
 void VisualOdometryInterface::CheckForKeyframe()
