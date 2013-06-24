@@ -73,8 +73,7 @@ private:
                                                  std::vector<double>&   timeStamps,
                                                  std::vector<std::string>& filelist     );
     
-    void                ReadGroundTruthData     (std::ifstream& file,
-                                                 std::vector<GroundTruthInfo>& gtInfo   );
+    void                ReadGroundTruthData     (std::ifstream& file                    );
     
     void                CorrespondRGBDIndices   (                                       );
     void                CorrespondGroundTruth   (                                       );
@@ -83,7 +82,9 @@ private:
 private:
     FileList                                    mRGBFiles;
     FileList                                    mDepthFiles;
-    std::vector<GroundTruthInfo>                mGroundTruth;
+    
+    typedef std::vector<GroundTruthInfo, Eigen::aligned_allocator<GroundTruthInfo> > GroundTruthArray;
+    GroundTruthArray                            mGroundTruth;
     
     int                                         mPerCycleSleep;
     int                                         mTotalTime;

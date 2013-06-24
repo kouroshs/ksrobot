@@ -22,6 +22,7 @@
 #include <interfaces/KinectDatasetReader.h>
 #include <interfaces/KinectDeviceReader.h>
 #include <interfaces/FovisInterface.h>
+#include <interfaces/ICPInterface.h>
 
 namespace KSRobot
 {
@@ -53,6 +54,7 @@ void MTEngine::Initialize()
     
     //NOTE: ICP visual odometry is only for testing, so there is no need to implement differently
     mVO.reset(new FovisInterface("Fovis"));
+    //mVO.reset(new ICPInterface("ICP"));
     mVO->RegisterToKinect(mKinect);
     
     //Set HZ

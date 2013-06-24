@@ -28,25 +28,27 @@ int main(int argc, char** argv)
     KinectDatasetReader::Ptr kinect(new KinectDatasetReader("kinect"));
     FovisInterface::Ptr fovis(new FovisInterface("Fovis"));
     MappingInterface::Ptr map(new MappingInterface("OctoMap"));
+    
+    fovis->ReadSettings(settings->StartNode("FovisInterface"));
     map->ReadSettings(settings->StartNode("MappingInterface"));
 
     kinect->Initialize("/windows/E/Datasets/rgbd_dataset_freiburg2_pioneer_slam/");
     fovis->RegisterToKinect(kinect);
-    map->RegisterToVO(fovis);
-    
+// //     map->RegisterToVO(fovis);
+//     
     int maxCount = settings->GetInt("Cycles", 10);
     
     for(int i = 0; i < maxCount; i++)
     {
         kinect->RunSingleCycle();
         fovis->RunSingleCycle();
-        map->RunSingleCycle();
+        //map->RunSingleCycle();
         cout << "Cycle " << kinect->GetCycle() << "  " << fovis->GetCycle() <<
             "  " << map->GetCycle() << std::endl;
     }
-    settings->SaveToFile("settings.xml");
-    
-    map->SaveMapToFile("/home/kourosh/map.ot");
+//     //settings->SaveToFile("settings.xml");
+//     
+//     map->SaveMapToFile("/home/kourosh/map.ot");
     
  /*   
     kinect->WriteRunningTimes(cout);

@@ -20,6 +20,7 @@
 
 #include <interfaces/FovisInterface.h>
 #include <math.h>
+#include <limits>
 #include <fovis/visual_odometry.hpp>
 #include <fovis/depth_image.hpp>
 
@@ -104,7 +105,15 @@ bool FovisInterface::RunSingleCycle()
     
     mDataCopyTimer->Start();
     
-    mImpl->mDepthImage->setDepthImage(mKinect->GetFloatDepthImage()->GetArray().data());
+    common::KinectFloatDepthImage::ArrayType depth_array = mKinect->GetFloatDepthImage()->GetArray();
+    for(size_t i = 0; i < depth_array.size(); i++)
+    {
+        if( depth_array[i] == 0 )
+            depth_array[i] = std::numeric_limits<float>::quiet_NaN();
+        else
+            depth_array[i] *= 1;
+    }
+    mImpl->mDepthImage->setDepthImage(depth_array.data());
     
     common::KinectRgbImage::ConstPtr rgb = mKinect->GetRgbImage();
     size_t size = rgb->GetHeight() * rgb->GetWidth();
@@ -125,9 +134,13 @@ bool FovisInterface::RunSingleCycle()
 
     mOdomTimer->Start();
         mImpl->mFovis->processFrame(mImpl->mGrayImage, mImpl->mDepthImage);
-        mMotionEstimate = mImpl->mFovis->getMotionEstimate();
-        //mGlobalPose = mImpl->mFovis->getPose();
+        //mMotionEstimate = mImpl->mFovis->getMotionEstimate();
+        mMotion->MotionEstimate = mImpl->mFovis->getMotionEstimate();
     mOdomTimer->Stop();
+    
+    std::cout << "FOVIS POSE = \n" << mImpl->mFovis->getPose().translation() << std::endl;
+    std::cout << "GT: " << mKinect->GetCurrentGroundTruth().translation() << std::endl;
+    std::cout << "STATUS: " << fovis::MotionEstimateStatusCodeStrings[mImpl->mFovis->getMotionEstimateStatus()] << std::endl << std::flush;
     
     FinishCycle();
     

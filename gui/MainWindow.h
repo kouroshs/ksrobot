@@ -52,10 +52,11 @@ public:
     
 private slots:
     void                                ToggleAction(bool);
+    void                                ToggleRGBD(bool);
+    void                                TogglePointCloud(bool);
     void                                About();
     
     void                                OnLogicError(const QString& str);
-    void                                OnRGBD(QImage rgb, QImage depth);
 private:
     void                                CreateActions();
     void                                CreateMenus();
@@ -68,7 +69,7 @@ private:
     
     void                                Cleanup();
     
-    void                                InitMdiSubWindow(QMdiSubWindow* wnd, const QString& title, QAction* act);
+    void                                InitMdiSubWindow(QMdiSubWindow* wnd, const QString& title, QAction* act, bool addToList = true);
     void                                SaveMdiSubWindow(QMdiSubWindow* wnd);
     void                                InitCheckableAction(QAction* act, const QString& top);
     void                                SaveCheckableAction(QAction* act);
@@ -82,11 +83,9 @@ protected:
 private:
     // Actions
     QAction*                            mActQuit;
-    QAction*                            mActDepthView;
-    QAction*                            mActRgbView;
+    QAction*                            mActRGBDView;
     QAction*                            mActLogView;
     QAction*                            mActPointCloud;
-    QAction*                            mActMapView;
     QAction*                            mActExecControlView;
     QAction*                            mActStatistics;
     
@@ -104,17 +103,14 @@ private:
     // MDI area
     QMdiArea*                           mMdiArea;
     //MDI Windows
-    QMdiSubWindow*                      mMdiRgbView;
-    QMdiSubWindow*                      mMdiDepthView;
+    QMdiSubWindow*                      mMdiRGBDView;
     QMdiSubWindow*                      mMdiLogView;
     QMdiSubWindow*                      mMdiPointCloud;
-    QMdiSubWindow*                      mMdiMapView;
     QMdiSubWindow*                      mMdiExecController;
     QMdiSubWindow*                      mMdiStatisticsContainer;
     
     LogContainer*                       mLogContainer;
-    ImageContainer*                     mRgbContainer;
-    ImageContainer*                     mDepthContainer;
+    ImageContainer*                     mRGBDContainer;
     PointCloudViewer*                   mPCViewer;
     
     ExecutionControl*                   mExecControl;

@@ -93,14 +93,22 @@ void MainWindow::SetupLogic()
     connect(mExecControl, SIGNAL(OnStart(common::ExecCtrlData)), mLogic, SLOT(OnStart(common::ExecCtrlData)));
     connect(mExecControl, SIGNAL(OnStop()), mLogic, SLOT(OnStop()));
     connect(mLogic, SIGNAL(OnError(QString)), this, SLOT(OnLogicError(QString)), Qt::QueuedConnection);
-//     connect(mLogic, SIGNAL(OnPointCloud(common::KinectPointCloud::ConstPtr)), 
-//             mPCViewer, SLOT(UpdataPointCloud(common::KinectPointCloud::ConstPtr)), Qt::QueuedConnection);
-    connect(mLogic, SIGNAL(OnRGBD(QImage,QImage)), this, SLOT(OnRGBD(QImage,QImage)), Qt::QueuedConnection);
+    connect(mLogic, SIGNAL(OnPointCloud(common::KinectPointCloud::ConstPtr)), 
+            mPCViewer, SLOT(UpdataPointCloud(common::KinectPointCloud::ConstPtr)), Qt::QueuedConnection);
+    connect(mLogic, SIGNAL(OnRGBD(QImage,QImage)), mRGBDContainer, SLOT(OnRGBD(QImage,QImage)), Qt::QueuedConnection);
+
+    mLogic->EnablePointCloud(mActPointCloud->isChecked());
+    mLogic->EnableRGBD(mActRGBDView->isChecked());
 }
 
 std::string MainWindow::GetChildObjName(QObject* obj) const
 {
-    return (obj->objectName()).toStdString();
+    // removing the 'm' in start of them
+    const QString& name = obj->objectName();
+    if( name.startsWith('m') )
+        return name.right(name.length() - 1).toStdString();
+    else
+        return name.toStdString();
 }
 
 void MainWindow::CreateActions()
@@ -114,21 +122,13 @@ void MainWindow::CreateActions()
     SET_QTOBJECTNAME(mActPointCloud);
     InitCheckableAction(mActPointCloud, tr("Shows the current point cloud"));
     
-    mActDepthView = new QAction(tr("View Depth"), this);
-    SET_QTOBJECTNAME(mActDepthView);
-    InitCheckableAction(mActDepthView, tr("Shows the current depth image"));
-    
     mActLogView = new QAction(tr("View Logs"), this);
     SET_QTOBJECTNAME(mActLogView);
     InitCheckableAction(mActLogView, tr("Shows logs window"));
     
-    mActMapView = new QAction(tr("View Map"), this);
-    SET_QTOBJECTNAME(mActMapView);
-    InitCheckableAction(mActMapView, tr("Shows the current created map"));
-    
-    mActRgbView = new QAction(tr("View RGB"), this);
-    SET_QTOBJECTNAME(mActRgbView);
-    InitCheckableAction(mActRgbView, tr("Shows current RGB image"));
+    mActRGBDView = new QAction(tr("View RGBD"), this);
+    SET_QTOBJECTNAME(mActRGBDView);
+    InitCheckableAction(mActRGBDView, tr("Shows current RGB image"));
     
     mActExecControlView = new QAction(tr("Execution Controller"), this);
     SET_QTOBJECTNAME(mActExecControlView);
@@ -153,11 +153,9 @@ void MainWindow::CreateMenus()
     // Windows menu
     mMenuWindows = menuBar()->addMenu(tr("Windows"));
     SET_QTOBJECTNAME(mMenuWindows);
-    mMenuWindows->addAction(mActRgbView);
-    mMenuWindows->addAction(mActDepthView);
+    mMenuWindows->addAction(mActRGBDView);
     mMenuWindows->addAction(mActLogView);
     mMenuWindows->addAction(mActPointCloud);
-    mMenuWindows->addAction(mActMapView);
     mMenuWindows->addAction(mActExecControlView);
     
     // Help menu
@@ -197,11 +195,9 @@ void MainWindow::CreateToolbars()
     
     mToolbarWindows = addToolBar(tr("Windows"));
     SET_QTOBJECTNAME(mToolbarWindows);
-    mToolbarWindows->addAction(mActRgbView);
-    mToolbarWindows->addAction(mActDepthView);
+    mToolbarWindows->addAction(mActRGBDView);
     mToolbarWindows->addAction(mActLogView);
     mToolbarWindows->addAction(mActPointCloud);
-    mToolbarWindows->addAction(mActMapView);
     mToolbarWindows->addAction(mActExecControlView);
 }
 
@@ -218,13 +214,9 @@ void MainWindow::SetupUI()
     SET_QTOBJECTNAME(mLogContainer);
     InitControl(mLogContainer);
 
-    mRgbContainer = new ImageContainer(this);
-    SET_QTOBJECTNAME(mRgbContainer);
-    InitControl(mRgbContainer);
-    
-    mDepthContainer = new ImageContainer(this);
-    SET_QTOBJECTNAME(mDepthContainer);
-    InitControl(mDepthContainer);
+    mRGBDContainer = new ImageContainer(this);
+    SET_QTOBJECTNAME(mRGBDContainer);
+    InitControl(mRGBDContainer);
     
     mExecControl = new ExecutionControl(this);
     SET_QTOBJECTNAME(mExecControl);
@@ -238,33 +230,23 @@ void MainWindow::SetupUI()
     SET_QTOBJECTNAME(mPCViewer);
     mPCViewer->setAttribute(Qt::WA_DeleteOnClose, false);
     
-    qDebug() << "(MainWindow::SetupUI) No containers for PointCloud and map.";
-    
     Qt::WindowFlags flags = Qt::Window | Qt::WindowMinimizeButtonHint | 
             Qt::WindowCloseButtonHint | Qt::WindowSystemMenuHint;
 
     Qt::WindowFlags imageViewFlags = Qt::Window | Qt::WindowMinimizeButtonHint |
             Qt::WindowCloseButtonHint | Qt::WindowSystemMenuHint;
     // Create MDI windows
-    mMdiRgbView = mMdiArea->addSubWindow(mRgbContainer, imageViewFlags);
-    SET_QTOBJECTNAME(mMdiRgbView);
-    InitMdiSubWindow(mMdiRgbView, tr("RGB Viewer"), mActRgbView);
-    
-    mMdiDepthView = mMdiArea->addSubWindow(mDepthContainer, imageViewFlags);
-    SET_QTOBJECTNAME(mMdiDepthView);
-    InitMdiSubWindow(mMdiDepthView, tr("Depth Viewer"), mActDepthView);
+    mMdiRGBDView = mMdiArea->addSubWindow(mRGBDContainer, flags);
+    SET_QTOBJECTNAME(mMdiRGBDView);
+    InitMdiSubWindow(mMdiRGBDView, tr("RGBD Viewer"), mActRGBDView, false);
     
     mMdiLogView = mMdiArea->addSubWindow(mLogContainer, flags);
     SET_QTOBJECTNAME(mMdiLogView);
     InitMdiSubWindow(mMdiLogView, tr("Log Viewer"), mActLogView);
 
-    mMdiMapView = mMdiArea->addSubWindow(new QLabel("MapView", this));
-    SET_QTOBJECTNAME(mMdiMapView);
-    InitMdiSubWindow(mMdiMapView, tr("Map Viewer"), mActMapView);
-    
     mMdiPointCloud = mMdiArea->addSubWindow(mPCViewer);
     SET_QTOBJECTNAME(mMdiPointCloud);
-    InitMdiSubWindow(mMdiPointCloud, tr("PointCloud Viewer"), mActPointCloud);
+    InitMdiSubWindow(mMdiPointCloud, tr("PointCloud Viewer"), mActPointCloud, false);
     
     mMdiExecController = mMdiArea->addSubWindow(mExecControl, imageViewFlags);
     SET_QTOBJECTNAME(mMdiExecController);
@@ -275,7 +257,7 @@ void MainWindow::SetupUI()
     InitMdiSubWindow(mMdiStatisticsContainer, tr("Statistics"), mActStatistics);
 }
 
-void MainWindow::InitMdiSubWindow(QMdiSubWindow* wnd, const QString& title, QAction* act)
+void MainWindow::InitMdiSubWindow(QMdiSubWindow* wnd, const QString& title, QAction* act, bool addToList)
 {
     ProgramOptions::Ptr wndpo = mGuiPO->StartNode(GetChildObjName(wnd));
     wnd->installEventFilter(this);
@@ -293,7 +275,8 @@ void MainWindow::InitMdiSubWindow(QMdiSubWindow* wnd, const QString& title, QAct
     if( act )
     {
         act->isChecked() ? wnd->show() : wnd->hide();
-        mWidActMap.insert(WidgetActionMap::value_type(wnd, act));
+        if( addToList )
+            mWidActMap.insert(WidgetActionMap::value_type(wnd, act));
     }
 }
 
@@ -303,7 +286,13 @@ void MainWindow::InitCheckableAction(QAction* act, const QString& tip)
     act->setCheckable(true);
     //act->setChecked(mGuiPO->GetBool((objectName() + "." + act->objectName()).toStdString() + ".Checked", true));
     act->setChecked(mGuiPO->GetBool(GetChildObjName(act) + ".Checked", true));
-    connect(act, SIGNAL(triggered(bool)), this, SLOT(ToggleAction(bool)));
+    
+    if( act == mActRGBDView )
+        connect(act, SIGNAL(triggered(bool)), this, SLOT(ToggleRGBD(bool)));
+    else if( act == mActPointCloud )
+        connect(act, SIGNAL(triggered(bool)), this, SLOT(TogglePointCloud(bool)));
+    else
+        connect(act, SIGNAL(triggered(bool)), this, SLOT(ToggleAction(bool)));
 }
 
 void MainWindow::SaveMdiSubWindow(QMdiSubWindow* wnd)
@@ -331,6 +320,18 @@ void MainWindow::ToggleAction(bool bShow)
     mGuiPO->PutBool(GetChildObjName(wid) + ".Checked", bShow);
 }
 
+void MainWindow::ToggleRGBD(bool bShow)
+{
+    bShow ? mMdiRGBDView->show() : mMdiRGBDView->hide();
+    mLogic->EnableRGBD(bShow);
+}
+
+void MainWindow::TogglePointCloud(bool bShow)
+{
+    bShow ? mMdiPointCloud->show() : mMdiPointCloud->hide();
+    mLogic->EnablePointCloud(bShow);
+}
+
 void MainWindow::About()
 {
     QMessageBox::about(this, tr("About KSRobot"), tr("This program is designed and implemented by Kourosh Sartipi\n" 
@@ -347,29 +348,43 @@ void MainWindow::Cleanup()
 {
 }
 
-void MainWindow::OnRGBD(QImage rgb, QImage depth)
-{
-    mRgbContainer->DrawImage(rgb);
-    mDepthContainer->DrawImage(depth);
-}
-
-
 bool MainWindow::eventFilter(QObject* obj, QEvent* event)
 {
     // Check if any window has been closed, if yes, toggle the corresponding action
     if( event->type() == QEvent::Close && obj->isWidgetType() )
     {
-        WidgetActionMap::left_const_iterator iter = mWidActMap.left.find(static_cast<QWidget*>(obj));
-        if( iter != mWidActMap.left.end() )
+        if( obj == mMdiPointCloud )
         {
-            QAction* act = iter->second;
-            bool oldVal = act->blockSignals(true);
-            act->setChecked(false);
-            act->blockSignals(oldVal);
-            static_cast<QWidget*>(obj)->hide();
+            mLogic->EnablePointCloud(false);
+            bool oldVal = mActRGBDView->blockSignals(true);
+            mActRGBDView->setChecked(false);
+            mActRGBDView->blockSignals(oldVal);
             event->ignore();
-            
             return true;
+        }
+        else if( obj == mMdiRGBDView )
+        {
+            mLogic->EnableRGBD(false);
+            bool oldVal = mActPointCloud->blockSignals(true);
+            mActPointCloud->setChecked(false);
+            mActPointCloud->blockSignals(oldVal);
+            event->ignore();
+            return true;
+        }
+        else
+        {
+            WidgetActionMap::left_const_iterator iter = mWidActMap.left.find(static_cast<QWidget*>(obj));
+            if( iter != mWidActMap.left.end() )
+            {
+                QAction* act = iter->second;
+                bool oldVal = act->blockSignals(true);
+                act->setChecked(false);
+                act->blockSignals(oldVal);
+                static_cast<QWidget*>(obj)->hide();
+                event->ignore();
+                
+                return true;
+            }
         }
     }
     return QMainWindow::eventFilter(obj, event);
@@ -378,24 +393,17 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* event)
 void MainWindow::closeEvent(QCloseEvent* event)
 {
     // Save settings here!
-    std::cout << "MainWindow::closeEvent\n" << std::flush;
     mLogic->OnStop();
-    std::cout << "mLogic->OnStop\n" << std::flush;
     
-    SaveCheckableAction(mActRgbView);
-    SaveCheckableAction(mActDepthView);
+    SaveCheckableAction(mActRGBDView);
     SaveCheckableAction(mActExecControlView);
     SaveCheckableAction(mActLogView);
-    SaveCheckableAction(mActMapView);
     SaveCheckableAction(mActPointCloud);
     
     SaveMdiSubWindow(mMdiStatisticsContainer);
-    SaveMdiSubWindow(mMdiDepthView);
     SaveMdiSubWindow(mMdiExecController);
     SaveMdiSubWindow(mMdiLogView);
-    SaveMdiSubWindow(mMdiMapView);
     SaveMdiSubWindow(mMdiPointCloud);
-    SaveMdiSubWindow(mMdiRgbView);
 
     QWidget::closeEvent(event);
 }

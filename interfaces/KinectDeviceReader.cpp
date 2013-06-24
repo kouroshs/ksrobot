@@ -1,6 +1,7 @@
 #include <interfaces/KinectDeviceReader.h>
 #include <iostream>
 #include <pcl/io/openni_grabber.h>
+#include <limits>
 
 namespace KSRobot
 {
@@ -77,8 +78,7 @@ void KinectDeviceReader::RGBDCallback(const boost::shared_ptr<openni_wrapper::Im
     rgb->fillRGB(rgb->getHeight(), rgb->getWidth(), mRgb->GetArray().data());
     //depth->fillDepthImage(depth->getHeight(), depth->getWidth(), mFloatDepth->GetArray().data());
     depth->fillDepthImageRaw(depth->getHeight(), depth->getWidth(), mRawDepth->GetArray().data());
-    for(size_t i = 0; i < depth->getWidth() * depth->getHeight(); i++)
-        mFloatDepth->GetArray()[i] = mRawDepth->GetArray()[i] / 1000.0f; // convert to mters.
+    depth->fillDepthImage(depth->getHeight(), depth->getWidth(), mFloatDepth->GetArray().data());
     
     mPC = mGrabber->GeneratePC(rgb, depth);
     

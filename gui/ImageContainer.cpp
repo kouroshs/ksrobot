@@ -22,7 +22,7 @@ void ImageContainer::InitControl(KSRobot::common::ProgramOptions::Ptr po)
 
 QSize ImageContainer::minimumSizeHint() const
 {
-    return QSize(320, 240);
+    return QSize(320 * 2, 240);
 }
 
 QSize ImageContainer::sizeHint() const
@@ -30,15 +30,20 @@ QSize ImageContainer::sizeHint() const
     return minimumSizeHint();
 }
 
-void ImageContainer::DrawImage(const QImage& img)
+void ImageContainer::OnRGBD(const QImage& rgb, const QImage& depth)
 {
-    mImage = img;
+    mRgb = rgb;
+    mDepth = depth;
     update();
 }
 
 void ImageContainer::paintEvent(QPaintEvent* evt)
 {
     QWidget::paintEvent(evt);
+    
     QPainter p(this);
-    p.drawImage(rect(), mImage, mImage.rect());
+    int w = width();
+    int h = height();
+    p.drawImage(QRect(0, 0, w / 2, h), mRgb, mRgb.rect());
+    p.drawImage(QRect(w / 2 + 1, 0, w / 2, h), mDepth, mDepth.rect());
 }

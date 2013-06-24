@@ -9,15 +9,16 @@ namespace KSRobot
 namespace common
 {
 
-template<class X, int NumChannels, class Allocator = std::allocator<X> >
+template<typename X, int NumChannels, typename Allocator = std::allocator<X> >
 class KinectBaseImage
 {
-private:
-    typedef KinectBaseImage<X, NumChannels>             ThisType;
 public:
+    typedef X                                           BaseDataType;
+    typedef Allocator                                   AllocatorType;
+    typedef KinectBaseImage<X, NumChannels>             ThisType;
     typedef typename boost::shared_ptr<ThisType>        Ptr;
     typedef typename boost::shared_ptr<const ThisType>  ConstPtr;
-    typedef typename std::vector<X, Allocator >                     ArrayType;
+    typedef typename std::vector<X, Allocator >         ArrayType;
     
     static const int Channels = NumChannels;
 public:

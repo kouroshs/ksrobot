@@ -101,11 +101,22 @@ protected:
     virtual void                                CheckForKeyframe();
     virtual void                                FinishCycle();
 protected:
+    struct MotionInfo
+    {
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+        Eigen::Isometry3d                       MotionEstimate;
+        Eigen::Isometry3d                       CurrRelativeMotion;
+        Eigen::Isometry3d                       GlobalPose;
+        Eigen::Isometry3d                       LastKeypointPose;
+    };
+    
+    MotionInfo*                                 mMotion;
+    
     KinectInterface::Ptr                        mKinect;
-    Eigen::Isometry3d                           mMotionEstimate;
-    Eigen::Isometry3d                           mCurrRelativeMotion;
-    Eigen::Isometry3d                           mGlobalPose;
-    Eigen::Isometry3d                           mLastKeypointPose;
+//     Eigen::Isometry3d                           mMotionEstimate;
+//     Eigen::Isometry3d                           mCurrRelativeMotion;
+//     Eigen::Isometry3d                           mGlobalPose;
+//     Eigen::Isometry3d                           mLastKeypointPose;
     KeypointVector                              mKeypoints;
     
     int                                         mLastKinectCycle;
@@ -126,12 +137,14 @@ protected:
 
 inline Eigen::Isometry3d VisualOdometryInterface::GetMotionEstimate() const
 {
-    return mMotionEstimate;
+    //return mMotionEstimate;
+    return mMotion->MotionEstimate;
 }
 
 inline Eigen::Isometry3d VisualOdometryInterface::GetCurrRelativeMotion() const
 {
-    return mCurrRelativeMotion;
+    //return mCurrRelativeMotion;
+    return mMotion->CurrRelativeMotion;
 }
 
 inline const VisualOdometryInterface::KeypointVector& VisualOdometryInterface::GetKeypointRelativeMotion() const
@@ -146,7 +159,8 @@ inline KinectInterface::Ptr VisualOdometryInterface::GetKinect() const
 
 inline Eigen::Isometry3d VisualOdometryInterface::GetGlobalPose() const
 {
-    return mGlobalPose;
+    //return mGlobalPose;
+    return mMotion->GlobalPose;
 }
 
 inline KinectFloatDepthImage::ConstPtr VisualOdometryInterface::GetCurrentFloatDepthImage() const

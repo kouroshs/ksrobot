@@ -4,6 +4,7 @@
 #include <gui/KWidgetBase.h>
 #include <common/ProgramOptions.h>
 #include <QImage>
+#include <boost/graph/graph_concepts.hpp>
 
 namespace KSRobot
 {
@@ -21,12 +22,14 @@ public:
     
     virtual QSize       minimumSizeHint() const;
     virtual QSize       sizeHint() const;
-    
-    void                DrawImage(const QImage& img);
+
+public slots:    
+    void                OnRGBD(const QImage& rgb, const QImage& depth);
 protected:
     virtual void        paintEvent(QPaintEvent* evt);
     
-    QImage              mImage;
+    QImage              mRgb;
+    QImage              mDepth;
 };
 
 } // end namespace gui

@@ -59,7 +59,7 @@ void KinectDatasetReader::Initialize(const std::string& pathStr)
 
     // Now read the ground truth data.
     ifstream gtFile(gtPath.string().c_str(), ios::in);
-    ReadGroundTruthData(gtFile, mGroundTruth);
+    ReadGroundTruthData(gtFile);
     gtFile.close();
     // Now check which indexes correspond together
     CorrespondRGBDIndices();
@@ -82,7 +82,7 @@ void KinectDatasetReader::MoveGroundTruthsToOrigin()
     origin = origin.inverse();
     
     for(size_t i = 0; i < mGroundTruth.size(); i++)
-        mGroundTruth[i].LocalTransform = mGroundTruth[i].LocalTransform * origin;
+        mGroundTruth[i].LocalTransform = origin * mGroundTruth[i].LocalTransform;
 }
 
 void KinectDatasetReader::ReadIndexFile(ifstream& file, const fs::path& fullPath,
@@ -113,10 +113,9 @@ void KinectDatasetReader::ReadIndexFile(ifstream& file, const fs::path& fullPath
     }
 }
 
-void KinectDatasetReader::ReadGroundTruthData(ifstream& file,
-        vector< KinectDatasetReader::GroundTruthInfo >& gtInfo)
+void KinectDatasetReader::ReadGroundTruthData(ifstream& file)
 {
-    gtInfo.clear();
+    mGroundTruth.clear();
     string line;
     std::vector<std::string> strs;
     while( !file.eof() )
@@ -141,7 +140,6 @@ void KinectDatasetReader::ReadGroundTruthData(ifstream& file,
         
         gt.TimeStamp = lexical_cast<double>(strs[0]);
         
-        
         for(int i = 0; i < 3; i++)
             vect[i] = lexical_cast<double>(strs[i + 1]);
 
@@ -152,10 +150,11 @@ void KinectDatasetReader::ReadGroundTruthData(ifstream& file,
                                   lexical_cast<double>(strs[6]));
 
         gt.LocalTransform.setIdentity();
-        gt.LocalTransform.rotate(rot);
+        // This ordering is necessary to get correct results.
         gt.LocalTransform.translate(vect);
+        gt.LocalTransform.rotate(rot);
         
-        gtInfo.push_back(gt);
+        mGroundTruth.push_back(gt);
     }
 }
 
@@ -285,7 +284,7 @@ void KinectDatasetReader::CorrespondGroundTruth()
     }
 
     // I dont have time to optimize this code, should be done by using list instead of vector. probably!
-    std::vector<GroundTruthInfo> gtInfoList;
+    GroundTruthArray gtInfoList;
     FileList rgb;
     FileList dp;
 
@@ -305,7 +304,7 @@ void KinectDatasetReader::CorrespondGroundTruth()
 
 bool KinectDatasetReader::RunSingleCycle()
 {
-    if( GetCycle() >= mRGBFiles.FileNames.size() )
+    if( GetCycle() >= (int)mRGBFiles.FileNames.size() )
     {
         mContinueExec.store(false); // finish execution of kinect.
         return false;
@@ -314,7 +313,7 @@ bool KinectDatasetReader::RunSingleCycle()
     LockData();
         LoadNextFiles();
     UnlockData();
-    IncrementCycle();
+    FinishCycle();
     return true;
 }
 
@@ -328,9 +327,17 @@ void KinectDatasetReader::LoadNextFiles()
     mFloatDepth.reset(new common::KinectFloatDepthImage);
     mFloatDepth->Create(mRawDepth->GetWidth(), mRawDepth->GetHeight());
     
-    for(int i = 0; i < mRawDepth->GetNumElements(); i++)
-        mFloatDepth->GetArray()[i] = mRawDepth->GetArray()[i] / 1000.0f;
-    
+    //Generating float depth requires more work.
+    const float bad_point = std::numeric_limits<float>::quiet_NaN();
+    const common::KinectRawDepthImage::ArrayType& raw_array = mRawDepth->GetArray();
+    common::KinectFloatDepthImage::ArrayType& float_array = mFloatDepth->GetArray();
+    for(size_t i = 0; i < float_array.size(); i++)
+    {
+        if( raw_array[i] == 0 )
+            float_array[i] = bad_point;
+        else
+            float_array[i] = raw_array[i] * 0.001f; // Convert to meters
+    }
     mTimerLoadTimes->Stop();
     
     mTimerPCGenerator->Start();

@@ -30,22 +30,26 @@ namespace common
 {
 
 VisualOdometryInterface::VisualOdometryInterface(const std::string& name): Interface(name),
-    mMotionEstimate(Eigen::Isometry3d::Identity()), mCurrRelativeMotion(Eigen::Isometry3d::Identity()),
-    mLastKeypointPose(Eigen::Isometry3d::Identity()),
+//     mMotionEstimate(Eigen::Isometry3d::Identity()), 
+//     mCurrRelativeMotion(Eigen::Isometry3d::Identity()),
+//     mLastKeypointPose(Eigen::Isometry3d::Identity()),
     mMaxKeyframesDist(DEFAULT_KEYFRAMES_DIST),
     mMaxKeyframesAngle(DEFAULT_KEYFRAMES_ANGLE),
     mRobotHeight(DEFAULT_ROBOT_HEIGHT),
-    mProjectOnGround(true),
+    mProjectOnGround(false),
     mIsCycleKeyframe(true), // first cycle is always keyframe
     mLastKinectCycle(-1), mOdomTimer(new Timer("Odometry time"))
 {
+    mMotion = new MotionInfo;
     RegisterTimer(mOdomTimer);
     if( mProjectOnGround )
-        mGlobalPose.translation()[1] = mRobotHeight;
+        //mGlobalPose.translation()[1] = mRobotHeight;
+        mMotion->GlobalPose.translation()[1] = mRobotHeight;
 }
 
 VisualOdometryInterface::~VisualOdometryInterface()
 {
+    delete mMotion;
 }
 
 void VisualOdometryInterface::RegisterToKinect(KinectInterface::Ptr ki)
@@ -89,22 +93,29 @@ void VisualOdometryInterface::FinishCycle()
     if( mProjectOnGround )
         ProjectToGround(); // only necessary for mMotionEstimate
     
-    mGlobalPose = mGlobalPose * mMotionEstimate;
-    mCurrRelativeMotion = mCurrRelativeMotion * mMotionEstimate;
+    //mGlobalPose = mGlobalPose * mMotionEstimate;
+    //mCurrRelativeMotion = mCurrRelativeMotion * mMotionEstimate;
+    mMotion->GlobalPose = mMotion->GlobalPose * mMotion->MotionEstimate;
     
     CheckForKeyframe();
     if( IsThisCycleKeyframe() )
     {
         Keypoint kp;
-        kp.GlobalPose = mGlobalPose;
-        kp.RelativeMotion = mLastKeypointPose.inverse() * mGlobalPose;
+        //kp.GlobalPose = mGlobalPose;
+        //kp.RelativeMotion = mLastKeypointPose.inverse() * mGlobalPose;
+        
+        kp.GlobalPose = mMotion->GlobalPose;
+        kp.RelativeMotion = mMotion->LastKeypointPose.inverse() * mMotion->GlobalPose;
         mKeypoints.push_back(kp);
-        mCurrRelativeMotion = Eigen::Isometry3d::Identity();
-        mLastKeypointPose = mGlobalPose;
+        //mCurrRelativeMotion = Eigen::Isometry3d::Identity();
+        //mLastKeypointPose = mGlobalPose;
+        mMotion->CurrRelativeMotion = Eigen::Isometry3d::Identity();
+        mMotion->LastKeypointPose = mMotion->GlobalPose;
     }
     else
     {
-        mCurrRelativeMotion = mLastKeypointPose.inverse() * mGlobalPose;
+        //mCurrRelativeMotion = mLastKeypointPose.inverse() * mGlobalPose;
+        mMotion->CurrRelativeMotion = mMotion->LastKeypointPose.inverse() * mMotion->GlobalPose;
     }
     NotifyKeyframeReceivers();
 }
@@ -135,20 +146,26 @@ void VisualOdometryInterface::ProjectToGround()
 //     newTrans.rotate(rot);
 //     
 //     mCurrRelativeMotion = newTrans;
-    mCurrRelativeMotion.translation()[1] = 0; // Set change in this direction to zero
-    double tetha = ExtractRotationAngle(mCurrRelativeMotion.rotation());
-    mCurrRelativeMotion.linear() = Eigen::AngleAxisd(tetha, Eigen::Vector3d::UnitY()).toRotationMatrix(); 
+    
+    //mCurrRelativeMotion.translation()[1] = 0; // Set change in this direction to zero
+    //double tetha = ExtractRotationAngle(mCurrRelativeMotion.rotation());
+    //mCurrRelativeMotion.linear() = Eigen::AngleAxisd(tetha, Eigen::Vector3d::UnitY()).toRotationMatrix(); 
+    mMotion->CurrRelativeMotion.translation()[1] = 0;
+    double tetha = ExtractRotationAngle(mMotion->CurrRelativeMotion.rotation());
+    mMotion->CurrRelativeMotion.linear() = Eigen::AngleAxisd(tetha, Eigen::Vector3d::UnitY()).toRotationMatrix(); 
 }
 
 void VisualOdometryInterface::CheckForKeyframe()
 {
+    mIsCycleKeyframe = false;
     if( GetCycle() == 0 )
     {
         mIsCycleKeyframe = true;
         return;
     }
     
-    if( mCurrRelativeMotion.translation().squaredNorm() >= mMaxKeyframesDist * mMaxKeyframesDist )
+    //if( mCurrRelativeMotion.translation().squaredNorm() >= mMaxKeyframesDist * mMaxKeyframesDist )
+    if( mMotion->CurrRelativeMotion.translation().squaredNorm() >= mMaxKeyframesDist * mMaxKeyframesDist )
     {
         mIsCycleKeyframe = true;
         return;
@@ -158,8 +175,8 @@ void VisualOdometryInterface::CheckForKeyframe()
     if( mProjectOnGround )
     {
         double r11, r13, r31, r33;
-        const Eigen::Matrix3d& rot = mCurrRelativeMotion.rotation();
-        
+        //const Eigen::Matrix3d& rot = mCurrRelativeMotion.rotation();
+        const Eigen::Matrix3d& rot = mMotion->CurrRelativeMotion.rotation();
         //TODO: REPLACE THIS WITH ExtractRotationAngle after debugs
         
         r11 = rot(0, 0);
@@ -179,6 +196,20 @@ void VisualOdometryInterface::CheckForKeyframe()
         
         std::cout << "Tetha " << tetha * 180 / M_PI << "  Is keyframe " << mIsCycleKeyframe << std::endl << std::flush;
     }
+    
+    //std::cout << "Motion Estimate:\n" << mMotionEstimate.rotation() << std::endl << std::flush;
+    
+    //Eigen::Matrix<double, 3, 1> euler = mMotionEstimate.rotation().eulerAngles(2, 1, 0);
+    Eigen::Matrix<double, 3, 1> euler = mMotion->MotionEstimate.rotation().eulerAngles(2, 1, 0);
+    euler = euler * 180 / M_PI;
+    //std::cout << "Motion Estimate:\n Yaw=" << euler(0, 0) << " Pitch=" << euler(1, 0) << " Roll= " << euler(2, 0) << std::endl;
+    //euler = mCurrRelativeMotion.rotation().eulerAngles(2, 1, 0);
+    euler = mMotion->CurrRelativeMotion.rotation().eulerAngles(2, 1, 0);
+    euler = euler * 180 / M_PI;
+    //std::cout << "Relative motion:\n Yaw=" << euler(0, 0) << " Pitch=" << euler(1, 0) << " Roll= " << euler(2, 0) << std::endl;
+    //std::cout << "RELATIVE MATRIX:\n" << mCurrRelativeMotion.matrix() << std::endl;
+    //std::cout << "RELATIVE MATRIX:\n" << mMotion->CurrRelativeMotion.matrix() << std::endl;
+    //std::cout << "=====================================================================\n\n";
 }
 
 void VisualOdometryInterface::ReadSettings(ProgramOptions::Ptr po)
@@ -193,7 +224,7 @@ void VisualOdometryInterface::ReadSettings(ProgramOptions::Ptr po)
     
     if( mProjectOnGround )
     {
-        mGlobalPose.translation()[1] = mRobotHeight; // for kinect, height is along y axis.
+        //mGlobalPose.translation()[1] = mRobotHeight; // for kinect, height is along y axis.
     }
 }
 

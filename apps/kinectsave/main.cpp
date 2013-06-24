@@ -7,6 +7,10 @@
 std::string DefaultPath = "/home/kourosh/kinectsave";
 std::string pathToSave;
 
+using namespace KSRobot;
+using namespace common;
+using namespace interfaces;
+
 KinectDeviceReader::Ptr kinect;
 
 void OnKinectReciever()

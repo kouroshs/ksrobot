@@ -61,7 +61,7 @@ public:
     
     static KinectPointCloud::Ptr                GeneratePointCloudFromImages(KinectRgbImage::Ptr rgb, 
                                                                    KinectRawDepthImage::Ptr depth, 
-                                                                   const CameraParameters& camParams);    
+                                                                   const CameraParameters& camParams);
 protected:
     KinectPointCloud::Ptr                       mPC;
     KinectRgbImage::Ptr                         mRgb;

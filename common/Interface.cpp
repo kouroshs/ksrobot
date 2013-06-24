@@ -101,10 +101,14 @@ boost::signals2::connection Interface::RegisterOnFinishReceiver(boost::function<
 
 void Interface::ReadSettings(ProgramOptions::Ptr po)
 {
+    //Nothing to do here
+    (void)po;
 }
 
 void Interface::WriteSettings(ProgramOptions::Ptr po)
 {
+    //Nothing to do here
+    (void)po;
 }
 
 void Interface::FinishCycle()

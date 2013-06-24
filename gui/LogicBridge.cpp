@@ -40,7 +40,8 @@ namespace KSRobot
 namespace gui
 {
 
-LogicBridge::LogicBridge(QObject* parent): QObject(parent), mNumKinectReceiversConnected(0)
+LogicBridge::LogicBridge(QObject* parent): QObject(parent), mNumKinectReceiversConnected(0),
+    mRGBDEnabled(true), mPointCloudEnabled(true)
 {
 }
 
@@ -137,6 +138,7 @@ void LogicBridge::OnKinectNewDataReceive()
     mEngine->GetKinectInterface()->LockData();
     common::KinectRgbImage::ConstPtr rgb = mEngine->GetKinectInterface()->GetRgbImage();
     common::KinectRawDepthImage::ConstPtr depth = mEngine->GetKinectInterface()->GetRawDepthImage();
+    common::KinectPointCloud::ConstPtr pc = mEngine->GetKinectInterface()->GetPointCloud();
     mEngine->GetKinectInterface()->UnlockData();
     
     if( mSavePath != "" )
@@ -159,7 +161,7 @@ void LogicBridge::OnKinectNewDataReceive()
         common::KinectImageDiskIO::SaveToFileDepth(pdepth.string(), depth);
     }
     
-    if( mNumKinectReceiversConnected && !mSkipPC.ShouldSkip() )
+    if( mNumKinectReceiversConnected && !mSkipPC.ShouldSkip() && mRGBDEnabled )
     {
         QImage qrgb, qdepth;
         qrgb = Utils::ConvertToQImage(rgb);
@@ -167,8 +169,8 @@ void LogicBridge::OnKinectNewDataReceive()
         emit OnRGBD(qrgb, qdepth);
     }
     
-    if( !mSkipPC.ShouldSkip() )
-        emit OnPointCloud(mEngine->GetKinectInterface()->GetPointCloud());
+    if( !mSkipPC.ShouldSkip() && mPointCloudEnabled )
+        emit OnPointCloud(pc);
 }
 
 void LogicBridge::OnFovisCycleComplete()

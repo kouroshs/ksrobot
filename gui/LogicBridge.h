@@ -53,6 +53,9 @@ public:
     void                                SetPointCloudSkip(int s) { mSkipPC.Skip = s; }
     int                                 GetPointCloudSkip() const { return mSkipPC.Skip; }
     
+    inline void                         EnableRGBD(bool enable);
+    inline void                         EnablePointCloud(bool enable);
+    
 signals:
     void                                ExecutionFinished();
     void                                OnRGBD(QImage rgb, QImage depth);
@@ -63,7 +66,7 @@ public slots:
     void                                OnStart(const common::ExecCtrlData& data);
     void                                OnStop();
     
-private slots:    
+private slots:
     
     
 protected:
@@ -98,10 +101,23 @@ protected:
     SkipParams                          mSkipPC;
     
     int                                 mNumKinectReceiversConnected;
+    bool                                mRGBDEnabled;
+    bool                                mPointCloudEnabled;
     common::SettingsBinder              mBinder;
     QString                             mSavePath;
     common::EngineInterface::Ptr        mEngine;
 };
+
+inline void LogicBridge::EnablePointCloud(bool enable)
+{
+    mPointCloudEnabled = enable;
+}
+
+inline void LogicBridge::EnableRGBD(bool enable)
+{
+    mRGBDEnabled = enable;
+}
+
 
 } // end namespace gui
 } // end namespace KSRobot
