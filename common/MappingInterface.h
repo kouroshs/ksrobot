@@ -70,17 +70,19 @@ private:
     class MapElement
     {
     public:
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+        
         MapElement() {;}
         MapElement(const MapElement& o) : PC(o.PC), Transform(o.Transform) {;}
         ~MapElement() {;}
         
         MapElement& operator = (const MapElement& o) { PC = o.PC; Transform = o.Transform; return *this; }
-        
-        KinectPointCloud::ConstPtr      PC;
+
         Eigen::Isometry3d               Transform;
+        KinectPointCloud::ConstPtr      PC;
     };
     
-    typedef tbb::concurrent_bounded_queue<MapElement>   QueueType;
+    typedef tbb::concurrent_bounded_queue<MapElement, Eigen::aligned_allocator<MapElement> >   QueueType;
     QueueType                           mQ;
     double                              mMapRes;
     double                              mMaxRange;

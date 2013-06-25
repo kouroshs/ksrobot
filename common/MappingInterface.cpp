@@ -182,7 +182,6 @@ bool MappingInterface::RunSingleCycle()
 
 void MappingInterface::SaveMapToFile(const std::string& filename)
 {
-    //TODO: test this.
     mMapper->write(filename);
 }
 
