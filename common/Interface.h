@@ -45,6 +45,7 @@ public:
     public:
         ScopedLock(Interface* i)
         {
+            assert(i);
             iface = i;
             iface->LockData();
         }
@@ -59,11 +60,14 @@ public:
     typedef boost::shared_ptr<this_type>        Ptr;
     typedef boost::shared_ptr<const this_type>  ConstPtr;
     
-    Interface(const std::string& name);
+    Interface();
     virtual ~Interface();
     
     inline void                 SetHZ(float hz);
     inline void                 SetPeriod(float t);
+    
+    inline void                 SetInterfaceName(const std::string& name);
+    inline std::string          GetInterfaceName() const;
     
     virtual void                Start();
     virtual void                Stop();
@@ -74,7 +78,7 @@ public:
 
     inline int                  GetCycle() const;
     
-    inline std::string          GetName() const { return mName; }
+    inline std::string          GetName() const { return mInterfaceName; }
     // This method is public, to enable running in single threaded context
     virtual bool                RunSingleCycle() = 0;
     virtual void                WriteRunningTimes(std::ostream& os);
@@ -97,11 +101,11 @@ protected:
 protected:
     int                         mSleepMillisecs;
     TimePoint                   mLastTime;
-    boost::atomic<bool>         mContinueExec;
+    volatile bool               mContinueExec;
     boost::thread               mThread;
     boost::mutex                mInternalDataGaurd;
     std::vector<Timer::Ptr>     mTimers;
-    std::string                 mName;
+    std::string                 mInterfaceName;
     int                         mCycles;
     
     typedef boost::signals2::signal<void()>  SignalType;
@@ -140,6 +144,16 @@ inline void Interface::UnlockData()
 inline void Interface::RegisterTimer(Timer::Ptr timer)
 {
     mTimers.push_back(timer);
+}
+
+inline std::string Interface::GetInterfaceName() const
+{
+    return mInterfaceName;
+}
+
+void Interface::SetInterfaceName(const std::string& name)
+{
+    mInterfaceName = name;
 }
 
 

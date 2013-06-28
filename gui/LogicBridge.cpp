@@ -65,9 +65,12 @@ void LogicBridge::OnStart(const common::ExecCtrlData& data)
     {
         if( mEngine.get() )
             mEngine->Stop();
-        mEngine.reset(new interfaces::MTEngine("MTEngine"));
+        mEngine.reset(new interfaces::MTEngine());
         mEngine->SetExecutionParams(data);
         mEngine->Initialize();
+        
+        assert(mEngine->GetKinectInterface().get());
+        assert(mEngine->GetVisualOdometryInterface().get());
         
         mEngine->GetKinectInterface()->RegisterOnCycleCompleteReceiver(boost::bind(&LogicBridge::OnKinectNewDataReceive, this));
         mEngine->GetKinectInterface()->RegisterOnFinishReceiver(boost::bind(&LogicBridge::OnKinectFinish, this));
@@ -76,10 +79,12 @@ void LogicBridge::OnStart(const common::ExecCtrlData& data)
     catch(std::exception& ex)
     {
         emit OnError(QString(ex.what()));
+        return;
     }
     catch(...)
     {
         emit OnError(QString("Unknown Error"));
+        return;
     }
     
     try
@@ -143,22 +148,29 @@ void LogicBridge::OnKinectNewDataReceive()
     
     if( mSavePath != "" )
     {
-        std::stringstream ssPartialFileName;
-        common::TimePoint t = common::Clock::now();
-        long nanosecs = common::Nanoseconds(t.time_since_epoch());
-        double save_time = (double)nanosecs * 10e-9;
-        boost::filesystem::path prgb(mSavePath.toStdString()), pdepth(mSavePath.toStdString());
-        prgb /= "rgb";
-        pdepth /= "depth";
-        
-        ssPartialFileName << std::fixed << std::setprecision(6);
-        ssPartialFileName << save_time;
-        
-        prgb /= ssPartialFileName.str() + ".png";
-        pdepth /= ssPartialFileName.str() + ".png";
-        
-        common::KinectImageDiskIO::SaveToFileRgb(prgb.string(), rgb);
-        common::KinectImageDiskIO::SaveToFileDepth(pdepth.string(), depth);
+        try
+        {
+            std::stringstream ssPartialFileName;
+            common::TimePoint t = common::Clock::now();
+            long nanosecs = common::Nanoseconds(t.time_since_epoch());
+            double save_time = (double)nanosecs * 10e-9;
+            boost::filesystem::path prgb(mSavePath.toStdString()), pdepth(mSavePath.toStdString());
+            prgb /= "rgb";
+            pdepth /= "depth";
+            
+            ssPartialFileName << std::fixed << std::setprecision(6);
+            ssPartialFileName << save_time;
+            
+            prgb /= ssPartialFileName.str() + ".png";
+            pdepth /= ssPartialFileName.str() + ".png";
+            
+            common::KinectImageDiskIO::SaveToFileRgb(prgb.string(), rgb);
+            common::KinectImageDiskIO::SaveToFileDepth(pdepth.string(), depth);
+        }
+        catch(std::exception& ex)
+        {
+            std::cout << "(LogicBridge::OnKinectNewDataReceive) Exception occured: " << ex.what() << std::endl << std::flush;
+        }
     }
     
     if( mNumKinectReceiversConnected && !mSkipPC.ShouldSkip() && mRGBDEnabled )

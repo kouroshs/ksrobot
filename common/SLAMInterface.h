@@ -46,7 +46,7 @@ public:
     typedef boost::shared_ptr<this_type>        Ptr;
     typedef boost::shared_ptr<const this_type>  ConstPtr;
 
-    SLAMInterface(const std::string& name);
+    SLAMInterface();
     virtual ~SLAMInterface();
     
     //THIS IS FOR TEST ONLY!

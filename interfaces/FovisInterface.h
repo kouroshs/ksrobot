@@ -35,7 +35,7 @@ class FovisInterface : public common::VisualOdometryInterface
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    FovisInterface(const std::string& name);
+    FovisInterface();
     virtual ~FovisInterface();
     
     virtual void        RegisterToKinect(common::KinectInterface::Ptr ki);

@@ -32,7 +32,7 @@ public:
     pcl::IterativeClosestPoint<pcl::PointXYZRGBA, pcl::PointXYZRGBA>    ICP;
 };
     
-ICPInterface::ICPInterface(const std::string& name): common::VisualOdometryInterface(name), mImpl(new Impl)
+ICPInterface::ICPInterface(): common::VisualOdometryInterface(), mImpl(new Impl)
 {
     SetWithNormals(false);
 }

@@ -25,7 +25,7 @@ namespace KSRobot
 namespace common
 {
 
-LoopDetector::LoopDetector(const std::string& name): Interface(name)
+LoopDetector::LoopDetector(): Interface()
 {
 
 }

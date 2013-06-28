@@ -27,7 +27,7 @@ namespace KSRobot
 namespace common
 {
 
-SLAMInterface::SLAMInterface(const std::string& name) : Interface(name), mLastKeyframe(-1), 
+SLAMInterface::SLAMInterface() : Interface(), mLastKeyframe(-1), 
     mGraph(new gtsam::NonlinearFactorGraph())
 {
     mLoops.set_capacity(10);

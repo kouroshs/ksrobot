@@ -79,8 +79,8 @@ public:
     
 };
     
-FovisInterface::FovisInterface(const std::string& name) : 
-            common::VisualOdometryInterface(name), 
+FovisInterface::FovisInterface() : 
+            common::VisualOdometryInterface(), 
             mDataCopyTimer(new common::Timer("Data copying"))
 {
     RegisterTimer(mDataCopyTimer);
@@ -92,8 +92,10 @@ FovisInterface::~FovisInterface()
 
 void FovisInterface::RegisterToKinect(common::KinectInterface::Ptr ki)
 {
+    assert(ki.get());
     VisualOdometryInterface::RegisterToKinect(ki);
-    mImpl.reset(new FovisImpl(ki->GetCameraParams()));
+    mKinect->EnableFloatDepthGeneration(true);
+    mImpl.reset(new FovisImpl(mKinect->GetCameraParams()));
 }
 
 bool FovisInterface::RunSingleCycle()
@@ -105,20 +107,19 @@ bool FovisInterface::RunSingleCycle()
     
     mDataCopyTimer->Start();
     
-    common::KinectFloatDepthImage::ArrayType depth_array = mKinect->GetFloatDepthImage()->GetArray();
-    for(size_t i = 0; i < depth_array.size(); i++)
-    {
-        if( depth_array[i] == 0 )
-            depth_array[i] = std::numeric_limits<float>::quiet_NaN();
-        else
-            depth_array[i] *= 1;
-    }
-    mImpl->mDepthImage->setDepthImage(depth_array.data());
+    assert(mImpl.get());
+    assert(mImpl->mDepthImage && mImpl->mFovis && mImpl->mGrayImage && mImpl->mRectification);
+    assert(mCurrFloatDepth.get());
+    assert(mCurrRgb.get());
+    assert(mCurrFloatDepth->GetWidth() != 0 && mCurrFloatDepth->GetHeight() != 0);
+    assert(mCurrRgb->GetWidth() != 0 && mCurrRgb->GetHeight() != 0);
+    assert(mCurrFloatDepth->GetArray().size() != 0);
+    assert(mCurrRgb->GetArray().size() != 0);
     
-    common::KinectRgbImage::ConstPtr rgb = mKinect->GetRgbImage();
-    size_t size = rgb->GetHeight() * rgb->GetWidth();
+    mImpl->mDepthImage->setDepthImage(mCurrFloatDepth->GetArray().data());
     
-    const common::KinectRgbImage::ArrayType& array = rgb->GetArray();
+    size_t size = mCurrRgb->GetHeight() * mCurrRgb->GetWidth();
+    const common::KinectRgbImage::ArrayType& array = mCurrRgb->GetArray();
     
     for(size_t i = 0; i < size; i++)
     {
@@ -128,27 +129,22 @@ bool FovisInterface::RunSingleCycle()
         g = array[startIndex + 1];
         b = array[startIndex + 2];
         
-        mImpl->mGrayImage[i] = (int)roundf(0.2125 * r + 0.7154 * g + 0.0721 * b);
+        mImpl->mGrayImage[i] = (int)roundf(((int)r+(int)g+(int)b)/3.0f);//(int)roundf(0.2125 * r + 0.7154 * g + 0.0721 * b);
     }
     mDataCopyTimer->Stop();
 
     mOdomTimer->Start();
         mImpl->mFovis->processFrame(mImpl->mGrayImage, mImpl->mDepthImage);
-        //mMotionEstimate = mImpl->mFovis->getMotionEstimate();
         mMotion->MotionEstimate = mImpl->mFovis->getMotionEstimate();
     mOdomTimer->Stop();
-    
-    std::cout << "FOVIS POSE = \n" << mImpl->mFovis->getPose().translation() << std::endl;
-    std::cout << "GT: " << mKinect->GetCurrentGroundTruth().translation() << std::endl;
-    std::cout << "STATUS: " << fovis::MotionEstimateStatusCodeStrings[mImpl->mFovis->getMotionEstimateStatus()] << std::endl << std::flush;
-    
+
     FinishCycle();
-    
     return true;
 }
 
 bool FovisInterface::Converged()
 {
+    assert(mImpl.get() && mImpl->mFovis);
     return mImpl->mFovis->getMotionEstimateStatus() == fovis::SUCCESS;
 }
 

@@ -56,7 +56,7 @@ public:
     typedef boost::shared_ptr<this_type>        Ptr;
     typedef boost::shared_ptr<const this_type>  ConstPtr;
 
-    VisualOdometryInterface(const std::string& name);
+    VisualOdometryInterface();
     virtual ~VisualOdometryInterface();
     
     struct Keypoint
@@ -101,9 +101,19 @@ protected:
     virtual void                                CheckForKeyframe();
     virtual void                                FinishCycle();
 protected:
-    struct MotionInfo
+    class MotionInfo
     {
+    public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+        
+        MotionInfo()
+        {
+            MotionEstimate.setIdentity();
+            CurrRelativeMotion.setIdentity();
+            GlobalPose.setIdentity();
+            LastKeypointPose.setIdentity();
+        }
+        
         Eigen::Isometry3d                       MotionEstimate;
         Eigen::Isometry3d                       CurrRelativeMotion;
         Eigen::Isometry3d                       GlobalPose;

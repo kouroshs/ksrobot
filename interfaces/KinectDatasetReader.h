@@ -31,7 +31,11 @@ namespace interfaces
 class KinectDatasetReader : public common::KinectInterface
 {
 public:
-    KinectDatasetReader(const std::string& name);
+    typedef KinectDatasetReader                 this_type;
+    typedef boost::shared_ptr<this_type>        Ptr;
+    typedef boost::shared_ptr<const this_type>  ConstPtr;
+    
+    KinectDatasetReader();
     virtual ~KinectDatasetReader();
 
     virtual void                        Initialize(const std::string& str);
@@ -40,6 +44,9 @@ public:
 
     virtual bool                        ProvidesGroundTruth();
     virtual Eigen::Isometry3d           GetCurrentGroundTruth();
+    
+    int                 GetNumCycles() const { return (int)mRGBFiles.TimeStamps.size(); }
+    
 private:
     struct FileList
     {
@@ -76,7 +83,7 @@ private:
     void                ReadGroundTruthData     (std::ifstream& file                    );
     
     void                CorrespondRGBDIndices   (                                       );
-    void                CorrespondGroundTruth   (                                       );
+    void                CorrespondGroundTruths   (                                       );
     void                MoveGroundTruthsToOrigin(                                       );
 
 private:
@@ -86,6 +93,7 @@ private:
     typedef std::vector<GroundTruthInfo, Eigen::aligned_allocator<GroundTruthInfo> > GroundTruthArray;
     GroundTruthArray                            mGroundTruth;
     
+    bool                                        mProvidesGroundTruth;
     int                                         mPerCycleSleep;
     int                                         mTotalTime;
     common::TimePoint                           mLastTime;

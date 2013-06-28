@@ -162,6 +162,9 @@ void RobXControlDialog::on_tabControlLevel_currentChanged(int index)
 void RobXControlDialog::Stop()
 {
     mCtrl->Stop();
+    
+    ui->sliderMotor1->setSliderPosition(128);
+    ui->sliderMotor2->setSliderPosition(128);
 }
 
 void RobXControlDialog::on_sliderMotor2_sliderReleased()
@@ -172,6 +175,8 @@ void RobXControlDialog::on_sliderMotor2_sliderReleased()
 void RobXControlDialog::on_sliderMotor1_sliderReleased()
 {
     mCtrl->Write(RobXControl::CMD_SET_SPEED_1, ui->sliderMotor1->value());
+    if( ui->chkSyncMotors->isChecked() )
+        mCtrl->Write(RobXControl::CMD_SET_SPEED_2, ui->sliderMotor1->value());
 }
 
 void RobXControlDialog::on_sldrMoveAmount_valueChanged(int value)

@@ -20,7 +20,7 @@ public:
     typedef boost::shared_ptr<KinectDeviceReader>               Ptr;
     typedef boost::shared_ptr<const KinectDeviceReader>         ConstPtr;
     
-    KinectDeviceReader(const std::string& name);
+    KinectDeviceReader();
     virtual ~KinectDeviceReader();
     
     virtual void                        Initialize(const std::string& device);

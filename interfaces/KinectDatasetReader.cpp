@@ -20,7 +20,7 @@ using namespace std;
 using namespace Eigen;
 namespace fs = boost::filesystem;
 
-KinectDatasetReader::KinectDatasetReader(const std::string& name) : KinectInterface(name), 
+KinectDatasetReader::KinectDatasetReader() : KinectInterface(), 
     mRunning(false), mTimerLoadTimes(new common::Timer("Image load times")),
     mTimerPCGenerator(new common::Timer("PointCloud generation time"))
 {
@@ -49,6 +49,9 @@ void KinectDatasetReader::Initialize(const std::string& pathStr)
     fs::path depthIndexFile = dirPath / "depth.txt";
     fs::path gtPath = dirPath / "groundtruth.txt";
     
+    if( !fs::exists(rgbIndexFile) || !fs::exists(depthIndexFile) )
+        throw std::runtime_error("(KinectDatasetReader::Initialize) Invalid dataset path: Index files do not exist." + pathStr);
+    
     ifstream depthFile(depthIndexFile.string().c_str(), ios::in);
     ifstream rgbFile(rgbIndexFile.string().c_str(), ios::in);
     
@@ -59,14 +62,24 @@ void KinectDatasetReader::Initialize(const std::string& pathStr)
 
     // Now read the ground truth data.
     ifstream gtFile(gtPath.string().c_str(), ios::in);
-    ReadGroundTruthData(gtFile);
+    
+    if( gtFile.is_open() )
+    {
+        ReadGroundTruthData(gtFile);
+        mProvidesGroundTruth = true;
+    }
+    else
+        mProvidesGroundTruth = false;
+    
     gtFile.close();
     // Now check which indexes correspond together
     CorrespondRGBDIndices();
     // Now check those indexes with ground truth data.
-    CorrespondGroundTruth();
-    MoveGroundTruthsToOrigin();
-
+    if( mProvidesGroundTruth )
+    {
+        CorrespondGroundTruths();
+        MoveGroundTruthsToOrigin();
+    }
     memset(&mParams, 0, sizeof(mParams));
     mParams.Width = 640;
     mParams.Height = 480;
@@ -83,6 +96,11 @@ void KinectDatasetReader::MoveGroundTruthsToOrigin()
     
     for(size_t i = 0; i < mGroundTruth.size(); i++)
         mGroundTruth[i].LocalTransform = origin * mGroundTruth[i].LocalTransform;
+}
+
+static inline bool IsEmpty(const std::string& val)
+{
+    return val == "";
 }
 
 void KinectDatasetReader::ReadIndexFile(ifstream& file, const fs::path& fullPath,
@@ -102,9 +120,14 @@ void KinectDatasetReader::ReadIndexFile(ifstream& file, const fs::path& fullPath
         // Now parse the line, it should be like this:  TimeStamp  PathToFile
         vector<string> strs;
         boost::split(strs, line, boost::is_any_of("\t "));
+        
+        for(size_t i = 0; i < strs.size(); i++)
+            boost::trim(strs[i]);
+        // remove empty ones
+        strs.erase(std::remove_if(strs.begin(), strs.end(), IsEmpty), strs.end());
         if( strs.size() != 2 )
         {
-            throw std::runtime_error("Invalid dataset file");
+            throw std::runtime_error("(KinectDatasetReader::ReadIndexFile) File parse error.");
             continue;
         }
 
@@ -225,7 +248,7 @@ void KinectDatasetReader::CorrespondRGBDIndices()
     mDepthFiles = depth;
 }
 
-void KinectDatasetReader::CorrespondGroundTruth()
+void KinectDatasetReader::CorrespondGroundTruths()
 {
     // Ground truth data frequency can be higher than the kinect frequency
     size_t iCurrGtIndex = 0, iCurrRGBDIndex = 0;
@@ -304,15 +327,15 @@ void KinectDatasetReader::CorrespondGroundTruth()
 
 bool KinectDatasetReader::RunSingleCycle()
 {
+    common::Interface::ScopedLock lock(this);
+    
     if( GetCycle() >= (int)mRGBFiles.FileNames.size() )
     {
-        mContinueExec.store(false); // finish execution of kinect.
+        mContinueExec = false; // finish execution of kinect.
         return false;
     }
     
-    LockData();
-        LoadNextFiles();
-    UnlockData();
+    LoadNextFiles();
     FinishCycle();
     return true;
 }
@@ -324,25 +347,31 @@ void KinectDatasetReader::LoadNextFiles()
     mRgb = common::KinectImageDiskIO::LoadRgbFromFile(mRGBFiles.FileNames[GetCycle()]);
     mRawDepth = common::KinectImageDiskIO::LoadDepthFromFile(mDepthFiles.FileNames[GetCycle()]);
     
-    mFloatDepth.reset(new common::KinectFloatDepthImage);
-    mFloatDepth->Create(mRawDepth->GetWidth(), mRawDepth->GetHeight());
+    //if( mGenerateFloatDepth )
+    //{
+        mFloatDepth.reset(new common::KinectFloatDepthImage);
+        mFloatDepth->Create(mRawDepth->GetWidth(), mRawDepth->GetHeight());
     
-    //Generating float depth requires more work.
-    const float bad_point = std::numeric_limits<float>::quiet_NaN();
-    const common::KinectRawDepthImage::ArrayType& raw_array = mRawDepth->GetArray();
-    common::KinectFloatDepthImage::ArrayType& float_array = mFloatDepth->GetArray();
-    for(size_t i = 0; i < float_array.size(); i++)
-    {
-        if( raw_array[i] == 0 )
-            float_array[i] = bad_point;
-        else
-            float_array[i] = raw_array[i] * 0.001f; // Convert to meters
-    }
+        //Generating float depth requires more work.
+        const float bad_point = std::numeric_limits<float>::quiet_NaN();
+        const common::KinectRawDepthImage::ArrayType& raw_array = mRawDepth->GetArray();
+        common::KinectFloatDepthImage::ArrayType& float_array = mFloatDepth->GetArray();
+        for(size_t i = 0; i < float_array.size(); i++)
+        {
+            if( raw_array[i] == 0 )
+                float_array[i] = bad_point;
+            else
+                float_array[i] = raw_array[i] * 0.001f; // Convert to meters
+        }
+    //}
     mTimerLoadTimes->Stop();
     
-    mTimerPCGenerator->Start();
-    mPC = common::KinectInterface::GeneratePointCloudFromImages(mRgb, mRawDepth, mParams);
-    mTimerPCGenerator->Stop();
+    //if( mGeneratePointCloud )
+    //{
+        mTimerPCGenerator->Start();
+        mPC = common::KinectInterface::GeneratePointCloudFromImages(mRgb, mRawDepth, mParams);
+        mTimerPCGenerator->Stop();
+    //}
 }
 
 Eigen::Isometry3d KinectDatasetReader::GetCurrentGroundTruth()
@@ -352,7 +381,7 @@ Eigen::Isometry3d KinectDatasetReader::GetCurrentGroundTruth()
 
 bool KinectDatasetReader::ProvidesGroundTruth()
 {
-    return true;
+    return mProvidesGroundTruth;
 }
 
 

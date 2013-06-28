@@ -29,7 +29,7 @@ namespace KSRobot
 namespace interfaces
 {
 
-MTEngine::MTEngine(const std::string& name) : common::EngineInterface(name)
+MTEngine::MTEngine() : common::EngineInterface()
 {
 }
 
@@ -43,17 +43,17 @@ void MTEngine::Initialize()
     
     if( mExecCtrl.Kinect.GetFromDevice )
     {
-        mKinect.reset(new KinectDeviceReader("KinectDevice"));
+        mKinect.reset(new KinectDeviceReader());
         mKinect->Initialize(mExecCtrl.Kinect.SourceDevice);
     }
     else
     {
-        mKinect.reset(new KinectDatasetReader("KinectDataset"));
+        mKinect.reset(new KinectDatasetReader());
         mKinect->Initialize(mExecCtrl.Kinect.SourceDir);
     }
     
     //NOTE: ICP visual odometry is only for testing, so there is no need to implement differently
-    mVO.reset(new FovisInterface("Fovis"));
+    mVO.reset(new FovisInterface());
     //mVO.reset(new ICPInterface("ICP"));
     mVO->RegisterToKinect(mKinect);
     
@@ -68,7 +68,7 @@ void MTEngine::Start()
     //DO NOT CALL EngineInterface::Start, we are not using a thread for engine execution!
     mKinect->Start();
     mVO->Start();
-    mContinueExec.store(true);
+    mContinueExec = true;
 }
 
 void MTEngine::Stop()
@@ -77,7 +77,7 @@ void MTEngine::Stop()
     if( mContinueExec == false )
         return;
     
-    mContinueExec.store(false);
+    mContinueExec = false;
     mVO->Stop();
     mKinect->Stop();
     

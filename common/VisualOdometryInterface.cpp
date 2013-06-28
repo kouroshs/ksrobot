@@ -29,10 +29,7 @@ namespace KSRobot
 namespace common
 {
 
-VisualOdometryInterface::VisualOdometryInterface(const std::string& name): Interface(name),
-//     mMotionEstimate(Eigen::Isometry3d::Identity()), 
-//     mCurrRelativeMotion(Eigen::Isometry3d::Identity()),
-//     mLastKeypointPose(Eigen::Isometry3d::Identity()),
+VisualOdometryInterface::VisualOdometryInterface(): Interface(),
     mMaxKeyframesDist(DEFAULT_KEYFRAMES_DIST),
     mMaxKeyframesAngle(DEFAULT_KEYFRAMES_ANGLE),
     mRobotHeight(DEFAULT_ROBOT_HEIGHT),
@@ -41,10 +38,11 @@ VisualOdometryInterface::VisualOdometryInterface(const std::string& name): Inter
     mLastKinectCycle(-1), mOdomTimer(new Timer("Odometry time"))
 {
     mMotion = new MotionInfo;
-    RegisterTimer(mOdomTimer);
+    
     if( mProjectOnGround )
-        //mGlobalPose.translation()[1] = mRobotHeight;
         mMotion->GlobalPose.translation()[1] = mRobotHeight;
+
+    RegisterTimer(mOdomTimer);
 }
 
 VisualOdometryInterface::~VisualOdometryInterface()
@@ -60,13 +58,10 @@ void VisualOdometryInterface::RegisterToKinect(KinectInterface::Ptr ki)
 bool VisualOdometryInterface::RunSingleCycle()
 {
     Interface::ScopedLock lock(this);
-    mKinect->LockData();
+    Interface::ScopedLock kinectLock(mKinect.get());
     
     if( mKinect->GetCycle() <= mLastKinectCycle )
-    {
-        mKinect->UnlockData();
         return false;
-    }
     
     mCurrFloatDepth = mKinect->GetFloatDepthImage();
     mCurrRawDepth = mKinect->GetRawDepthImage();
@@ -74,16 +69,13 @@ bool VisualOdometryInterface::RunSingleCycle()
     mCurrPointCloud = mKinect->GetPointCloud();
     
     mLastKinectCycle = mKinect->GetCycle();
-    mKinect->UnlockData();
     return true;
 }
 
 void VisualOdometryInterface::NotifyKeyframeReceivers()
 {
     if( IsThisCycleKeyframe() )
-    {
         mKeypointReceivers();
-    }
 }
 
 void VisualOdometryInterface::FinishCycle()
@@ -109,7 +101,7 @@ void VisualOdometryInterface::FinishCycle()
         mKeypoints.push_back(kp);
         //mCurrRelativeMotion = Eigen::Isometry3d::Identity();
         //mLastKeypointPose = mGlobalPose;
-        mMotion->CurrRelativeMotion = Eigen::Isometry3d::Identity();
+        mMotion->CurrRelativeMotion.setIdentity();
         mMotion->LastKeypointPose = mMotion->GlobalPose;
     }
     else
@@ -134,22 +126,6 @@ static double ExtractRotationAngle(const Eigen::Matrix3d& r)
 
 void VisualOdometryInterface::ProjectToGround()
 {
-//     Eigen::Vector3d position = mCurrRelativeMotion.translation();
-//     Eigen::Matrix3d rot;
-//     position[1] = 0; // set y change to zero.
-//     double tetha = ExtractRotationAngle(mCurrRelativeMotion.rotation());
-// 
-//     rot = Eigen::AngleAxisd(tetha, Eigen::Vector3d::UnitY());
-//     
-//     Eigen::Isometry3d newTrans;
-//     newTrans.translate(position);
-//     newTrans.rotate(rot);
-//     
-//     mCurrRelativeMotion = newTrans;
-    
-    //mCurrRelativeMotion.translation()[1] = 0; // Set change in this direction to zero
-    //double tetha = ExtractRotationAngle(mCurrRelativeMotion.rotation());
-    //mCurrRelativeMotion.linear() = Eigen::AngleAxisd(tetha, Eigen::Vector3d::UnitY()).toRotationMatrix(); 
     mMotion->CurrRelativeMotion.translation()[1] = 0;
     double tetha = ExtractRotationAngle(mMotion->CurrRelativeMotion.rotation());
     mMotion->CurrRelativeMotion.linear() = Eigen::AngleAxisd(tetha, Eigen::Vector3d::UnitY()).toRotationMatrix(); 
@@ -174,27 +150,28 @@ void VisualOdometryInterface::CheckForKeyframe()
     //TODO: Check for angle
     if( mProjectOnGround )
     {
-        double r11, r13, r31, r33;
+        double r13, r33;
         //const Eigen::Matrix3d& rot = mCurrRelativeMotion.rotation();
         const Eigen::Matrix3d& rot = mMotion->CurrRelativeMotion.rotation();
         //TODO: REPLACE THIS WITH ExtractRotationAngle after debugs
         
-        r11 = rot(0, 0);
+//         r11 = rot(0, 0);
         r13 = rot(0, 2);
-        r31 = rot(2, 0);
+//         r31 = rot(2, 0);
         r33 = rot(2, 2);
         
-        double dc = abs(r11) - abs(r33);
-        double ds = abs(r13) - abs(r31);
-        
-        std::cout << "(VisualOdometryInterface::CheckForKeyframe) dc = " << dc << " ds = " << ds << std::endl << std::flush;
+//         double dc = abs(r11) - abs(r33);
+//         double ds = abs(r13) - abs(r31);
+//         
+//         std::cout << "(VisualOdometryInterface::CheckForKeyframe) dc = " << dc << " ds = " << ds << std::endl << std::flush;
         
         double tetha = atan2(r13, r33);
         
+        if( isnan(tetha) )
+            std::cout << "tetha is nan r13=" << r13 << " r33=" << r33 << std::endl << std::flush;
+        
         if( abs(tetha) >= mMaxKeyframesAngle * M_PI / 180 )
             mIsCycleKeyframe = true;
-        
-        std::cout << "Tetha " << tetha * 180 / M_PI << "  Is keyframe " << mIsCycleKeyframe << std::endl << std::flush;
     }
     
     //std::cout << "Motion Estimate:\n" << mMotionEstimate.rotation() << std::endl << std::flush;

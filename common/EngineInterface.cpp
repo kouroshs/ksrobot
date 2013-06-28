@@ -25,7 +25,7 @@ namespace KSRobot
 namespace common
 {
 
-EngineInterface::EngineInterface(const std::string& name): Interface(name)
+EngineInterface::EngineInterface(): Interface()
 {
 }
 

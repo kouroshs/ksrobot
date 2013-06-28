@@ -25,7 +25,7 @@ namespace KSRobot
 namespace interfaces
 {
 
-iSAM2Interface::iSAM2Interface(const std::string& name) : common::SLAMInterface(name)
+iSAM2Interface::iSAM2Interface() : common::SLAMInterface()
 {
 }
 

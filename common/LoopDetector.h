@@ -46,7 +46,7 @@ public:
     typedef boost::shared_ptr<this_type>                Ptr;
     typedef boost::shared_ptr<const this_type>          ConstPtr;
     
-    LoopDetector(const std::string& name);
+    LoopDetector();
     virtual ~LoopDetector();
     
     virtual void                                RegisterToVO(VisualOdometryInterface::Ptr vo);

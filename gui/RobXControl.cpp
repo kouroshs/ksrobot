@@ -372,7 +372,8 @@ void RobXControl::Init()
 
 void RobXControl::OnFeedback()
 {
-    std::cout << "(ONFeedback) before encoderes ... " << std::flush;
+    static int i = 0;
+    std::cout << "(ONFeedback) before encoderes ... " << i++ << std::flush;
     GetEncoders();
     std::cout << " done feedback \n " << std::flush;
 }

@@ -41,7 +41,7 @@ public:
     typedef boost::shared_ptr<KinectInterface>                                  Ptr;
     typedef boost::shared_ptr<const KinectInterface>                            ConstPtr;
     
-    KinectInterface(const std::string& name);
+    KinectInterface();
     virtual ~KinectInterface();
 
     virtual void                                Initialize(const std::string& device) = 0;
@@ -54,10 +54,16 @@ public:
     inline KinectFloatDepthImage::ConstPtr      GetFloatDepthImage() const;
     
     inline CameraParameters                     GetCameraParams() const;
-    inline float                                UnitsPerMeter() const;
+    //TODO: Implement this
+    inline float                                UnitsPerMeter() const { return 0; }
     
     virtual bool                                ProvidesGroundTruth() = 0;
     virtual Eigen::Isometry3d                   GetCurrentGroundTruth() = 0;
+    
+    inline void                                 EnablePointCloudGeneration(bool enable);
+    inline void                                 EnableFloatDepthGeneration(bool enable);
+    inline bool                                 PointCloudGenerationEnabled() const;
+    inline bool                                 FloatDepthGenerationEnabled() const;
     
     static KinectPointCloud::Ptr                GeneratePointCloudFromImages(KinectRgbImage::Ptr rgb, 
                                                                    KinectRawDepthImage::Ptr depth, 
@@ -67,6 +73,9 @@ protected:
     KinectRgbImage::Ptr                         mRgb;
     KinectRawDepthImage::Ptr                    mRawDepth;
     KinectFloatDepthImage::Ptr                  mFloatDepth;
+    
+    bool                                        mGeneratePointCloud;
+    bool                                        mGenerateFloatDepth;
     
     CameraParameters                            mParams;
 };
@@ -95,6 +104,27 @@ inline KinectInterface::CameraParameters KinectInterface::GetCameraParams() cons
 {
     return mParams;
 }
+
+inline void KinectInterface::EnableFloatDepthGeneration(bool enable)
+{
+    mGenerateFloatDepth = enable;
+}
+
+inline void KinectInterface::EnablePointCloudGeneration(bool enable)
+{
+    mGeneratePointCloud = enable;
+}
+
+inline bool KinectInterface::FloatDepthGenerationEnabled() const
+{
+    return mGenerateFloatDepth;
+}
+
+inline bool KinectInterface::PointCloudGenerationEnabled() const
+{
+    return mGeneratePointCloud;
+}
+
 
 } // end namespace utils
 } // end namespace KSRobot

@@ -24,7 +24,7 @@ public:
     
 };
 
-KinectDeviceReader::KinectDeviceReader(const std::string& name) : common::KinectInterface(name)
+KinectDeviceReader::KinectDeviceReader() : common::KinectInterface()
 {
 }
 
@@ -39,23 +39,38 @@ void KinectDeviceReader::Initialize(const std::string& device)
                           const boost::shared_ptr<openni_wrapper::DepthImage>& , 
                           float)> fn;
     
+    assert(mGrabber.get());
+    
     fn = boost::bind(&KinectDeviceReader::RGBDCallback, this, _1, _2, _3);
-    mGrabber->registerCallback(fn);
+    boost::signals2::connection c =  mGrabber->registerCallback(fn);
+
+    assert(c.connected());
+    
+    memset(&mParams, 0, sizeof(mParams));
+    mParams.Width = 640;
+    mParams.Height = 480;
+    mParams.FocalX = 528.49404721f;
+    mParams.FocalY = 528.49404721f;
+    mParams.CenterX = mParams.Width / 2;
+    mParams.CenterY = mParams.Height / 2;
+    
 }
 
 bool KinectDeviceReader::ContinueExecution() const
 {
-    assert(mGrabber);
+    assert(mGrabber.get());
     return mGrabber->isRunning();
 }
 
 void KinectDeviceReader::Start()
 {
+    assert(mGrabber.get());
     mGrabber->start();
 }
 
 void KinectDeviceReader::Stop()
 {
+    assert(mGrabber.get());
     mGrabber->stop();
 }
 
@@ -63,27 +78,33 @@ void KinectDeviceReader::RGBDCallback(const boost::shared_ptr<openni_wrapper::Im
                                       const boost::shared_ptr<openni_wrapper::DepthImage>& depth, 
                                       float /*invFocalLength*/)
 {
+    common::Interface::ScopedLock lock(this);
+    
     assert(rgb->getHeight() == depth->getHeight() && rgb->getWidth() == depth->getWidth());
-    
-    LockData();
-    
     mRgb.reset(new common::KinectRgbImage());
     mRawDepth.reset(new common::KinectRawDepthImage());
-    mFloatDepth.reset(new common::KinectFloatDepthImage());
     
     mRgb->Create(rgb->getWidth(), rgb->getHeight());
-    mFloatDepth->Create(depth->getWidth(), depth->getHeight());
     mRawDepth->Create(depth->getWidth(), depth->getHeight());
     
-    rgb->fillRGB(rgb->getHeight(), rgb->getWidth(), mRgb->GetArray().data());
-    //depth->fillDepthImage(depth->getHeight(), depth->getWidth(), mFloatDepth->GetArray().data());
-    depth->fillDepthImageRaw(depth->getHeight(), depth->getWidth(), mRawDepth->GetArray().data());
-    depth->fillDepthImage(depth->getHeight(), depth->getWidth(), mFloatDepth->GetArray().data());
+    rgb->fillRGB(rgb->getWidth(), rgb->getHeight(), mRgb->GetArray().data());
+    depth->fillDepthImageRaw(depth->getWidth(), depth->getHeight(), mRawDepth->GetArray().data());
     
-    mPC = mGrabber->GeneratePC(rgb, depth);
+    if( mGenerateFloatDepth )
+    {
+        mFloatDepth.reset(new common::KinectFloatDepthImage());
+        mFloatDepth->Create(depth->getWidth(), depth->getHeight());
+        depth->fillDepthImage(depth->getHeight(), depth->getWidth(), mFloatDepth->GetArray().data());
+    }
     
-    IncrementCycle();
-    UnlockData();
+    if( mGeneratePointCloud )
+        mPC = mGrabber->GeneratePC(rgb, depth);
+    
+    FinishCycle();
+    
+    //Since this interface does not call ThreadEntry, so we have to call these signals here.
+    mOnCycleCompleteSignal();
+    mOnFinishSignal();
 }
 
 Eigen::Isometry3d KinectDeviceReader::GetCurrentGroundTruth()
@@ -94,7 +115,7 @@ Eigen::Isometry3d KinectDeviceReader::GetCurrentGroundTruth()
 
 bool KinectDeviceReader::ProvidesGroundTruth()
 {
-    return false;
+    return false; // For now there is not way to provide ground truth for a kinect device.
 }
 
 } // end namespace utils

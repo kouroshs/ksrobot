@@ -7,8 +7,9 @@ namespace common
 {
 
 
-KinectInterface::KinectInterface(const std::string& name) : Interface(name), mPC(new KinectPointCloud()),
-    mRgb(new KinectRgbImage()), mRawDepth(new KinectRawDepthImage()), mFloatDepth(new KinectFloatDepthImage())
+KinectInterface::KinectInterface() : Interface(), mPC(new KinectPointCloud()),
+    mRgb(new KinectRgbImage()), mRawDepth(new KinectRawDepthImage()), mFloatDepth(new KinectFloatDepthImage()),
+    mGeneratePointCloud(true), mGenerateFloatDepth(true)
 {
     memset(&mParams, 0, sizeof(mParams));
 }

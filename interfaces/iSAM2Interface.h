@@ -31,7 +31,7 @@ namespace interfaces
 class iSAM2Interface : public common::SLAMInterface
 {
 public:
-    iSAM2Interface(const std::string& name);
+    iSAM2Interface();
     virtual ~iSAM2Interface();
 private:
 };

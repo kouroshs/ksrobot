@@ -35,7 +35,7 @@ public:
     typedef boost::shared_ptr<this_type>        Ptr;
     typedef boost::shared_ptr<const this_type>  ConstPtr;
     
-    ICPInterface(const std::string& name);
+    ICPInterface();
     virtual ~ICPInterface();
     
     //virtual void                RegisterToKinect(common::KinectInterface::Ptr ki);

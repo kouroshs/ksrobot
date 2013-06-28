@@ -25,7 +25,7 @@ namespace KSRobot
 namespace interfaces
 {
 
-SerialEngine::SerialEngine(const std::string& name) : EngineInterface(name)
+SerialEngine::SerialEngine() : EngineInterface()
 {
 }
 

@@ -24,9 +24,7 @@
 #include <common/Interface.h>
 #include <common/VisualOdometryInterface.h>
 #include <common/Timer.h>
-#include <boost/lockfree/queue.hpp>
 #include <Eigen/Geometry>
-#include <tbb/concurrent_queue.h>
 
 namespace KSRobot
 {
@@ -39,8 +37,8 @@ public:
     typedef MappingInterface                    this_type;
     typedef boost::shared_ptr<this_type>        Ptr;
     typedef boost::shared_ptr<const this_type>  ConstPtr;
-
-    MappingInterface(const std::string& name);
+    
+    MappingInterface();
     virtual ~MappingInterface();
     
     // Not neccessary to call
@@ -67,23 +65,6 @@ private:
     class KOctreeMap;
     boost::shared_ptr<KOctreeMap>       mMapper;
     
-    class MapElement
-    {
-    public:
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-        
-        MapElement() {;}
-        MapElement(const MapElement& o) : PC(o.PC), Transform(o.Transform) {;}
-        ~MapElement() {;}
-        
-        MapElement& operator = (const MapElement& o) { PC = o.PC; Transform = o.Transform; return *this; }
-
-        Eigen::Isometry3d               Transform;
-        KinectPointCloud::ConstPtr      PC;
-    };
-    
-    typedef tbb::concurrent_bounded_queue<MapElement, Eigen::aligned_allocator<MapElement> >   QueueType;
-    QueueType                           mQ;
     double                              mMapRes;
     double                              mMaxRange;
     bool                                mApplyFilter;

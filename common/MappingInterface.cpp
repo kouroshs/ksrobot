@@ -34,10 +34,28 @@
 #include <vector>
 #include <math.h>
 
+#include <tbb/concurrent_queue.h>
+
+
 namespace KSRobot
 {
 namespace common
 {
+
+class MapElement
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    
+    MapElement() {;}
+    MapElement(const MapElement& o) : PC(o.PC), Transform(o.Transform) {;}
+    ~MapElement() {;}
+    
+    MapElement& operator = (const MapElement& o) { PC = o.PC; Transform = o.Transform; return *this; }
+    
+    Eigen::Isometry3d               Transform;
+    KinectPointCloud::ConstPtr      PC;
+};    
 
 class MappingInterface::KOctreeMap : public octomap::ColorOcTree
 {
@@ -46,6 +64,11 @@ public:
     typedef KOctreeMap                          ThisType;
     
 
+    
+    typedef tbb::concurrent_bounded_queue<MapElement, Eigen::aligned_allocator<MapElement> >   QueueType;
+    QueueType                           mQ;
+    
+    
     pcl::VoxelGrid<pcl::PointXYZRGBA>           mGrid;
     KinectPointCloud::Ptr                       mFilteredCloud;
     
@@ -110,10 +133,20 @@ public:
 
 };
 
-MappingInterface::MappingInterface(const std::string& name) : Interface(name), mMapRes(0.01), mMaxRange(-1),
+// MappingInterface::MappingInterface(): Interface(""), mMapRes(0.01), mMaxRange(-1),
+// mApplyFilter(true), mFilterTimer(new Timer("FilterDownSample")), mUpdateTimer(new Timer("Update"))
+// {
+//     mQ.set_capacity(1000); // Storing this much pointcloud will need 5GB of memory, so it's better to fail!
+//     ReInitialize();
+//     
+//     RegisterTimer(mFilterTimer);
+//     RegisterTimer(mUpdateTimer);
+// }
+
+
+MappingInterface::MappingInterface() : Interface(), mMapRes(0.01), mMaxRange(-1),
     mApplyFilter(true), mFilterTimer(new Timer("FilterDownSample")), mUpdateTimer(new Timer("Update"))
 {
-    mQ.set_capacity(1000); // Storing this much pointcloud will need 5GB of memory, so it's better to fail!
     ReInitialize();
     
     RegisterTimer(mFilterTimer);
@@ -127,6 +160,7 @@ MappingInterface::~MappingInterface()
 void MappingInterface::ReInitialize()
 {
     mMapper.reset(new KOctreeMap(mMapRes, mMaxRange));
+    mMapper->mQ.set_capacity(1000); // Storing this much pointcloud will need 5GB of memory, so it's better to fail!
     mMapper->mGrid.setLeafSize(mMapRes / 2, mMapRes / 2, mMapRes / 2);
     mMapper->mFilteredCloud.reset(new KinectPointCloud());
 }
@@ -140,7 +174,7 @@ void MappingInterface::OnNewKeypoint()
     MapElement me;
     me.PC = mVO->GetCurrentPointCloud();
     me.Transform = mVO->GetGlobalPose();
-    mQ.try_push(me);
+    mMapper->mQ.try_push(me);
 }
 
 void MappingInterface::RegisterToVO(VisualOdometryInterface::Ptr vo)
@@ -153,7 +187,7 @@ bool MappingInterface::RunSingleCycle()
 {
     int count = 0;
     MapElement me;
-    while( mQ.try_pop(me) )
+    while( mMapper->mQ.try_pop(me) )
     {
         KinectPointCloud::ConstPtr final_output;
         if( mApplyFilter )

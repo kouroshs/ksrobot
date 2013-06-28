@@ -41,7 +41,7 @@ public:
     typedef boost::shared_ptr<this_type>        Ptr;
     typedef boost::shared_ptr<const this_type>  ConstPtr;
 
-    EngineInterface(const std::string& name);
+    EngineInterface();
     virtual ~EngineInterface();
     
     inline void                         SetExecutionParams(const ExecCtrlData& data);

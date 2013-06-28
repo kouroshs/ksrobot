@@ -30,8 +30,9 @@ else(CMAKE_SIZEOF_VOID_P EQUAL 8)
 endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
 
 #add a hint so that it can find it without the pkg-config
+#KOUROSH : THERE WAS A /usr/include/openni in the following hints, but i removed it. didn't work for my platform
 find_path(OPENNI_INCLUDE_DIR XnStatus.h
-    HINTS /usr/include/ni ${PC_OPENNI_INCLUDEDIR} ${PC_OPENNI_INCLUDE_DIRS} /usr/include/openni
+    HINTS /usr/include/ni ${PC_OPENNI_INCLUDEDIR} ${PC_OPENNI_INCLUDE_DIRS} 
     "${PROGRAMFILES_}/OpenNI/Include"
     PATH_SUFFIXES openni)
 #add a hint so that it can find it without the pkg-config

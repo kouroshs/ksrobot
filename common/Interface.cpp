@@ -26,9 +26,9 @@ namespace KSRobot
 namespace common
 {
 
-Interface::Interface(const std::string& name) : mSleepMillisecs(0.0f), mName(name), mCycles(0)
+Interface::Interface() : mSleepMillisecs(0.0f), mCycles(0)
 {
-    mContinueExec.store(true);
+    mContinueExec = true;
 }
 
 Interface::~Interface()
@@ -61,7 +61,7 @@ void Interface::Start()
 
 void Interface::Stop()
 {
-    mContinueExec.store(false);
+    mContinueExec = (false);
     if( mThread.joinable() )
         mThread.join();
 }
@@ -79,14 +79,14 @@ void Interface::ThreadEntry()
 
 void Interface::WriteRunningTimes(std::ostream& os)
 {
-    os << "Interface " << mName << " times:\n";
+    os << "Interface " << mInterfaceName << " times:\n";
     for(size_t i = 0; i < mTimers.size(); i++)
         os << mTimers[i]->ToString() << std::endl;
 }
 
 bool Interface::ContinueExecution() const
 {
-    return mContinueExec.load();
+    return mContinueExec;
 }
 
 boost::signals2::connection Interface::RegisterOnCycleCompleteReceiver(boost::function<void ()> fn)

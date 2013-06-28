@@ -22,7 +22,7 @@ public:
     
     static const int Channels = NumChannels;
 public:
-    KinectBaseImage(int w, int h) : mWidth(0), mHeight(0) { Create(mWidth, mHeight); }
+    KinectBaseImage(int w, int h) : mWidth(w), mHeight(h) { Create(mWidth, mHeight); }
     KinectBaseImage() : mWidth(0), mHeight(0) {;}
     KinectBaseImage(const KinectBaseImage<X, NumChannels>& o) : mWidth(o.GetWidth()), mHeight(o.GetHeight()),
                                                                 mData(GetArray()) {;}
