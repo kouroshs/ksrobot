@@ -192,6 +192,7 @@ void ExportEigen()
     
     
     class_<Quaterniond>("Quaterniond", init<>())
+        .def(init<const Matrix3d&>())
         .def(init<double,double,double,double>())
         .def_readonly("IsDouble", true)
         .def_readonly("Identity", qd_identity)

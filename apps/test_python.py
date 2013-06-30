@@ -3,7 +3,6 @@ import numpy
 sys.path.append('../build/bin/')
 from libksrobot import *
 
-m = eigen.Matrix3f()
-q = eigen.Quaternionf(m)
+p = common.KinectPointCloud()
 
-print q
+pcl.TransformPointCloud(p, p, eigen.Isometry3f.Identity)

@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 2.8)
 
 # Set CMake build type here. the default is Debug.
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "DEBUG")
-  #set(CMAKE_BUILD_TYPE "RELEASE")
+  #set(CMAKE_BUILD_TYPE "DEBUG")
+  set(CMAKE_BUILD_TYPE "RELEASE")
   #set(CMAKE_BUILD_TYPE "RELWITHDEBINFO")
   #set(CMAKE_BUILD_TYPE "MINSIZEREL")
 endif()

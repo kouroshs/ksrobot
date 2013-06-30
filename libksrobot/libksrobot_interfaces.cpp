@@ -34,6 +34,10 @@ void ExportInterfaces()
         .def("ProvidesGroundTruth", &KinectDatasetReader::ProvidesGroundTruth)
         .def("GetCurrentGroundTruth", &KinectDatasetReader::GetCurrentGroundTruth)
         .def("GetNumCycles", &KinectDatasetReader::GetNumCycles)
+        .def("GetCurrentRgbFileName", &KinectDatasetReader::GetCurrentRgbFileName)
+        .def("GetCurrentDepthFileName", &KinectDatasetReader::GetCurrentDepthFileName)
+        .def("GetReadFiles", &KinectDatasetReader::GetReadFiles)
+        .def("SetReadFiles", &KinectDatasetReader::SetReadFiles)
     ;
 
     class_<KinectDeviceReader, boost::shared_ptr<KinectDeviceReader>, 

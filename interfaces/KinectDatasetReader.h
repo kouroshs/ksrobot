@@ -45,8 +45,16 @@ public:
     virtual bool                        ProvidesGroundTruth();
     virtual Eigen::Isometry3d           GetCurrentGroundTruth();
     
-    int                 GetNumCycles() const { return (int)mRGBFiles.TimeStamps.size(); }
+    inline int                          GetNumCycles() const;
     
+    inline std::string                  GetCurrentDepthFileName() const;
+    inline std::string                  GetCurrentRgbFileName() const;
+    
+    inline bool                         GetReadFiles() const;
+    inline void                         SetReadFiles(bool rd);
+    
+    inline std::vector<std::string>     GetRgbFileList() const;
+    inline std::vector<std::string>     GetDepthFileList() const;
 private:
     struct FileList
     {
@@ -83,7 +91,7 @@ private:
     void                ReadGroundTruthData     (std::ifstream& file                    );
     
     void                CorrespondRGBDIndices   (                                       );
-    void                CorrespondGroundTruths   (                                       );
+    void                CorrespondGroundTruths  (                                       );
     void                MoveGroundTruthsToOrigin(                                       );
 
 private:
@@ -94,6 +102,7 @@ private:
     GroundTruthArray                            mGroundTruth;
     
     bool                                        mProvidesGroundTruth;
+    bool                                        mReadFiles;
     int                                         mPerCycleSleep;
     int                                         mTotalTime;
     common::TimePoint                           mLastTime;
@@ -104,6 +113,45 @@ private:
     common::Timer::Ptr                          mTimerLoadTimes;
     common::Timer::Ptr                          mTimerPCGenerator;
 };
+
+inline int KinectDatasetReader::GetNumCycles() const
+{
+    assert(mRGBFiles.TimeStamps.size() < size_t(1 << 31) - 1);
+    return (int)mRGBFiles.TimeStamps.size();
+}
+
+inline std::string KinectDatasetReader::GetCurrentDepthFileName() const
+{
+    assert((size_t)GetCycle() < mDepthFiles.FileNames.size());
+    return mDepthFiles.FileNames[GetCycle()];
+}
+
+inline std::string KinectDatasetReader::GetCurrentRgbFileName() const
+{
+    assert((size_t)GetCycle() < mRGBFiles.FileNames.size());
+    return mRGBFiles.FileNames[GetCycle()];
+}
+
+inline std::vector<std::string> KinectDatasetReader::GetRgbFileList() const
+{
+    return mRGBFiles.FileNames;
+}
+
+inline std::vector<std::string> KinectDatasetReader::GetDepthFileList() const
+{
+    return mDepthFiles.FileNames;
+}
+
+inline bool KinectDatasetReader::GetReadFiles() const
+{
+    return mReadFiles;
+}
+
+inline void KinectDatasetReader::SetReadFiles(bool rd)
+{
+    mReadFiles = rd;
+}
+
 
 } // end namespace utils
 } // end namespace KSRobot

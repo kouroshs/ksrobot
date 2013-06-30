@@ -97,7 +97,6 @@ void ExportCommon()
     DEF_KINECT_IMAGE_TYPE(KinectRawDepthImage);
     DEF_KINECT_IMAGE_TYPE(KinectFloatDepthImage);
     
-    
     class_<KinectImageDiskIO, boost::noncopyable>("KinectImageDiskIO", no_init)
         .def("SaveToFileRgb", &KinectImageDiskIO::SaveToFileRgb)
         .def("SaveToFileDepth", &KinectImageDiskIO::SaveToFileDepth)
@@ -122,6 +121,7 @@ void ExportCommon()
     
     
     class_<KinectPointCloud, KinectPointCloud::Ptr>("KinectPointCloud", init<>())
+        .def(init<const KinectPointCloud&>())
         .def_readwrite("points", &KinectPointCloud::points)
         .def_readwrite("width", &KinectPointCloud::width)
         .def_readwrite("height", &KinectPointCloud::height)
@@ -129,6 +129,9 @@ void ExportCommon()
         .def("size", &KinectPointCloud::size)
         .def("clear", &KinectPointCloud::clear)
     ;
+    
+    implicitly_convertible<KinectPointCloud::Ptr, KinectPointCloud::ConstPtr>();
+    register_ptr_to_python<KinectPointCloud::ConstPtr>();
     
     {
         scope outer_ki =
@@ -194,6 +197,9 @@ void ExportCommon()
         .def("GetCurrentRgbImage", &VisualOdometryInterface::GetCurrentRgbImage)
         .def("GetCurrentRawDepthImage", &VisualOdometryInterface::GetCurrentRawDepthImage)
         .def("GetCurrentFloatDepthImage", &VisualOdometryInterface::GetCurrentFloatDepthImage)
+        
+        .def("ReadSettings", &VisualOdometryInterface::ReadSettings)
+        .def("WriteSettings", &VisualOdometryInterface::WriteSettings)
         
         .def("GetConvergenceError", pure_virtual(&VisualOdometryInterface::GetConvergenceError))
         .def("Converged", pure_virtual(&VisualOdometryInterface::Converged))

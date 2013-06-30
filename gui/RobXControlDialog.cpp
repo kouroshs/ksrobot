@@ -4,6 +4,8 @@
 #include <QMessageBox>
 #include <QTimer>
 
+#include <iostream>
+
 #if 1
 #define ENABLE      ui->tabControlLevel->setEnabled(true)
 #define DISABLE     ui->tabControlLevel->setEnabled(false)
@@ -44,7 +46,7 @@ void RobXControlDialog::Connect(const QString& device)
         mCtrl->Open(device);
         ENABLE;
         mEncoderUpdateTimer->start();
-        std::cout << "After timer call\n" << std::flush;
+        //std::cout << "After timer call\n" << std::flush;
     }
     catch(std::exception& ex)
     {

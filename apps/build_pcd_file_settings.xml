@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DatasetDir>/windows/E/Datasets/rgbd_dataset_freiburg2_pioneer_slam/</DatasetDir>
+<SaveDir>~/test/pointclouds/</SaveDir>
+<Fovis>
+    <MaxKeyframesDistance>0.1</MaxKeyframesDistance>
+    <MaxKeyframesAngle>20</MaxKeyframesAngle>
+    <ProjectOnGround>true</ProjectOnGround>
+    <RobotSensorHeight>0.57</RobotSensorHeight>
+</Fovis>
+<VoxelGrid>
+    <Resolution>0.05</Resolution>
+    <Enabled>true</Enabled>
+</VoxelGrid>
+<PassThrough>
+    <LowLimit>0</LowLimit>
+    <HighLimit>4</HighLimit>
+    <Enabled>false</Enabled>
+    <FieldName>z</FieldName>
+</PassThrough>
+<MaxCycles>10</MaxCycles>

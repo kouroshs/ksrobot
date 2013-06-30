@@ -17,77 +17,65 @@ using namespace common;
 using namespace interfaces;
 using namespace std;
 
+// void Callback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& p)
+// {
+//     std::cout << "CALLBACK CALLED!\n" << std::flush;
+// }
+
 int main(int argc, char** argv)
 {
+    (void)argc; (void)argv;
     ProgramOptions::Ptr settings(new ProgramOptions());
     settings->LoadFromFile("settings.xml");
     
     KinectDatasetReader::Ptr kinect(new KinectDatasetReader());
-    FovisInterface::Ptr fovis(new FovisInterface());
-    MappingInterface::Ptr map(new MappingInterface());
-    
-    fovis->ReadSettings(settings->StartNode("FovisInterface"));
-    map->ReadSettings(settings->StartNode("MappingInterface"));
+//     FovisInterface::Ptr fovis(new FovisInterface());
+//     fovis->ReadSettings(settings->StartNode("FovisInterface"));
 
     kinect->Initialize("/windows/E/Datasets/rgbd_dataset_freiburg2_pioneer_slam/");
-    fovis->RegisterToKinect(kinect);
-    //map->RegisterToVO(fovis);
+//     fovis->RegisterToKinect(kinect);
 
-    int maxCount = settings->GetInt("Cycles", 10);
-    
-    KinectPointCloud::Ptr ki(new KinectPointCloud);
-    ki->points.reserve(800 * 640 * 480);
-    
-    pcl::VoxelGrid<pcl::PointXYZRGBA> vg;
-    float sz = 0.01;
-    vg.setLeafSize(sz, sz, sz);
-    
-    pcl::PassThrough<pcl::PointXYZRGBA> pass;
-    pass.setFilterFieldName("z");
-    pass.setFilterLimits(0, 3);
-    
-    KinectPointCloud::Ptr filterResult(new KinectPointCloud);
-    
     std::vector<int> dummyVect;
-    size_t numPoints = 0;
+
+    KinectPointCloud::Ptr kpc(new KinectPointCloud);
     
-    for(int i = 0; i < 50; i++)
+    for(int i = 0; i < 1; i++)
     {
         kinect->RunSingleCycle();
-        fovis->RunSingleCycle();
-        //map->RunSingleCycle();
-        
-        if( !fovis->Converged() )
-        {
-            std::cout << "SKIPPED\n";
-            continue;
-        }
         KinectPointCloud::ConstPtr pc = kinect->GetPointCloud();
-        vg.setInputCloud(pc);
-        filterResult->points.clear();
-        vg.filter(*filterResult);
+        KinectPointCloud::Ptr filteredPC(new KinectPointCloud(*pc));
         
-        pcl::removeNaNFromPointCloud(*filterResult, *filterResult, dummyVect);
+//         pcl::VoxelGrid<KinectPointCloud::PointType> vg;
+//         vg.setLeafSize(0.02, 0.02, 0.02);
+//         vg.setInputCloud(pc);
+//         vg.filter(*filteredPC);
+//         
         
-        pass.setInputCloud(filterResult);
-        pass.filter(*filterResult);
         
-        //pcl::transformPointCloud(*filterResult, *filterResult, fovis->GetGlobalPose().cast<float>());
-        pcl::transformPointCloud(*filterResult, *filterResult, kinect->GetCurrentGroundTruth().cast<float>());
-        ki->points.insert(ki->points.end(), filterResult->begin(), filterResult->end());
+//         pcl::PassThrough<KinectPointCloud::PointType> passFilter;
+//         passFilter.setFilterLimits(0, 3);
+//         passFilter.setFilterFieldName("z");
+//         passFilter.setInputCloud(filteredPC);
+//         passFilter.filter(*filteredPC);
+
+        filteredPC->sensor_orientation_ = kinect->GetCurrentGroundTruth().linear().cast<float>();
+        Eigen::Vector3f v = kinect->GetCurrentGroundTruth().translation().cast<float>();
+        filteredPC->sensor_origin_ = Eigen::Vector4f(v[0], v[1], v[2], 1);
         
-        Eigen::Vector3d v = fovis->GetGlobalPose().translation();
+        pcl::io::savePCDFileBinaryCompressed("/home/kourosh/test/" +  boost::lexical_cast<std::string>(i) + ".pcd", *filteredPC);
         
-        //if( i % 10 == 0 || i == maxCount - 1 )
-        //std::cout << "Cycle " << kinect->GetCycle() << " " << fovis->GetCycle() << " " << map->GetCycle() << std::endl;
-        std::cout << v[0] << "  " << v[1] << "  " << v[2] << std::endl;
+//        pcl::transformPointCloud(*filteredPC, *filteredPC, kinect->GetCurrentGroundTruth().cast<float>());
+//        kpc->insert(kpc->end(), filteredPC->begin(), filteredPC->end());
+        
+//         vg.setInputCloud(kpc);
+//         vg.filter(*kpc);
+        
+        std::cout << "Cycle " << i << std::endl; 
+//         std::cout << "RGB: " << kinect->GetCurrentRgbFileName() << std::endl;
+//         std::cout << "DEPTH: " << kinect->GetCurrentDepthFileName() << std::endl;
+        std::cout << std::flush;
     }
+    //pcl::io::savePCDFileBinary("/home/kourosh/test/pointclouds/all.pcd", *kpc);
     settings->SaveToFile("settings.xml");
-    //map->SaveMapToFile("/home/kourosh/map.ot");
-    
-    vg.setInputCloud(ki);
-    vg.filter(*ki);
-    
-    pcl::io::savePCDFileBinary("/home/kourosh/pc.pcd", *ki);
     return 0;
 }

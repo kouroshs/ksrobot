@@ -22,7 +22,8 @@ namespace fs = boost::filesystem;
 
 KinectDatasetReader::KinectDatasetReader() : KinectInterface(), 
     mRunning(false), mTimerLoadTimes(new common::Timer("Image load times")),
-    mTimerPCGenerator(new common::Timer("PointCloud generation time"))
+    mTimerPCGenerator(new common::Timer("PointCloud generation time")),
+    mReadFiles(true)
 {
     RegisterTimer(mTimerLoadTimes);
     RegisterTimer(mTimerPCGenerator);
@@ -335,7 +336,8 @@ bool KinectDatasetReader::RunSingleCycle()
         return false;
     }
     
-    LoadNextFiles();
+    if( mReadFiles )
+        LoadNextFiles();
     FinishCycle();
     return true;
 }
