@@ -30,6 +30,7 @@
 #include <Eigen/Geometry>
 
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/common/transforms.h>
 
 #include <vector>
 #include <math.h>
@@ -53,7 +54,7 @@ public:
     
     MapElement& operator = (const MapElement& o) { PC = o.PC; Transform = o.Transform; return *this; }
     
-    Eigen::Isometry3d               Transform;
+    Eigen::Isometry3f               Transform;
     KinectPointCloud::ConstPtr      PC;
 };    
 
@@ -97,10 +98,10 @@ public:
         mPC.transform(octomath::Pose6D(octomath::Vector3(0, 0, 0), rot));
     }
     
-    void InsertPointCloud(common::KinectPointCloud::ConstPtr pc, const Eigen::Isometry3d& pose, bool lazy_eval = false)
+    void InsertPointCloud(common::KinectPointCloud::ConstPtr pc, const Eigen::Isometry3f& pose, bool lazy_eval = false)
     {
-        Eigen::Vector3d eig_trans(pose.translation());
-        Eigen::Quaterniond eig_quat(pose.rotation());
+        Eigen::Vector3f eig_trans(pose.translation());
+        Eigen::Quaternionf eig_quat(pose.linear());
         
         octomath::Vector3 trans(eig_trans[0], eig_trans[1], eig_trans[2]);
         octomath::Quaternion rot(eig_quat.w(), eig_quat.x(), eig_quat.y(), eig_quat.z());
@@ -196,11 +197,16 @@ bool MappingInterface::RunSingleCycle()
                 mMapper->mFilteredCloud->points.clear(); // in case the filter doesn't do this
                 mMapper->mGrid.setInputCloud(me.PC);
                 mMapper->mGrid.filter(*(mMapper->mFilteredCloud));
+                
+                Eigen::Quaternionf quat(Eigen::AngleAxisf(6, Eigen::Vector3f::UnitX()));
+                pcl::transformPointCloud(*(mMapper->mFilteredCloud), *(mMapper->mFilteredCloud), Eigen::Vector3f(0,0,0), quat);
+                
                 final_output = mMapper->mFilteredCloud;
             mFilterTimer->Stop();
         }
         else
             final_output = me.PC;
+        
         
         mUpdateTimer->Start();
             mMapper->InsertPointCloud(final_output, me.Transform);

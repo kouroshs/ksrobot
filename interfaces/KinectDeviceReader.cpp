@@ -51,8 +51,8 @@ void KinectDeviceReader::Initialize(const std::string& device)
     mParams.Height = 480;
     mParams.FocalX = 528.49404721f;
     mParams.FocalY = 528.49404721f;
-    mParams.CenterX = mParams.Width / 2;
-    mParams.CenterY = mParams.Height / 2;
+    mParams.CenterX = mParams.Width / 2 - 0.5f;
+    mParams.CenterY = mParams.Height / 2 - 0.5f;
     
 }
 
@@ -107,10 +107,10 @@ void KinectDeviceReader::RGBDCallback(const boost::shared_ptr<openni_wrapper::Im
     mOnFinishSignal();
 }
 
-Eigen::Isometry3d KinectDeviceReader::GetCurrentGroundTruth()
+Eigen::Isometry3f KinectDeviceReader::GetCurrentGroundTruth()
 {
     throw std::runtime_error("(KinectDeviceReader::GetCurrentGroundTruth) No ground truth information is provided.");
-    return Eigen::Isometry3d::Identity();
+    return Eigen::Isometry3f::Identity();
 }
 
 bool KinectDeviceReader::ProvidesGroundTruth()

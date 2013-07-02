@@ -57,22 +57,20 @@ if __name__ == "__main__":
         #fovis.RunSingleCycle()
         pc = kinect.GetPointCloud()
         #pcl.removeNaNFromPointCloud(pc, pc)
-        print 'Original size:', pc.size()
+        
+        filteredCloud = common.KinectPointCloud()
         if voxelEnabled:
             voxFilter = pcl.VoxelGrid()
             voxFilter.setLeafSize(voxResolution, voxResolution, voxResolution)
             voxFilter.setInputCloud(pc)
-            voxFilter.filter(pc)
+            voxFilter.filter(filteredCloud)
         
-        print 'After vg:', pc.size()
         if passEnabled:
-            passFilter.setInputCloud(pc)
-            passFilter.filter(pc)
+            passFilter.setInputCloud(filteredCloud)
+            passFilter.filter(filteredCloud)
         
-        print 'After pass:', pc.size()
-        #pcl.MergePointClouds(final_pc, pc)
         
-        saveFile = os.path.join(saveDir, str(i) + '.pcd')    
-        pcl.io.savePCDFileBinary(saveFile, pc)
+        saveFile = os.path.join(saveDir, str(i) + '.pcd')
+        pcl.io.savePCDFileBinaryCompressed(saveFile, filteredCloud)
         
     po.SaveToFile(xmlConfigFile)

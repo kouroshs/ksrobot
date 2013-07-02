@@ -37,16 +37,16 @@ namespace KSRobot
 namespace common
 {
 
-class VisualFeature
-{
-public:
-    typedef boost::shared_ptr<VisualFeature>            Ptr;
-    typedef boost::shared_ptr<const VisualFeature>      ConstPtr;
-    
-    float       U, V;
-    Eigen::Vector3d       RelativePosition;
-    //TODO: Complete this!
-};
+// class VisualFeature
+// {
+// public:
+//     typedef boost::shared_ptr<VisualFeature>            Ptr;
+//     typedef boost::shared_ptr<const VisualFeature>      ConstPtr;
+//     
+//     float       U, V;
+//     Eigen::Vector3d       RelativePosition;
+//     //TODO: Complete this!
+// };
 
 class VisualOdometryInterface : public Interface
 {
@@ -62,8 +62,8 @@ public:
     struct Keypoint
     {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-        Eigen::Isometry3d               RelativeMotion;
-        Eigen::Isometry3d               GlobalPose;
+        Eigen::Isometry3f               RelativeMotion;
+        Eigen::Isometry3f               GlobalPose;
     };
     
     typedef std::vector<Keypoint, Eigen::aligned_allocator<Keypoint> >  KeypointVector;
@@ -81,16 +81,19 @@ public:
     virtual bool                                RunSingleCycle();
     
     inline KinectInterface::Ptr                 GetKinect() const;
-    inline Eigen::Isometry3d                    GetMotionEstimate() const;
-    inline Eigen::Isometry3d                    GetCurrRelativeMotion() const;
+    inline Eigen::Isometry3f                    GetMotionEstimate() const;
+    inline Eigen::Isometry3f                    GetCurrRelativeMotion() const;
     inline const KeypointVector&                GetKeypointRelativeMotion() const;
-    inline Eigen::Isometry3d                    GetGlobalPose() const;
+    inline Eigen::Isometry3f                    GetGlobalPose() const;
+    inline void                                 SetAxisTransform(const Eigen::Isometry3f& trans);
+    inline Eigen::Isometry3f                    GetAxisTransform() const;
     
     // methods useful for when we are inside OnCycleFinished event.
     inline KinectPointCloud::ConstPtr           GetCurrentPointCloud() const;
     inline KinectRgbImage::ConstPtr             GetCurrentRgbImage() const;
     inline KinectRawDepthImage::ConstPtr        GetCurrentRawDepthImage() const;
     inline KinectFloatDepthImage::ConstPtr      GetCurrentFloatDepthImage() const;
+    
 
     inline boost::signals2::connection          RegisterKeyframeReceiver(boost::function<void()> fn);
 protected:
@@ -112,27 +115,25 @@ protected:
             CurrRelativeMotion.setIdentity();
             GlobalPose.setIdentity();
             LastKeypointPose.setIdentity();
+            AxisTransform.setIdentity();
         }
         
-        Eigen::Isometry3d                       MotionEstimate;
-        Eigen::Isometry3d                       CurrRelativeMotion;
-        Eigen::Isometry3d                       GlobalPose;
-        Eigen::Isometry3d                       LastKeypointPose;
+        Eigen::Isometry3f                       MotionEstimate;
+        Eigen::Isometry3f                       CurrRelativeMotion;
+        Eigen::Isometry3f                       GlobalPose;
+        Eigen::Isometry3f                       LastKeypointPose;
+        Eigen::Isometry3f                       AxisTransform;
     };
     
     MotionInfo*                                 mMotion;
     
     KinectInterface::Ptr                        mKinect;
-//     Eigen::Isometry3d                           mMotionEstimate;
-//     Eigen::Isometry3d                           mCurrRelativeMotion;
-//     Eigen::Isometry3d                           mGlobalPose;
-//     Eigen::Isometry3d                           mLastKeypointPose;
     KeypointVector                              mKeypoints;
     
     int                                         mLastKinectCycle;
-    double                                      mMaxKeyframesDist;
-    double                                      mMaxKeyframesAngle;
-    double                                      mRobotHeight;
+    float                                       mMaxKeyframesDist;
+    float                                       mMaxKeyframesAngle;
+    float                                       mRobotHeight;
     bool                                        mIsCycleKeyframe;
     bool                                        mProjectOnGround;
     
@@ -145,15 +146,13 @@ protected:
     Timer::Ptr                                  mOdomTimer;
 };
 
-inline Eigen::Isometry3d VisualOdometryInterface::GetMotionEstimate() const
+inline Eigen::Isometry3f VisualOdometryInterface::GetMotionEstimate() const
 {
-    //return mMotionEstimate;
     return mMotion->MotionEstimate;
 }
 
-inline Eigen::Isometry3d VisualOdometryInterface::GetCurrRelativeMotion() const
+inline Eigen::Isometry3f VisualOdometryInterface::GetCurrRelativeMotion() const
 {
-    //return mCurrRelativeMotion;
     return mMotion->CurrRelativeMotion;
 }
 
@@ -167,10 +166,20 @@ inline KinectInterface::Ptr VisualOdometryInterface::GetKinect() const
     return mKinect;
 }
 
-inline Eigen::Isometry3d VisualOdometryInterface::GetGlobalPose() const
+inline Eigen::Isometry3f VisualOdometryInterface::GetGlobalPose() const
 {
-    //return mGlobalPose;
     return mMotion->GlobalPose;
+}
+
+inline Eigen::Isometry3f VisualOdometryInterface::GetAxisTransform() const
+{
+    return mMotion->AxisTransform;
+}
+
+inline void VisualOdometryInterface::SetAxisTransform(const Eigen::Isometry3f& trans)
+{
+    assert(mMotion != NULL);
+    mMotion->AxisTransform = trans;
 }
 
 inline KinectFloatDepthImage::ConstPtr VisualOdometryInterface::GetCurrentFloatDepthImage() const

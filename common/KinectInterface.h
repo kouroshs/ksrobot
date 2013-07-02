@@ -18,6 +18,12 @@ namespace common
 
 typedef pcl::PointCloud<pcl::PointXYZRGBA>                                  KinectPointCloud;
 
+// #ifdef KSROBOT_USE_DOUBLE_PRECISION_MATH
+//     typedef Eigen::Isometry3d       IsometryTransform
+// #else
+//     typedef Eigen::Isometry3f       IsometryTransform
+// #endif //KSROBOT_USE_DOUBLE_PRECISION_MATH
+
 class KinectInterface : public Interface
 {
 public:
@@ -58,7 +64,7 @@ public:
     inline float                                UnitsPerMeter() const { return 0; }
     
     virtual bool                                ProvidesGroundTruth() = 0;
-    virtual Eigen::Isometry3d                   GetCurrentGroundTruth() = 0;
+    virtual Eigen::Isometry3f                   GetCurrentGroundTruth() = 0;
     
     inline void                                 EnablePointCloudGeneration(bool enable);
     inline void                                 EnableFloatDepthGeneration(bool enable);

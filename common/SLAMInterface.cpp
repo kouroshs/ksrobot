@@ -63,6 +63,11 @@ void SLAMInterface::OnKeyframeDetected()
     //TODO: ADD TO KEYFRAME QUEUE
 }
 
+bool SLAMInterface::RunSingleCycle()
+{
+    //TODO: return true if should process this cycle.
+}
+
 
 } // end namespace common
 } // end namespace KSRobot

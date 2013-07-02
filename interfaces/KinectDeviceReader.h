@@ -29,7 +29,7 @@ public:
     virtual bool                        ContinueExecution() const;
     
     virtual bool                        ProvidesGroundTruth();
-    virtual Eigen::Isometry3d           GetCurrentGroundTruth();
+    virtual Eigen::Isometry3f           GetCurrentGroundTruth();
     
     virtual bool                        RunSingleCycle() { return false; }
     

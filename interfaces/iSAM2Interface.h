@@ -23,6 +23,12 @@
 
 #include <common/SLAMInterface.h>
 
+//Forward declaration:
+namespace gtsam
+{
+    class ISAM2;
+};
+
 namespace KSRobot
 {
 namespace interfaces
@@ -33,7 +39,15 @@ class iSAM2Interface : public common::SLAMInterface
 public:
     iSAM2Interface();
     virtual ~iSAM2Interface();
+    
+    
+    virtual void ReadSettings(common::ProgramOptions::Ptr po);
+    virtual void WriteSettings(common::ProgramOptions::Ptr po);
+    
+    
+    virtual bool RunSingleCycle();
 private:
+    gtsam::ISAM2*                               mISAM2;
 };
 
 };

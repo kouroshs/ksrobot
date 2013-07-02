@@ -43,7 +43,7 @@ public:
     virtual bool                        RunSingleCycle();
 
     virtual bool                        ProvidesGroundTruth();
-    virtual Eigen::Isometry3d           GetCurrentGroundTruth();
+    virtual Eigen::Isometry3f           GetCurrentGroundTruth();
     
     inline int                          GetNumCycles() const;
     
@@ -76,7 +76,7 @@ private:
     struct GroundTruthInfo
     {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-        Eigen::Isometry3d               LocalTransform;
+        Eigen::Isometry3f               LocalTransform;
         double                          TimeStamp;
     };
 

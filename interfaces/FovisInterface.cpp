@@ -135,7 +135,7 @@ bool FovisInterface::RunSingleCycle()
 
     mOdomTimer->Start();
         mImpl->mFovis->processFrame(mImpl->mGrayImage, mImpl->mDepthImage);
-        mMotion->MotionEstimate = mImpl->mFovis->getMotionEstimate();
+        mMotion->MotionEstimate = mImpl->mFovis->getMotionEstimate().cast<float>();
     mOdomTimer->Stop();
 
     FinishCycle();

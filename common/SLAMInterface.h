@@ -54,6 +54,8 @@ public:
     
     virtual void                                RegisterToVO(VisualOdometryInterface::Ptr vo);
     virtual void                                RegisterToLoopDetector(LoopDetector::Ptr ld);
+    
+    virtual bool                                RunSingleCycle();
 private:
     void                                        OnKeyframeDetected();
     void                                        OnLoopDetected(const LoopDetector::LoopClosure& lc);// called from visual odometry

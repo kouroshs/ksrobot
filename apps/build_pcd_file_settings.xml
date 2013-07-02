@@ -8,13 +8,13 @@
     <RobotSensorHeight>0.57</RobotSensorHeight>
 </Fovis>
 <VoxelGrid>
-    <Resolution>0.05</Resolution>
+    <Resolution>0.02</Resolution>
     <Enabled>true</Enabled>
 </VoxelGrid>
 <PassThrough>
     <LowLimit>0</LowLimit>
     <HighLimit>4</HighLimit>
-    <Enabled>false</Enabled>
+    <Enabled>true</Enabled>
     <FieldName>z</FieldName>
 </PassThrough>
 <MaxCycles>10</MaxCycles>

@@ -93,42 +93,36 @@ void VisualOdometryInterface::FinishCycle()
     if( IsThisCycleKeyframe() )
     {
         Keypoint kp;
-        //kp.GlobalPose = mGlobalPose;
-        //kp.RelativeMotion = mLastKeypointPose.inverse() * mGlobalPose;
-        
         kp.GlobalPose = mMotion->GlobalPose;
         kp.RelativeMotion = mMotion->LastKeypointPose.inverse() * mMotion->GlobalPose;
         mKeypoints.push_back(kp);
-        //mCurrRelativeMotion = Eigen::Isometry3d::Identity();
-        //mLastKeypointPose = mGlobalPose;
         mMotion->CurrRelativeMotion.setIdentity();
         mMotion->LastKeypointPose = mMotion->GlobalPose;
     }
     else
     {
-        //mCurrRelativeMotion = mLastKeypointPose.inverse() * mGlobalPose;
         mMotion->CurrRelativeMotion = mMotion->LastKeypointPose.inverse() * mMotion->GlobalPose;
     }
     NotifyKeyframeReceivers();
 }
 
-static double ExtractRotationAngle(const Eigen::Matrix3d& r)
+static double ExtractRotationAngle(const Eigen::Matrix3f& r)
 {
-    double r11, r13, r31, r33;
+    float r11, r13, r31, r33;
     
     r11 = r(0, 0);
     r13 = r(0, 2);
     r31 = r(2, 0);
     r33 = r(2, 2);
     
-    return atan2(r13, r33);
+    return atan2f(r13, r33);
 }
 
 void VisualOdometryInterface::ProjectToGround()
 {
     mMotion->CurrRelativeMotion.translation()[1] = 0;
-    double tetha = ExtractRotationAngle(mMotion->CurrRelativeMotion.rotation());
-    mMotion->CurrRelativeMotion.linear() = Eigen::AngleAxisd(tetha, Eigen::Vector3d::UnitY()).toRotationMatrix(); 
+    float tetha = ExtractRotationAngle(mMotion->CurrRelativeMotion.rotation());
+    mMotion->CurrRelativeMotion.linear() = Eigen::AngleAxisf(tetha, Eigen::Vector3f::UnitY()).toRotationMatrix(); 
 }
 
 void VisualOdometryInterface::CheckForKeyframe()
@@ -150,9 +144,8 @@ void VisualOdometryInterface::CheckForKeyframe()
     //TODO: Check for angle
     if( mProjectOnGround )
     {
-        double r13, r33;
-        //const Eigen::Matrix3d& rot = mCurrRelativeMotion.rotation();
-        const Eigen::Matrix3d& rot = mMotion->CurrRelativeMotion.rotation();
+        float r13, r33;
+        const Eigen::Matrix3f& rot = mMotion->CurrRelativeMotion.rotation();
         //TODO: REPLACE THIS WITH ExtractRotationAngle after debugs
         
 //         r11 = rot(0, 0);
@@ -165,7 +158,7 @@ void VisualOdometryInterface::CheckForKeyframe()
 //         
 //         std::cout << "(VisualOdometryInterface::CheckForKeyframe) dc = " << dc << " ds = " << ds << std::endl << std::flush;
         
-        double tetha = atan2(r13, r33);
+        float tetha = atan2f(r13, r33);
         
         if( isnan(tetha) )
             std::cout << "tetha is nan r13=" << r13 << " r33=" << r33 << std::endl << std::flush;
@@ -177,7 +170,7 @@ void VisualOdometryInterface::CheckForKeyframe()
     //std::cout << "Motion Estimate:\n" << mMotionEstimate.rotation() << std::endl << std::flush;
     
     //Eigen::Matrix<double, 3, 1> euler = mMotionEstimate.rotation().eulerAngles(2, 1, 0);
-    Eigen::Matrix<double, 3, 1> euler = mMotion->MotionEstimate.rotation().eulerAngles(2, 1, 0);
+    Eigen::Matrix<float, 3, 1> euler = mMotion->MotionEstimate.rotation().eulerAngles(2, 1, 0);
     euler = euler * 180 / M_PI;
     //std::cout << "Motion Estimate:\n Yaw=" << euler(0, 0) << " Pitch=" << euler(1, 0) << " Roll= " << euler(2, 0) << std::endl;
     //euler = mCurrRelativeMotion.rotation().eulerAngles(2, 1, 0);

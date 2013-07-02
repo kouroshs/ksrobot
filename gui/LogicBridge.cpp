@@ -187,8 +187,8 @@ void LogicBridge::OnKinectNewDataReceive()
 
 void LogicBridge::OnFovisCycleComplete()
 {
-    Eigen::Isometry3d motion = mEngine->GetVisualOdometryInterface()->GetMotionEstimate();
-    Eigen::Vector3d v = motion.translation();
+    Eigen::Isometry3f motion = mEngine->GetVisualOdometryInterface()->GetMotionEstimate();
+    Eigen::Vector3f v = motion.translation();
     emit OnVisualOdometry(QVector3D(v[0], v[1], v[2]));
 }
 

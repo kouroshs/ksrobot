@@ -17,65 +17,196 @@ using namespace common;
 using namespace interfaces;
 using namespace std;
 
-// void Callback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& p)
-// {
-//     std::cout << "CALLBACK CALLED!\n" << std::flush;
-// }
-
 int main(int argc, char** argv)
 {
     (void)argc; (void)argv;
-    ProgramOptions::Ptr settings(new ProgramOptions());
-    settings->LoadFromFile("settings.xml");
-    
+
     KinectDatasetReader::Ptr kinect(new KinectDatasetReader());
-//     FovisInterface::Ptr fovis(new FovisInterface());
-//     fovis->ReadSettings(settings->StartNode("FovisInterface"));
-
     kinect->Initialize("/windows/E/Datasets/rgbd_dataset_freiburg2_pioneer_slam/");
-//     fovis->RegisterToKinect(kinect);
 
-    std::vector<int> dummyVect;
+    FovisInterface::Ptr fovis(new FovisInterface());
+    fovis->RegisterToKinect(kinect);
 
-    KinectPointCloud::Ptr kpc(new KinectPointCloud);
+    ProgramOptions::Ptr po(new ProgramOptions);
+    po->LoadFromFile("component-test-settings.xml");
+    float angle = po->GetDouble("AxisRotAngle", 10);
+    angle *= M_PI / 180;
     
-    for(int i = 0; i < 1; i++)
-    {
-        kinect->RunSingleCycle();
-        KinectPointCloud::ConstPtr pc = kinect->GetPointCloud();
-        KinectPointCloud::Ptr filteredPC(new KinectPointCloud(*pc));
-        
-//         pcl::VoxelGrid<KinectPointCloud::PointType> vg;
-//         vg.setLeafSize(0.02, 0.02, 0.02);
-//         vg.setInputCloud(pc);
-//         vg.filter(*filteredPC);
-//         
-        
-        
-//         pcl::PassThrough<KinectPointCloud::PointType> passFilter;
-//         passFilter.setFilterLimits(0, 3);
-//         passFilter.setFilterFieldName("z");
-//         passFilter.setInputCloud(filteredPC);
-//         passFilter.filter(*filteredPC);
+    Eigen::Quaternionf quatAxis(Eigen::AngleAxisf(angle, Eigen::Vector3f::UnitX()));
+    
+    
+    MappingInterface::Ptr map(new MappingInterface);
+    map->RegisterToVO(fovis);
+    map->EnableFiltering(true);
+    map->SetMapResolution(0.05);
+    map->SetMaxRange(4);
+    map->ReInitialize();
+    
+    pcl::VoxelGrid<KinectPointCloud::PointType> vg;
+    vg.setLeafSize(0.05, 0.05, 0.05);
+    
+    pcl::PassThrough<KinectPointCloud::PointType> pass;
+    pass.setFilterFieldName("z");
+    pass.setFilterLimits(0, 4);
 
-        filteredPC->sensor_orientation_ = kinect->GetCurrentGroundTruth().linear().cast<float>();
-        Eigen::Vector3f v = kinect->GetCurrentGroundTruth().translation().cast<float>();
-        filteredPC->sensor_origin_ = Eigen::Vector4f(v[0], v[1], v[2], 1);
+    const size_t max_count = 51;
+    
+    int curr_file_index = 0;
+    int skip_counter = 0;
+    const int skip_max = 5;
+    
+    KinectPointCloud final_pc;
+    
+    for(size_t i = 0; i < max_count; i++)
+    {
+        bool shouldskip;
         
-        pcl::io::savePCDFileBinaryCompressed("/home/kourosh/test/" +  boost::lexical_cast<std::string>(i) + ".pcd", *filteredPC);
+        if( ++skip_counter == skip_max )
+        {
+            //DO NOT SKIP! READ THE FILE
+            kinect->SetReadFiles(true);
+            shouldskip = false;
+            skip_counter = 0;
+            curr_file_index++;
+        }
+        else
+        {
+            // SKIP CYCLE
+            kinect->SetReadFiles(false);
+            shouldskip = true;
+        }
+        kinect->RunSingleCycle();
         
-//        pcl::transformPointCloud(*filteredPC, *filteredPC, kinect->GetCurrentGroundTruth().cast<float>());
-//        kpc->insert(kpc->end(), filteredPC->begin(), filteredPC->end());
+        if( shouldskip )
+            continue;
         
-//         vg.setInputCloud(kpc);
-//         vg.filter(*kpc);
+        fovis->RunSingleCycle();
         
-        std::cout << "Cycle " << i << std::endl; 
-//         std::cout << "RGB: " << kinect->GetCurrentRgbFileName() << std::endl;
-//         std::cout << "DEPTH: " << kinect->GetCurrentDepthFileName() << std::endl;
-        std::cout << std::flush;
+        Eigen::Vector3f trans = fovis->GetGlobalPose().translation();
+        Eigen::Quaternionf quat(fovis->GetGlobalPose().linear());
+        
+        KinectPointCloud::Ptr p1(new KinectPointCloud);
+        vg.setInputCloud(kinect->GetPointCloud());
+        vg.filter(*p1);
+        
+        pass.setInputCloud(p1);
+        pass.filter(*p1);
+        
+        pcl::transformPointCloud(*p1, *p1, trans, quat);
+    
+        pcl::transformPointCloud(*p1, *p1, Eigen::Vector3f(0,0,0), quatAxis);
+        
+        final_pc.insert(final_pc.end(), p1->begin(), p1->end());
+        
+        map->RunSingleCycle();
+        
+        std::cout << "Cycle " << i << std::endl;
     }
-    //pcl::io::savePCDFileBinary("/home/kourosh/test/pointclouds/all.pcd", *kpc);
-    settings->SaveToFile("settings.xml");
+    
+    pcl::io::savePCDFileBinaryCompressed("/home/kourosh/test/pointclouds/fovis.pcd", final_pc);
+    po->SaveToFile("component-test-settings.xml");
+    
+    map->SaveMapToFile("/home/kourosh/map.ot");
+    
+//     KinectDatasetReader::Ptr kinect(new KinectDatasetReader());
+//     kinect->Initialize("/windows/E/Datasets/rgbd_dataset_freiburg2_pioneer_slam/");
+// 
+//     pcl::VoxelGrid<KinectPointCloud::PointType> vg;
+//     vg.setLeafSize(0.05, 0.05, 0.05);
+//     
+//     pcl::PassThrough<KinectPointCloud::PointType> pass;
+//     pass.setFilterFieldName("z");
+//     pass.setFilterLimits(0, 4);
+// 
+//     const size_t max_count = 2000;
+//     
+//     int curr_file_index = 0;
+//     int skip_counter = 0;
+//     const int skip_max = 5;
+//     
+//     for(size_t i = 0; i < max_count; i++)
+//     {
+//         bool shouldskip;
+//         
+//         if( ++skip_counter == skip_max )
+//         {
+//             //DO NOT SKIP! READ THE FILE
+//             kinect->SetReadFiles(true);
+//             shouldskip = false;
+//             skip_counter = 0;
+//             curr_file_index++;
+//         }
+//         else
+//         {
+//             // SKIP CYCLE
+//             kinect->SetReadFiles(false);
+//             shouldskip = true;
+//         }
+//         kinect->RunSingleCycle();
+//         
+//         if( shouldskip )
+//             continue;
+//         
+//         Eigen::Isometry3f iso = kinect->GetCurrentGroundTruth();
+//         
+//         Eigen::Quaternionf quat(iso.rotation());
+//         Eigen::Vector3f t = iso.translation();
+//         
+//         KinectPointCloud::Ptr p1(new KinectPointCloud);
+//         vg.setInputCloud(kinect->GetPointCloud());
+//         vg.filter(*p1);
+//         
+//         pass.setInputCloud(p1);
+//         pass.filter(*p1);
+//         
+//         p1->sensor_origin_ = Eigen::Vector4f(t[0], t[1], t[2], 0);
+//         p1->sensor_orientation_ = quat;
+//         
+//         pcl::io::savePCDFileBinaryCompressed("/home/kourosh/test/pointclouds/" +
+//             boost::lexical_cast<std::string>(curr_file_index) + ".pcd", *p1);
+//         
+//         //if( i % 10 == 0 || i == max_count - 1 )
+//             std::cout << "Cycle " << i << std::endl;
+//     }
+    
+    
+
+//     KinectPointCloud pc;
+//     
+//     pcl::VoxelGrid<KinectPointCloud::PointType> vg;
+//     vg.setLeafSize(0.05, 0.05, 0.05);
+//     
+//     pcl::PassThrough<KinectPointCloud::PointType> pass;
+//     pass.setFilterFieldName("z");
+//     pass.setFilterLimits(0, 4);
+//     
+//     const size_t max_count = 50;
+//     
+//     for(size_t i = 1; i < max_count; i++)
+//     {
+//         KinectPointCloud::Ptr loaddedPC(new KinectPointCloud);
+//         pcl::io::loadPCDFile("/home/kourosh/test/pointclouds/" +
+//             boost::lexical_cast<std::string>(i) + ".pcd", *loaddedPC);
+//         
+//         KinectPointCloud p1;
+//         vg.setInputCloud(loaddedPC);
+//         vg.filter(p1);
+//         
+//         *loaddedPC = p1;
+//         
+//         pass.setInputCloud(loaddedPC);
+//         p1.clear();
+//         pass.filter(p1);
+//         
+//         pcl::transformPointCloud(p1, p1, Eigen::Vector3f(p1.sensor_origin_[0], p1.sensor_origin_[1], p1.sensor_origin_[2]),
+//             p1.sensor_orientation_);
+//         
+//         pc.insert(pc.end(), p1.begin(), p1.end());
+//         if( i % 10 == 0 || i == max_count - 1 )
+//             std::cout << "Cycle " << i << std::endl;
+//     }
+//     
+//     pcl::io::savePCDFileBinary("/home/kourosh/test/pointclouds/final.pcd", pc);
+    
     return 0;
 }

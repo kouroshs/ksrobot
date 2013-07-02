@@ -216,6 +216,8 @@ void RobXControl::Forward(int cm, float speed_index)
     Write(CMD_SET_SPEED_1, (byte)speed_amount1);
     Write(CMD_SET_SPEED_2, (byte)speed_amount2);
     
+    std::cout << "(RobXControl::Forward) Amount = " << speed_amount1 << " ToByte " << (byte)speed_amount1 << std::endl << std::flush;
+    
     mEncoderGoalForward = encoder_amount;
     mMoveTimer->start();
 }
@@ -228,6 +230,8 @@ void RobXControl::Backward(int cm, float speed_index)
     
     Write(CMD_SET_SPEED_1, speed_amount1);
     Write(CMD_SET_SPEED_2, speed_amount2);
+    
+    std::cout << "(RobXControl::Backward) Amount = " << speed_amount1 << " ToByte " << (byte)speed_amount1 << std::endl << std::flush;
     
     mEncoderGoalForward = encoder_amount;
     mMoveTimer->start();
@@ -281,9 +285,9 @@ void RobXControl::GetEncoders()
     {
         int value = 0;
         unsigned char c;
-        std::cout << "\n before write " << std::flush;
+//        std::cout << "\n before write " << std::flush;
         Write(CMD_GET_ENCODER_1);
-        std::cout << " after write " << std::flush;
+//        std::cout << " after write " << std::flush;
         
         Read((unsigned char*)&value, 4);
 //         std::cout << "read \n" << std::flush;
@@ -373,9 +377,9 @@ void RobXControl::Init()
 void RobXControl::OnFeedback()
 {
     static int i = 0;
-    std::cout << "(ONFeedback) before encoderes ... " << i++ << std::flush;
+//    std::cout << "(ONFeedback) before encoderes ... " << i++ << std::flush;
     GetEncoders();
-    std::cout << " done feedback \n " << std::flush;
+//    std::cout << " done feedback \n " << std::flush;
 }
 
 float RobXControl::GetEncoderValue(int index) const

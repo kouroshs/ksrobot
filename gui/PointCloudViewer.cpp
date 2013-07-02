@@ -20,6 +20,7 @@
 
 #include <gui/PointCloudViewer.h>
 #include <pcl/visualization/pcl_visualizer.h>
+#include <vtkRenderWindow.h>
 
 namespace KSRobot
 {
@@ -43,7 +44,7 @@ PointCloudViewer::PointCloudViewer(QWidget* parent, Qt::WindowFlags f): QVTKWidg
     
     mImpl->Vis.addCoordinateSystem(1.0, trans);
     mImpl->Vis.setBackgroundColor(0, 0, 0);
-    SetRenderWindow(mImpl->Vis.getRenderWindow());
+    SetRenderWindow(mImpl->Vis.getRenderWindow().GetPointer());
 }
 
 PointCloudViewer::~PointCloudViewer()

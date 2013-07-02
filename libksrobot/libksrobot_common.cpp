@@ -49,6 +49,18 @@ class DummyScopeClass_Common
 {
 };
 
+struct STRUCT
+{
+    float x;
+    float y;
+    int rgba;
+    
+//     bool operator == (const STRUCT& o)
+//     {
+//         return true;
+//     }
+};
+
 void ExportCommon()
 {
     using namespace boost::python;
@@ -119,13 +131,14 @@ void ExportCommon()
         .def_readwrite("a", &pcl::PointXYZRGBA::a)
     ;
     
-    
     class_<KinectPointCloud, KinectPointCloud::Ptr>("KinectPointCloud", init<>())
         .def(init<const KinectPointCloud&>())
         .def_readwrite("points", &KinectPointCloud::points)
         .def_readwrite("width", &KinectPointCloud::width)
         .def_readwrite("height", &KinectPointCloud::height)
         .def_readwrite("is_dense", &KinectPointCloud::is_dense)
+        .def_readwrite("sensor_orientation_", &KinectPointCloud::sensor_orientation_)
+        .def_readwrite("sensor_origin_", &KinectPointCloud::sensor_origin_)
         .def("size", &KinectPointCloud::size)
         .def("clear", &KinectPointCloud::clear)
     ;

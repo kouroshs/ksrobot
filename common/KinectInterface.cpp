@@ -36,6 +36,8 @@ KinectPointCloud::Ptr KinectInterface::GeneratePointCloudFromImages(KinectRgbIma
     cloud->width = rgb->GetWidth();
     cloud->is_dense = false;
     cloud->points.resize(cloud->width * cloud->height);
+    cloud->sensor_orientation_.setIdentity();
+    cloud->sensor_origin_.fill(0.0f);
     
     float constant_x = 1.0f / camParams.FocalX;
     float constant_y = 1.0f / camParams.FocalY;

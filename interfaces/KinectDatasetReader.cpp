@@ -86,13 +86,13 @@ void KinectDatasetReader::Initialize(const std::string& pathStr)
     mParams.Height = 480;
     mParams.FocalX = 528.49404721f;
     mParams.FocalY = 528.49404721f;
-    mParams.CenterX = mParams.Width / 2;
-    mParams.CenterY = mParams.Height / 2;
+    mParams.CenterX = mParams.Width / 2 - 0.5f;
+    mParams.CenterY = mParams.Height / 2 - 0.5f;
 }
 
 void KinectDatasetReader::MoveGroundTruthsToOrigin()
 {
-    Eigen::Isometry3d origin = mGroundTruth[0].LocalTransform;
+    Eigen::Isometry3f origin = mGroundTruth[0].LocalTransform;
     origin = origin.inverse();
     
     for(size_t i = 0; i < mGroundTruth.size(); i++)
@@ -159,8 +159,8 @@ void KinectDatasetReader::ReadGroundTruthData(ifstream& file)
         }
 
         GroundTruthInfo gt;
-        Eigen::Vector3d vect;
-        Eigen::Quaterniond rot;
+        Eigen::Vector3f vect;
+        Eigen::Quaternionf rot;
         
         gt.TimeStamp = lexical_cast<double>(strs[0]);
         
@@ -168,13 +168,14 @@ void KinectDatasetReader::ReadGroundTruthData(ifstream& file)
             vect[i] = lexical_cast<double>(strs[i + 1]);
 
         // in form of wxyz
-        rot = Quaterniond(lexical_cast<double>(strs[7]),
+        rot = Quaternionf(lexical_cast<double>(strs[7]),
                                   lexical_cast<double>(strs[4]),
                                   lexical_cast<double>(strs[5]),
                                   lexical_cast<double>(strs[6]));
 
         gt.LocalTransform.setIdentity();
         // This ordering is necessary to get correct results.
+        //TODO: Why in this order? shouldn't it be in the reverse order?
         gt.LocalTransform.translate(vect);
         gt.LocalTransform.rotate(rot);
         
@@ -349,8 +350,8 @@ void KinectDatasetReader::LoadNextFiles()
     mRgb = common::KinectImageDiskIO::LoadRgbFromFile(mRGBFiles.FileNames[GetCycle()]);
     mRawDepth = common::KinectImageDiskIO::LoadDepthFromFile(mDepthFiles.FileNames[GetCycle()]);
     
-    //if( mGenerateFloatDepth )
-    //{
+    if( mGenerateFloatDepth )
+    {
         mFloatDepth.reset(new common::KinectFloatDepthImage);
         mFloatDepth->Create(mRawDepth->GetWidth(), mRawDepth->GetHeight());
     
@@ -365,18 +366,18 @@ void KinectDatasetReader::LoadNextFiles()
             else
                 float_array[i] = raw_array[i] * 0.001f; // Convert to meters
         }
-    //}
+    }
     mTimerLoadTimes->Stop();
     
-    //if( mGeneratePointCloud )
-    //{
+    if( mGeneratePointCloud )
+    {
         mTimerPCGenerator->Start();
         mPC = common::KinectInterface::GeneratePointCloudFromImages(mRgb, mRawDepth, mParams);
         mTimerPCGenerator->Stop();
-    //}
+    }
 }
 
-Eigen::Isometry3d KinectDatasetReader::GetCurrentGroundTruth()
+Eigen::Isometry3f KinectDatasetReader::GetCurrentGroundTruth()
 {
     return mGroundTruth[GetCycle()].LocalTransform;
 }
