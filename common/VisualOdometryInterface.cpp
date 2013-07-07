@@ -75,7 +75,7 @@ bool VisualOdometryInterface::RunSingleCycle()
 void VisualOdometryInterface::NotifyKeyframeReceivers()
 {
     if( IsThisCycleKeyframe() )
-        mKeypointReceivers();
+        mKeyframeReceivers(GetLastKeyframe());
 }
 
 void VisualOdometryInterface::FinishCycle()
@@ -85,17 +85,16 @@ void VisualOdometryInterface::FinishCycle()
     if( mProjectOnGround )
         ProjectToGround(); // only necessary for mMotionEstimate
     
-    //mGlobalPose = mGlobalPose * mMotionEstimate;
-    //mCurrRelativeMotion = mCurrRelativeMotion * mMotionEstimate;
     mMotion->GlobalPose = mMotion->GlobalPose * mMotion->MotionEstimate;
     
     CheckForKeyframe();
     if( IsThisCycleKeyframe() )
     {
-        Keypoint kp;
-        kp.GlobalPose = mMotion->GlobalPose;
-        kp.RelativeMotion = mMotion->LastKeypointPose.inverse() * mMotion->GlobalPose;
-        mKeypoints.push_back(kp);
+        Keyframe kf;
+        kf.GlobalPose = mMotion->GlobalPose;
+        kf.RelativeMotion = mMotion->LastKeypointPose.inverse() * mMotion->GlobalPose;
+        AddKeyframeFeatures(kf);
+        mKeyframes.push_back(kf);
         mMotion->CurrRelativeMotion.setIdentity();
         mMotion->LastKeypointPose = mMotion->GlobalPose;
     }
@@ -125,20 +124,19 @@ void VisualOdometryInterface::ProjectToGround()
     mMotion->CurrRelativeMotion.linear() = Eigen::AngleAxisf(tetha, Eigen::Vector3f::UnitY()).toRotationMatrix(); 
 }
 
-void VisualOdometryInterface::CheckForKeyframe()
+bool VisualOdometryInterface::CheckForKeyframe()
 {
     mIsCycleKeyframe = false;
     if( GetCycle() == 0 )
     {
         mIsCycleKeyframe = true;
-        return;
+        return mIsCycleKeyframe;
     }
     
-    //if( mCurrRelativeMotion.translation().squaredNorm() >= mMaxKeyframesDist * mMaxKeyframesDist )
     if( mMotion->CurrRelativeMotion.translation().squaredNorm() >= mMaxKeyframesDist * mMaxKeyframesDist )
     {
         mIsCycleKeyframe = true;
-        return;
+        return mIsCycleKeyframe;
     }
     
     //TODO: Check for angle
@@ -169,17 +167,17 @@ void VisualOdometryInterface::CheckForKeyframe()
     
     //std::cout << "Motion Estimate:\n" << mMotionEstimate.rotation() << std::endl << std::flush;
     
-    //Eigen::Matrix<double, 3, 1> euler = mMotionEstimate.rotation().eulerAngles(2, 1, 0);
     Eigen::Matrix<float, 3, 1> euler = mMotion->MotionEstimate.rotation().eulerAngles(2, 1, 0);
     euler = euler * 180 / M_PI;
     //std::cout << "Motion Estimate:\n Yaw=" << euler(0, 0) << " Pitch=" << euler(1, 0) << " Roll= " << euler(2, 0) << std::endl;
-    //euler = mCurrRelativeMotion.rotation().eulerAngles(2, 1, 0);
     euler = mMotion->CurrRelativeMotion.rotation().eulerAngles(2, 1, 0);
     euler = euler * 180 / M_PI;
     //std::cout << "Relative motion:\n Yaw=" << euler(0, 0) << " Pitch=" << euler(1, 0) << " Roll= " << euler(2, 0) << std::endl;
     //std::cout << "RELATIVE MATRIX:\n" << mCurrRelativeMotion.matrix() << std::endl;
     //std::cout << "RELATIVE MATRIX:\n" << mMotion->CurrRelativeMotion.matrix() << std::endl;
     //std::cout << "=====================================================================\n\n";
+    
+    return mIsCycleKeyframe;
 }
 
 void VisualOdometryInterface::ReadSettings(ProgramOptions::Ptr po)

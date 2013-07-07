@@ -30,6 +30,8 @@ namespace interfaces
 iSAM2Interface::iSAM2Interface() : common::SLAMInterface()
 {
     mISAM2 = new gtsam::ISAM2();
+    mPriorNoise = gtsam::noiseModel::Diagonal::Sigmas(gtsam::Vector_(1,0,0,1));
+    mOdometryNoise = gtsam::noiseModel::Diagonal::Sigmas(gtsam::Vector_(1,0,0,1));
 }
 
 iSAM2Interface::~iSAM2Interface()
@@ -51,16 +53,15 @@ void iSAM2Interface::WriteSettings(common::ProgramOptions::Ptr po)
     //TODO:
 }
 
-bool iSAM2Interface::RunSingleCycle()
+void iSAM2Interface::AddKeyframe(const common::VisualOdometryInterface::Keyframe& kf)
 {
-    if( KSRobot::common::SLAMInterface::RunSingleCycle() == false )
-        return false;
-    
-    common::Interface::ScopedLock lock(this);
-    //TODO Complete this.
-    
+    //TODO:
 }
 
+void iSAM2Interface::AddLoopClosure(const common::LoopDetector::LoopClosure& lc)
+{
+    //TODO:
+}
 
 
 };

@@ -20,17 +20,16 @@
 
 #include <common/SLAMInterface.h>
 #include <gtsam/global_includes.h>
-#include <gtsam/nonlinear/NonlinearFactorGraph.h>
 
 namespace KSRobot
 {
 namespace common
 {
 
-SLAMInterface::SLAMInterface() : Interface(), mLastKeyframe(-1), 
-    mGraph(new gtsam::NonlinearFactorGraph())
+SLAMInterface::SLAMInterface() : Interface(), mLastKeyframe(-1)
 {
-    mLoops.set_capacity(10);
+    mLoops.set_capacity(1000);
+    mKeyframes.set_capacity(1000);
 }
 
 SLAMInterface::~SLAMInterface()
@@ -40,7 +39,7 @@ SLAMInterface::~SLAMInterface()
 void SLAMInterface::RegisterToVO(VisualOdometryInterface::Ptr vo)
 {
     mVO = vo;
-    mConnections.push_back(mVO->RegisterKeyframeReceiver(boost::bind(&SLAMInterface::OnKeyframeDetected, this)));
+    mConnections.push_back(mVO->RegisterKeyframeReceiver(boost::bind(&SLAMInterface::OnKeyframeDetected, this, _1)));
 }
 
 void SLAMInterface::ReadFromFile(const std::string& filename)
@@ -50,7 +49,7 @@ void SLAMInterface::ReadFromFile(const std::string& filename)
 
 void SLAMInterface::OnLoopDetected(const LoopDetector::LoopClosure& lc)
 {
-
+    mLoops.push(lc);
 }
 
 void SLAMInterface::RegisterToLoopDetector(LoopDetector::Ptr ld)
@@ -58,16 +57,32 @@ void SLAMInterface::RegisterToLoopDetector(LoopDetector::Ptr ld)
     ld->RegisterLoopReceiver(boost::bind(&SLAMInterface::OnLoopDetected, this, _1));
 }
 
-void SLAMInterface::OnKeyframeDetected()
+void SLAMInterface::OnKeyframeDetected(const VisualOdometryInterface::Keyframe& kf)
 {
-    //TODO: ADD TO KEYFRAME QUEUE
+    mKeyframes.push(kf);
 }
 
 bool SLAMInterface::RunSingleCycle()
 {
-    //TODO: return true if should process this cycle.
+    common::Interface::ScopedLock lock(this);
+    
+    int count = 0;
+    common::VisualOdometryInterface::Keyframe kf;
+    while( mKeyframes.try_pop(kf) )
+    {
+        count++;
+        AddKeyframe(kf);
+    }
+    
+    common::LoopDetector::LoopClosure lc;
+    while( mLoops.try_pop(lc) )
+    {
+        count++;
+        AddLoopClosure(lc);
+    }
+    
+    return count > 0;
 }
-
 
 } // end namespace common
 } // end namespace KSRobot

@@ -157,16 +157,21 @@ float FovisInterface::GetConvergenceError()
 #define M_PI 3.14159265358979323846
 #endif//M_PI
 
-void FovisInterface::CheckForKeyframe()
+bool FovisInterface::CheckForKeyframe()
 {
-    VisualOdometryInterface::CheckForKeyframe();
-    if( mIsCycleKeyframe )
-        return; // no need to check anymore.
+    if( VisualOdometryInterface::CheckForKeyframe() )
+        return true;
     
     if( mImpl->mFovis->getChangeReferenceFrames() )
         mIsCycleKeyframe = true; // TODO: Should I make this cycle keyframe or the next one? does it really matter?
+    
+    return mIsCycleKeyframe;
 }
 
+void FovisInterface::AddKeyframeFeatures(common::VisualOdometryInterface::Keyframe& kf)
+{
+    //TODO: IMPLEMENT THIS
+}
 
 } // end namespace utils
 } // end namespace KSRobot

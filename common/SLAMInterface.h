@@ -28,12 +28,6 @@
 #include <Eigen/Geometry>
 //NOTE: For now this is implemented using gtsam. maybe later extend the interface inside interfaces?
 
-//Forward declarations in here.
-namespace gtsam
-{
-    class NonlinearFactorGraph;
-};
-
 namespace KSRobot
 {
 namespace common
@@ -54,17 +48,18 @@ public:
     
     virtual void                                RegisterToVO(VisualOdometryInterface::Ptr vo);
     virtual void                                RegisterToLoopDetector(LoopDetector::Ptr ld);
-    
     virtual bool                                RunSingleCycle();
 private:
-    void                                        OnKeyframeDetected();
+    void                                        OnKeyframeDetected(const VisualOdometryInterface::Keyframe& kf);
     void                                        OnLoopDetected(const LoopDetector::LoopClosure& lc);// called from visual odometry
 protected:
-    VisualOdometryInterface::Ptr                                mVO;
-    int                                                         mLastKeyframe;
-    boost::shared_ptr<gtsam::NonlinearFactorGraph>              mGraph;
-    tbb::concurrent_bounded_queue<LoopDetector::LoopClosure>    mLoops;
-    //tbb::concurrent_bounded_queue<Keyframe>                   mKeyframes;
+    virtual void                                AddKeyframe(const VisualOdometryInterface::Keyframe& kf) = 0;
+    virtual void                                AddLoopClosure(const LoopDetector::LoopClosure& lc) = 0;
+protected:
+    VisualOdometryInterface::Ptr                                        mVO;
+    int                                                                 mLastKeyframe;
+    tbb::concurrent_bounded_queue<LoopDetector::LoopClosure>            mLoops;
+    tbb::concurrent_bounded_queue<VisualOdometryInterface::Keyframe>    mKeyframes;
 };
 
 } // end namespace common

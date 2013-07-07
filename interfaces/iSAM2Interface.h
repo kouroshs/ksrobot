@@ -22,12 +22,8 @@
 #define ISAM2INTERFACE_H
 
 #include <common/SLAMInterface.h>
-
-//Forward declaration:
-namespace gtsam
-{
-    class ISAM2;
-};
+#include <gtsam/nonlinear/ISAM2.h>
+#include <gtsam/nonlinear/NonlinearFactorGraph.h>
 
 namespace KSRobot
 {
@@ -44,10 +40,15 @@ public:
     virtual void ReadSettings(common::ProgramOptions::Ptr po);
     virtual void WriteSettings(common::ProgramOptions::Ptr po);
     
+protected:
+    virtual void                AddKeyframe(const common::VisualOdometryInterface::Keyframe& kf);
+    virtual void                AddLoopClosure(const common::LoopDetector::LoopClosure& lc);
     
-    virtual bool RunSingleCycle();
 private:
     gtsam::ISAM2*                               mISAM2;
+    gtsam::NonlinearFactorGraph                 mGraph;
+    gtsam::noiseModel::Diagonal::shared_ptr     mPriorNoise;
+    gtsam::noiseModel::Diagonal::shared_ptr     mOdometryNoise;
 };
 
 };

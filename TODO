@@ -3,9 +3,7 @@
 
 (HIGH)  Extract FOVIS Keypoints, using OdometryFrame or PyramidLevel (probably reimplement inside fovis itself!)
         In that case I have to implement copy constructors for those classes.
-(HIGH)  Start importing OctoMap.
 (HIGH)  import GTMAP 
 
-(HIGH)  Email to ask how can we merge octomap + ompl
 (HIGH)  Find a program to search in environment
 
