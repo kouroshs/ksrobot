@@ -24,6 +24,13 @@
 #include <math.h>
 #include <QTimer>
 
+#include <iostream>
+#include <iomanip>
+
+using std::cout;
+using std::endl;
+using std::flush;
+using std::hex;
 
 namespace KSRobot
 {
@@ -35,34 +42,35 @@ typedef unsigned char byte;
 struct RobXCommandInfo
 {
     RobXControl::RobXMotorCommand       command;
+    const char*                         name;
     byte                                cmdID;
     byte                                bytesSend;
     byte                                bytesRecv;
 };
 
 static RobXCommandInfo  allCommands[] = {
-    {RobXControl::CMD_GET_SPEED_1, 0x21,  2,  1}, 
-    {RobXControl::CMD_GET_SPEED_2, 0x22,  2,  1}, 
-    {RobXControl::CMD_GET_ENCODER_1, 0x23,  2, 4}, 
-    {RobXControl::CMD_GET_ENCODER_2,  0x24,  2,  4}, 
-    {RobXControl::CMD_GET_ENCODERS,  0x25,  2,  8}, 
-    {RobXControl::CMD_GET_VOLTS,  0x26,  2, 1}, 
-    {RobXControl::CMD_GET_CURRENT_1,  0x27,  2, 1}, 
-    {RobXControl::CMD_GET_CURRENT_2,  0x28,  2, 1}, 
-    {RobXControl::CMD_GET_VERSION,  0x29,  2,  1}, 
-    {RobXControl::CMD_GET_ACCELERATION,  0x2A,  2, 1}, 
-    {RobXControl::CMD_GET_MODE,  0x2B,  2,  1}, 
-    {RobXControl::CMD_GET_VI, 0x2C,  2, 3}, 
-    {RobXControl::CMD_GET_ERROR,  0x2D,  2, 1}, 
-    {RobXControl::CMD_SET_SPEED_1,  0x31,  3,  0}, 
-    {RobXControl::CMD_SET_SPEED_2,  0x32,  3, 0}, 
-    {RobXControl::CMD_SET_ACCELERATION, 0x33, 3, 0}, 
-    {RobXControl::CMD_SET_MODE, 0x34, 3, 0}, 
-    {RobXControl::CMD_RESET_ENCODERES,  0x35,  2, 0}, 
-    {RobXControl::CMD_DISABLE_REGULATOR,  0x36,  2, 0}, 
-    {RobXControl::CMD_ENABLE_REGULATOR,  0x37,  2,  0}, 
-    {RobXControl::CMD_DISABLE_TIMEOUT,  0x38,  2, 0}, 
-    {RobXControl::CMD_ENABLE_TIMEOUT,  0x39, 2, 0}
+    {RobXControl::CMD_GET_SPEED_1,          "CMD_GET_SPEED_1",          0x21, 2, 1}, 
+    {RobXControl::CMD_GET_SPEED_2,          "CMD_GET_SPEED_2",          0x22, 2, 1}, 
+    {RobXControl::CMD_GET_ENCODER_1,        "CMD_GET_ENCODER_1",        0x23, 2, 4}, 
+    {RobXControl::CMD_GET_ENCODER_2,        "CMD_GET_ENCODER_2",        0x24, 2, 4}, 
+    {RobXControl::CMD_GET_ENCODERS,         "CMD_GET_ENCODERS",         0x25, 2, 8}, 
+    {RobXControl::CMD_GET_VOLTS,            "CMD_GET_VOLTS",            0x26, 2, 1}, 
+    {RobXControl::CMD_GET_CURRENT_1,        "CMD_GET_CURRENT_1",        0x27, 2, 1}, 
+    {RobXControl::CMD_GET_CURRENT_2,        "CMD_GET_CURRENT_2",        0x28, 2, 1}, 
+    {RobXControl::CMD_GET_VERSION,          "CMD_GET_VERSION",          0x29, 2, 1}, 
+    {RobXControl::CMD_GET_ACCELERATION,     "CMD_GET_ACCELERATION",     0x2A, 2, 1}, 
+    {RobXControl::CMD_GET_MODE,             "CMD_GET_MODE",             0x2B, 2, 1}, 
+    {RobXControl::CMD_GET_VI,               "CMD_GET_VI",               0x2C, 2, 3}, 
+    {RobXControl::CMD_GET_ERROR,            "CMD_GET_ERROR",            0x2D, 2, 1}, 
+    {RobXControl::CMD_SET_SPEED_1,          "CMD_SET_SPEED_1",          0x31, 3, 0}, 
+    {RobXControl::CMD_SET_SPEED_2,          "CMD_SET_SPEED_2",          0x32, 3, 0}, 
+    {RobXControl::CMD_SET_ACCELERATION,     "CMD_SET_ACCELERATION",     0x33, 3, 0}, 
+    {RobXControl::CMD_SET_MODE,             "CMD_SET_MODE",             0x34, 3, 0}, 
+    {RobXControl::CMD_RESET_ENCODERES,      "CMD_RESET_ENCODERES",      0x35, 2, 0}, 
+    {RobXControl::CMD_DISABLE_REGULATOR,    "CMD_DISABLE_REGULATOR",    0x36, 2, 0}, 
+    {RobXControl::CMD_ENABLE_REGULATOR,     "CMD_ENABLE_REGULATOR",     0x37, 2, 0}, 
+    {RobXControl::CMD_DISABLE_TIMEOUT,      "CMD_DISABLE_TIMEOUT",      0x38, 2, 0}, 
+    {RobXControl::CMD_ENABLE_TIMEOUT,       "CMD_ENABLE_TIMEOUT",       0x39, 2, 0}
 };
     
 class RobXControl::CommImpl
@@ -120,9 +128,13 @@ bool RobXControl::IsOpen()
 
 void RobXControl::Open(const QString& device)
 {
+    std::cout << "(RobXControl::Open) " << flush;
     Close();
+    std::cout << " after close " << flush;
     mImpl.reset(new CommImpl(device.toStdString()));
+    std::cout << " after new " << flush;
     Init();
+    std::cout << " after init " << endl << flush;
 }
 
 void RobXControl::Close()
@@ -135,11 +147,12 @@ void RobXControl::Close()
 
 void RobXControl::Read(unsigned char* buffer, size_t numBytes)
 {
+    std::cout << "READ " << numBytes << endl << flush;
     boost::system::error_code ec;
     for(size_t i = 0; i < numBytes; i++)
         boost::asio::read(mImpl->Serial(), boost::asio::buffer(buffer + i, 1), ec);
     
-    std::cout << ec.message() << std::endl << std::flush;
+    //std::cout << ec.message() << std::endl << std::flush;
 }
 
 void RobXControl::Read(std::vector<unsigned char>& buffer, size_t numBytes)
@@ -164,6 +177,8 @@ void RobXControl::Write(RobXMotorCommand cmd, unsigned char val1, unsigned char 
     if( info.bytesSend > 4 )
         mWriteBuffer.push_back(val3);
     
+    
+    std::cout << "(RobXControl::Write) " << info.name << endl << flush;
     boost::asio::write(mImpl->Serial(), boost::asio::buffer(mWriteBuffer.data(), info.bytesSend));
 }
 
@@ -176,8 +191,9 @@ void RobXControl::Read(size_t numBytes)
 
 void RobXControl::OnMoveTimer()
 {
-    if( fabsf(mEncoder1) > fabsf(mEncoderGoalForward) || fabsf(mEncoder2) > fabsf(mEncoderGoalForward) )
+    if( abs(mEncoder1) > abs(mEncoderGoalForward) || abs(mEncoder2) > abs(mEncoderGoalForward) )
     {
+        std::cout << "(RobXControl::OnMoveTimer) Move command done\n" << std::flush;
         Stop();
         mMoveTimer->stop();
         Write(CMD_RESET_ENCODERES);
@@ -188,9 +204,9 @@ void RobXControl::OnMoveTimer()
 
 void RobXControl::OnTurnTimer()
 {
-    if( fabsf(mEncoder1) > fabsf(mEncoderGoal) )
+    if( abs(mEncoder1) > abs(mEncoderGoal) )
     {
-        if( fabsf(mEncoder2) > fabsf(mEncoderGoal) )
+        if( abs(mEncoder2) > abs(mEncoderGoal) )
         {
             Stop();
             mTurnTimer->stop();
@@ -210,13 +226,17 @@ void RobXControl::Stop()
 void RobXControl::Forward(int cm, float speed_index)
 {
     int encoder_amount = (int)(cm * 24.8);
-    int speed_amount1 = (int)(128 - speed_index * 10);
-    int speed_amount2 = (int)(128 - speed_index * 10);
+    int speed_amount = (int)(128 - speed_index * 10);
+    //int speed_amount2 = (int)(128 - speed_index * 10);
     
-    Write(CMD_SET_SPEED_1, (byte)speed_amount1);
-    Write(CMD_SET_SPEED_2, (byte)speed_amount2);
+    Write(CMD_RESET_ENCODERES);
+    GetEncoders();
     
-    std::cout << "(RobXControl::Forward) Amount = " << speed_amount1 << " ToByte " << (byte)speed_amount1 << std::endl << std::flush;
+    Write(CMD_SET_SPEED_1, (byte)speed_amount);
+    Write(CMD_SET_SPEED_2, (byte)speed_amount);
+    
+    std::cout << "(RobXControl::Forward) Amount = " << speed_amount << " ToByte " << (int)(byte)speed_amount << std::endl << std::flush;
+    std::cout << "\t Encoder must = " << encoder_amount << endl << flush;
     
     mEncoderGoalForward = encoder_amount;
     mMoveTimer->start();
@@ -225,13 +245,16 @@ void RobXControl::Forward(int cm, float speed_index)
 void RobXControl::Backward(int cm, float speed_index)
 {
     int encoder_amount = (-1) * (int)(cm * 24.8);
-    int speed_amount1 = (int)(128 + speed_index * 10);
-    int speed_amount2 = (int)(128 + speed_index * 10);
+    int speed_amount = (int)(128 + speed_index * 10);
+    //int speed_amoufnt2 = (int)(128 + speed_index * 10);
+
+    Write(CMD_RESET_ENCODERES);
+    GetEncoders();
     
-    Write(CMD_SET_SPEED_1, speed_amount1);
-    Write(CMD_SET_SPEED_2, speed_amount2);
+    Write(CMD_SET_SPEED_1, speed_amount);
+    Write(CMD_SET_SPEED_2, speed_amount);
     
-    std::cout << "(RobXControl::Backward) Amount = " << speed_amount1 << " ToByte " << (byte)speed_amount1 << std::endl << std::flush;
+    std::cout << "(RobXControl::Backward) Amount = " << speed_amount << " ToByte " << (int)(byte)speed_amount << std::endl << std::flush;
     
     mEncoderGoalForward = encoder_amount;
     mMoveTimer->start();
@@ -279,46 +302,32 @@ void RobXControl::EnableTimeout(bool enable)
         Write(CMD_DISABLE_TIMEOUT);
 }
 
+static int SwapBytes(int val)
+{
+    int b0, b1, b2, b3;
+    b0 = (val & 0x000000FF);
+    b1 = ((val >> 8) & 0x000000FF);
+    b2 = ((val >> 16) & 0x000000FF);
+    b3 = ((val >> 24) & 0x000000FF);
+    
+    return b3 | (b2 << 8) | (b1 << 16) | (b0 << 24);
+}
+
 void RobXControl::GetEncoders()
 {
     try
     {
         int value = 0;
         unsigned char c;
-//        std::cout << "\n before write " << std::flush;
-        Write(CMD_GET_ENCODER_1);
-//        std::cout << " after write " << std::flush;
-        
+        Write(CMD_GET_ENCODERS);
         Read((unsigned char*)&value, 4);
-//         std::cout << "read \n" << std::flush;
-//         Read(&c, 1);
-//         std::cout << "1\n" << std::flush;
-//         value = c << 24;
-//         Read(&c, 1);
-//         std::cout << "2\n" << std::flush;
-//         value |= c << 16;
-//         Read(&c, 1);
-//         std::cout << "3\n" << std::flush;
-//         value |= c << 8;
-//         Read(&c, 1);
-//         std::cout << "4\n" << std::flush;
-//         value |= c;
+        mEncoder1 = SwapBytes(value);
         
-        mEncoder1 = value;
-        
-        Write(CMD_GET_ENCODER_2);
+        //Write(CMD_GET_ENCODER_2);
         Read((unsigned char*)&value, 4);
-//         value = 0;
-//         Read(&c, 1);
-//         value = c << 24;
-//         Read(&c, 1);
-//         value |= c << 16;
-//         Read(&c, 1);
-//         value |= c << 8;
-//         Read(&c, 1);
-//         value |= c;
-        
-        mEncoder2 = value;
+        mEncoder2 = SwapBytes(value);
+
+        std::cout << "(RobXControl::GetEncoders) Encoder1 = " <<  mEncoder1 << " Encoder2 = " << mEncoder2 << std::endl << std::flush;
     }
     catch(std::exception& ex)
     {
@@ -363,7 +372,6 @@ int RobXControl::GetCurrent(int index)
 
 void RobXControl::Init()
 {
-    //TODO: Implement
     SLEEP(100);
     EnableTimeout(false);
     SLEEP(100);
@@ -382,7 +390,7 @@ void RobXControl::OnFeedback()
 //    std::cout << " done feedback \n " << std::flush;
 }
 
-float RobXControl::GetEncoderValue(int index) const
+int RobXControl::GetEncoderValue(int index) const
 {
     if( index == 1 )
         return mEncoder1;

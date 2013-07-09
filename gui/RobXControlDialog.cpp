@@ -28,7 +28,7 @@ RobXControlDialog::RobXControlDialog(QWidget *parent) :
     ui->deviceLineEdit->setText("/dev/ttyUSB0");
     DISABLE;
     mEncoderUpdateTimer = new QTimer(this);
-    mEncoderUpdateTimer->setInterval(1000);
+    mEncoderUpdateTimer->setInterval(2000);
     connect(mEncoderUpdateTimer, SIGNAL(timeout()), this, SLOT(UpdateMotorInfo()));
 }
 
@@ -205,19 +205,19 @@ void RobXControlDialog::UpdateMotorInfo()
 {
     try
     {
-        std::cout << "Update motor info ... \n" << std::flush;
+        //std::cout << "Update motor info ... \n" << std::flush;
         int v = mCtrl->GetVoltage();
-        std::cout << "1\n" << std::flush;
+        //std::cout << "1\n" << std::flush;
         float c1 = mCtrl->GetCurrent(1);
-        std::cout << "2\n" << std::flush;
+        //std::cout << "2\n" << std::flush;
         float c2 = mCtrl->GetCurrent(2);
-        std::cout << "3\n" << std::flush;
+        //std::cout << "3\n" << std::flush;
         int version = mCtrl->GetVersion();
-        std::cout << "4\n" << std::flush;
-        float en1 = mCtrl->GetEncoderValue(1);
-        std::cout << "5\n" << std::flush;
-        float en2 = mCtrl->GetEncoderValue(2);
-        std::cout << "6\n" << std::flush;
+        //std::cout << "4\n" << std::flush;
+        int en1 = mCtrl->GetEncoderValue(1);
+        //std::cout << "5\n" << std::flush;
+        int en2 = mCtrl->GetEncoderValue(2);
+        //std::cout << "6\n" << std::flush;
         
         ui->voltageLineEdit->setText(QString::number(v));
         ui->current1LineEdit->setText(QString::number(c1));

@@ -91,7 +91,7 @@ public:
     const std::vector<unsigned char>    GetReadBuffer() const { return mReadBuffer; }
     const std::vector<unsigned char>    GetWriteBuffer() const { return mWriteBuffer; }
     
-    float                               GetEncoderValue(int index) const;
+    int                                 GetEncoderValue(int index) const;
     
 signals:
     void                                OnCommandDone();
@@ -117,8 +117,8 @@ private:
     std::vector<unsigned char>          mWriteBuffer;
     std::vector<unsigned char>          mReadBuffer;
     
-    float                               mEncoder1;
-    float                               mEncoder2;
+    int                                 mEncoder1;
+    int                                 mEncoder2;
     
     float                               mCurrent1;
     float                               mCurrent2;
