@@ -31,7 +31,7 @@
 
 namespace KSRobot
 {
-namespace gui
+namespace roboctrl
 {
 
 class Ui_RobXControlDlg

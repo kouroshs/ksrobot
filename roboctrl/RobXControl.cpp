@@ -18,7 +18,9 @@
  *
  */
 
-#include <gui/RobXControl.h>
+#include <roboctrl/RobXControl.h>
+
+#include <common/Defenitions.h>
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <math.h>
@@ -34,7 +36,7 @@ using std::hex;
 
 namespace KSRobot
 {
-namespace gui
+namespace roboctrl
 {
 
 typedef unsigned char byte;
@@ -73,40 +75,87 @@ static RobXCommandInfo  allCommands[] = {
     {RobXControl::CMD_ENABLE_TIMEOUT,       "CMD_ENABLE_TIMEOUT",       0x39, 2, 0}
 };
     
-class RobXControl::CommImpl
-{
-public:
-    CommImpl(const std::string& device)
-    {
-        mIO = new boost::asio::io_service();
-        mSerial = new boost::asio::serial_port(Service(), device);
-        Serial().set_option(boost::asio::serial_port_base::baud_rate(9600));
-        Serial().set_option(boost::asio::serial_port_base::character_size(8));
-        Serial().set_option(boost::asio::serial_port_base::parity(boost::asio::serial_port_base::parity::none));
-        Serial().set_option(boost::asio::serial_port_base::stop_bits(boost::asio::serial_port_base::stop_bits::two));
-        //TODO: What about handshake? RequestToSendXOnXOff?
-        Serial().set_option(boost::asio::serial_port_base::flow_control(boost::asio::serial_port_base::flow_control::software));
-    }
-    ~CommImpl()
-    {
-        if( Serial().is_open() )
-            Serial().close();
-    }
-    
-    boost::asio::io_service&   Service() { return *mIO; }
-    boost::asio::serial_port&  Serial() { return *mSerial; }
-    
-    boost::asio::serial_port*    mSerial;
-    boost::asio::io_service*     mIO;
-};
-    
-RobXControl::RobXControl(QObject* parent): QObject(parent)
+// class RobXControl::CommImpl
+// {
+// public:
+//     Com() : mSerial(NULL), mIO(NULL) {;}
+//     CommImpl(const std::string& device) : mSerial(NULL), mIO(NULL)
+//     {
+//         Open(device);
+//     }
+//     
+//     ~CommImpl()
+//     {
+//         if( Serial().is_open() )
+//             Serial().close();
+//     }
+//     
+//     bool InternalCheckState() const
+//     {
+//         return mSerial != NULL && mIO != NULL;
+//     }
+//     
+//     bool IsOpen()
+//     {
+//         return InternalCheckState() && Serial().is_open();
+//     }
+//     
+//     void Open(const std::string& device)
+//     {
+//         if( IsOpen() )
+//             Close();
+//         
+//         mIO = new boost::asio::io_service();
+//         mSerial = new boost::asio::serial_port(Service(), device);
+//         Serial().set_option(boost::asio::serial_port_base::baud_rate(9600));
+//         Serial().set_option(boost::asio::serial_port_base::character_size(8));
+//         Serial().set_option(boost::asio::serial_port_base::parity(boost::asio::serial_port_base::parity::none));
+//         Serial().set_option(boost::asio::serial_port_base::stop_bits(boost::asio::serial_port_base::stop_bits::two));
+//         Serial().set_option(boost::asio::serial_port_base::flow_control(boost::asio::serial_port_base::flow_control::software));
+//         mTimeout = boost::chrono::seconds(1000); // default is almost infinite time.
+//     }
+//     
+//     void Close()
+//     {
+//         if( IsOpen() )
+//             Serial().close();
+//     }
+//     
+//     void SetTimeout(const common::Duration& dur)
+//     {
+//         mTimeout = dur;
+//     }
+//     
+//     void Write()
+//     {
+//     }
+//     void WriteByteByByte()
+//     {
+//     }
+//     
+//     void Read()
+//     {
+//     }
+//     
+//     void ReadByteByByte()
+//     {
+//     }
+//     
+//     boost::asio::io_service&   Service() { return *mIO; }
+//     boost::asio::serial_port&  Serial() { return *mSerial; }
+//     
+// private:
+//     boost::asio::serial_port*    mSerial;
+//     boost::asio::io_service*     mIO;
+//     
+//     common::Duration             mTimeout;
+// };
+
+RobXControl::RobXControl(QObject* parent): QObject(parent), mUseReadTimeout(false), mReadTimeoutMillisecs(100), mReadSingleByte(true)
 {
     mMoveTimer = new QTimer(this);
     mTurnTimer = new QTimer(this);
     mTimerFeedback = new QTimer(this);
-    
-    //TODO: Why these encoders have interval of 1 when feedback interval is 200?
     
     mMoveTimer->setInterval(100);
     mTurnTimer->setInterval(100);
@@ -121,37 +170,57 @@ RobXControl::~RobXControl()
 {
 }
 
+void RobXControl::ReadSettings(common::ProgramOptions::Ptr po)
+{
+    mUseReadTimeout = po->GetBool("UseReadTimeout", false);
+    mReadTimeoutMillisecs = po->GetInt("ReadTimeoutMillisecs", 100);
+    mReadSingleByte = po->GetBool("ReadSingleByte", false);
+}
+
 bool RobXControl::IsOpen()
 {
-    return mImpl.get() && mImpl->Serial().is_open();
+//    return mImpl.get() && mImpl->Serial().is_open();
+    return mPort.IsOpen();
 }
 
 void RobXControl::Open(const QString& device)
 {
-    std::cout << "(RobXControl::Open) " << flush;
-    Close();
-    std::cout << " after close " << flush;
-    mImpl.reset(new CommImpl(device.toStdString()));
-    std::cout << " after new " << flush;
-    Init();
-    std::cout << " after init " << endl << flush;
+//     std::cout << "(RobXControl::Open) " << flush;
+//     Close();
+//     std::cout << " after close " << flush;
+//     mImpl.reset(new CommImpl(device.toStdString()));
+//     std::cout << " after new " << flush;
+//     Init();
+//     std::cout << " after init " << endl << flush;
+    mPort.Open(device.toStdString(), 9600);
 }
 
 void RobXControl::Close()
 {
-    if( IsOpen() )
-    {
-        mImpl->Serial().close();
-    }
+    mPort.Close();
+//     if( IsOpen() )
+//     {
+//         mImpl->Serial().close();
+//     }
 }
 
 void RobXControl::Read(unsigned char* buffer, size_t numBytes)
 {
-    std::cout << "READ " << numBytes << endl << flush;
-    boost::system::error_code ec;
-    for(size_t i = 0; i < numBytes; i++)
-        boost::asio::read(mImpl->Serial(), boost::asio::buffer(buffer + i, 1), ec);
+//     std::cout << "READ " << numBytes << endl << flush;
+//     boost::system::error_code ec;
+//     for(size_t i = 0; i < numBytes; i++)
+//         boost::asio::read(mImpl->Serial(), boost::asio::buffer(buffer + i, 1), ec);
+//     
     
+    if( mUseReadTimeout )
+    {
+        mPort.SetTimeout(boost::chrono::milliseconds(mReadTimeoutMillisecs));
+        mPort.ReadTimout(buffer, numBytes);
+    }
+    else
+    {
+        mPort.ReadBlocking(buffer, numBytes, mReadSingleByte);
+    }
     //std::cout << ec.message() << std::endl << std::flush;
 }
 
@@ -177,9 +246,9 @@ void RobXControl::Write(RobXMotorCommand cmd, unsigned char val1, unsigned char 
     if( info.bytesSend > 4 )
         mWriteBuffer.push_back(val3);
     
-    
     std::cout << "(RobXControl::Write) " << info.name << endl << flush;
-    boost::asio::write(mImpl->Serial(), boost::asio::buffer(mWriteBuffer.data(), info.bytesSend));
+//    boost::asio::write(mImpl->Serial(), boost::asio::buffer(mWriteBuffer.data(), info.bytesSend));
+    mPort.Write(mWriteBuffer.data(), info.bytesSend);
 }
 
 void RobXControl::Read(size_t numBytes)
@@ -318,7 +387,7 @@ void RobXControl::GetEncoders()
     try
     {
         int value = 0;
-        unsigned char c;
+//         unsigned char c;
         Write(CMD_GET_ENCODERS);
         Read((unsigned char*)&value, 4);
         mEncoder1 = SwapBytes(value);
@@ -384,10 +453,10 @@ void RobXControl::Init()
 
 void RobXControl::OnFeedback()
 {
-    static int i = 0;
-//    std::cout << "(ONFeedback) before encoderes ... " << i++ << std::flush;
+//     static int i = 0;
+//     std::cout << "(ONFeedback) before encoderes ... " << i++ << std::flush;
     GetEncoders();
-//    std::cout << " done feedback \n " << std::flush;
+//     std::cout << " done feedback \n " << std::flush;
 }
 
 int RobXControl::GetEncoderValue(int index) const

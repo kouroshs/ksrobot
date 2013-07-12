@@ -33,6 +33,8 @@ namespace KSRobot
             return (double)Nanoseconds(dur) / 1.0e9;
         }
         
+        void RegisterDebugModeStackTracePrinter();
+        void PrintStackTrace();
     }
 }
 

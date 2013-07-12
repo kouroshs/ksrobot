@@ -9,6 +9,11 @@ if(NOT CMAKE_BUILD_TYPE)
   #set(CMAKE_BUILD_TYPE "MINSIZEREL")
 endif()
 
+if( ${CMAKE_BUILD_TYPE} EQUAL "DEBUG" )
+    add_definitions("-rdynamic")
+endif()
+
+
 #NOTE: This configuration should be set for each computer:
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules)
 
@@ -71,5 +76,5 @@ add_subdirectory(common)
 add_subdirectory(interfaces)
 add_subdirectory(gui)
 add_subdirectory(libksrobot)
+add_subdirectory(roboctrl)
 add_subdirectory(apps)
-

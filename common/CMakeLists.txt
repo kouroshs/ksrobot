@@ -3,7 +3,7 @@ include_directories(../)
 set(COMMON_SRC LoopDetector.cpp KinectImage.cpp Timer.cpp Interface.cpp VisualOdometryInterface.cpp EngineInterface.cpp 
               SLAMInterface.cpp MappingInterface.cpp PlannerInterface.cpp 
               ExecCtrlData.cpp SettingsBinder.cpp Worker.cpp ProgramOptions.cpp
-              KinectInterface.cpp)
+              KinectInterface.cpp Defenitions.cpp)
 
 find_package(PNG REQUIRED)
 include_directories(${PNG_INCLUDE_DIR})

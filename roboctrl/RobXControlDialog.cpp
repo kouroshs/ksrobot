@@ -1,5 +1,5 @@
-#include <gui/RobXControlDialog.h>
-#include <gui/ui_RobXControlDialog.h>
+#include <roboctrl/RobXControlDialog.h>
+#include <roboctrl/ui_RobXControlDialog.h>
 
 #include <QMessageBox>
 #include <QTimer>
@@ -16,7 +16,7 @@
 
 namespace KSRobot
 {
-namespace gui
+namespace roboctrl
 {
 
 RobXControlDialog::RobXControlDialog(QWidget *parent) :

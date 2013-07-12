@@ -2,13 +2,13 @@
 #define CTRLDLG_H
 
 #include <QDialog>
-#include <gui/RobXControl.h>
+#include <roboctrl/RobXControl.h>
 
 class QTimer;
 
 namespace KSRobot
 {
-namespace gui
+namespace roboctrl
 {
 
 namespace Ui {

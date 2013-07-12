@@ -22,17 +22,18 @@
 #define ROBXCONTROLMODULE_H
 
 #include <QObject>
-#include <boost/shared_ptr.hpp>
-#include <boost/graph/graph_concepts.hpp>
 #include <vector>
 #include <queue>
+
+#include <common/ProgramOptions.h>
+#include <roboctrl/SerialPort.h>
 
 class QTimer;
 
 
 namespace KSRobot
 {
-namespace gui
+namespace roboctrl
 {
 
 class RobXControl : public QObject
@@ -93,6 +94,8 @@ public:
     
     int                                 GetEncoderValue(int index) const;
     
+    void                                ReadSettings(common::ProgramOptions::Ptr po);
+    
 signals:
     void                                OnCommandDone();
     
@@ -112,8 +115,8 @@ private:
     void                                Init();
     void                                GetEncoders();
 private:
-    class CommImpl;
-    boost::shared_ptr<CommImpl>         mImpl;
+    SerialPort                          mPort;
+    
     std::vector<unsigned char>          mWriteBuffer;
     std::vector<unsigned char>          mReadBuffer;
     
@@ -130,6 +133,10 @@ private:
     float                               mEncoderGoalForward;
     
     int                                 mVersion;
+    
+    bool                                mUseReadTimeout;
+    int                                 mReadTimeoutMillisecs;
+    bool                                mReadSingleByte;
     
     QTimer*                             mMoveTimer;
     QTimer*                             mTurnTimer;
