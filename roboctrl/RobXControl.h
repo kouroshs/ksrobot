@@ -28,6 +28,10 @@
 #include <common/ProgramOptions.h>
 #include <roboctrl/SerialPort.h>
 
+#ifndef NDEBUG
+    #include <stack>
+#endif
+
 class QTimer;
 
 
@@ -141,6 +145,12 @@ private:
     QTimer*                             mMoveTimer;
     QTimer*                             mTurnTimer;
     QTimer*                             mTimerFeedback;
+    
+    std::string                         mDeviceName;
+    
+#ifndef NDEBUG
+    std::stack<const char*>             mCallerName;
+#endif
 };
 
 class RobXCommandQueue : public QObject
