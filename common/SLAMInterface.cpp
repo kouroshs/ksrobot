@@ -57,7 +57,7 @@ void SLAMInterface::RegisterToLoopDetector(LoopDetector::Ptr ld)
     ld->RegisterLoopReceiver(boost::bind(&SLAMInterface::OnLoopDetected, this, _1));
 }
 
-void SLAMInterface::OnKeyframeDetected(const VisualOdometryInterface::Keyframe& kf)
+void SLAMInterface::OnKeyframeDetected(const VisualKeyframe::Ptr kf)
 {
     mKeyframes.push(kf);
 }
@@ -67,7 +67,7 @@ bool SLAMInterface::RunSingleCycle()
     common::Interface::ScopedLock lock(this);
     
     int count = 0;
-    common::VisualOdometryInterface::Keyframe kf;
+    common::VisualKeyframe::Ptr kf;
     while( mKeyframes.try_pop(kf) )
     {
         count++;

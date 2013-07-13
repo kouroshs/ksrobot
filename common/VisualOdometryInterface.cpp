@@ -38,6 +38,7 @@ VisualOdometryInterface::VisualOdometryInterface(): Interface(),
     mLastKinectCycle(-1), mOdomTimer(new Timer("Odometry time"))
 {
     mMotion = new MotionInfo;
+    mLatestKeyframe.reset(new VisualKeyframe);
     
     if( mProjectOnGround )
         mMotion->GlobalPose.translation()[1] = mRobotHeight;
@@ -75,7 +76,7 @@ bool VisualOdometryInterface::RunSingleCycle()
 void VisualOdometryInterface::NotifyKeyframeReceivers()
 {
     if( IsThisCycleKeyframe() )
-        mKeyframeReceivers(GetLastKeyframe());
+        mKeyframeReceivers(GetLatestKeyframe());
 }
 
 void VisualOdometryInterface::FinishCycle()
@@ -90,17 +91,17 @@ void VisualOdometryInterface::FinishCycle()
     CheckForKeyframe();
     if( IsThisCycleKeyframe() )
     {
-        Keyframe kf;
-        kf.GlobalPose = mMotion->GlobalPose;
-        kf.RelativeMotion = mMotion->LastKeypointPose.inverse() * mMotion->GlobalPose;
-        AddKeyframeFeatures(kf);
-        mKeyframes.push_back(kf);
+        mLatestKeyframe.reset(new VisualKeyframe);
+        mLatestKeyframe->GlobalPose = mMotion->GlobalPose;
+        mLatestKeyframe->RelativeMotion = mMotion->LastKeyframePose.inverse() * mMotion->GlobalPose;
+        PublishKeyframeFeatures(mLatestKeyframe);
+        
         mMotion->CurrRelativeMotion.setIdentity();
-        mMotion->LastKeypointPose = mMotion->GlobalPose;
+        mMotion->LastKeyframePose = mMotion->GlobalPose;
     }
     else
     {
-        mMotion->CurrRelativeMotion = mMotion->LastKeypointPose.inverse() * mMotion->GlobalPose;
+        mMotion->CurrRelativeMotion = mMotion->LastKeyframePose.inverse() * mMotion->GlobalPose;
     }
     NotifyKeyframeReceivers();
 }

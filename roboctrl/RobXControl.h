@@ -79,6 +79,8 @@ public:
     void                                Close();
     bool                                IsOpen();
     
+    void                                ResetOnTimeout();
+    
     void                                Write(RobXMotorCommand cmd, unsigned char val1 = 0, unsigned char val2 = 0, 
                                               unsigned char val3 = 0);
     void                                Read(unsigned char* buffer, size_t numBytes);

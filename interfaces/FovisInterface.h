@@ -46,7 +46,7 @@ public:
     virtual bool        RunSingleCycle();
 protected:
     virtual bool        CheckForKeyframe();
-    virtual void        AddKeyframeFeatures(common::VisualOdometryInterface::Keyframe& kf);
+    virtual void        PublishKeyframeFeatures(common::VisualKeyframe::Ptr kf);
 protected:
     
     class FovisImpl;

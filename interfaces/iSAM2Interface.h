@@ -41,7 +41,7 @@ public:
     virtual void WriteSettings(common::ProgramOptions::Ptr po);
     
 protected:
-    virtual void                AddKeyframe(const common::VisualOdometryInterface::Keyframe& kf);
+    virtual void                AddKeyframe(const common::VisualKeyframe& kf);
     virtual void                AddLoopClosure(const common::LoopDetector::LoopClosure& lc);
     
 private:

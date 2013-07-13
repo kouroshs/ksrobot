@@ -30,9 +30,6 @@
 #include <boost/signals2.hpp>
 #include <vector>
 
-//TODO: Change keypoint to keyframe
-//TODO: Implement features
-
 namespace KSRobot
 {
 namespace common
@@ -41,15 +38,46 @@ namespace common
 class VisualFeature
 {
 public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+//    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;   // no need for this for Vector3f
     typedef boost::shared_ptr<VisualFeature>            Ptr;
     typedef boost::shared_ptr<const VisualFeature>      ConstPtr;
     
     Eigen::Vector3f         RelativePosition;
     float                   U, V;
-    //TODO: Complete this!
-    //TODO: ADD DESCRIPTOR, or use fovis descriptors. maybe add virtual functions?
+    float                   Score;
 };
+
+class VisualFeatureData : public std::vector<unsigned char, Eigen::aligned_allocator<unsigned char> >
+{
+public:
+    typedef boost::shared_ptr<VisualFeatureData>            Ptr;
+    typedef boost::shared_ptr<const VisualFeatureData>      ConstPtr;
+    
+    size_t                              FeatureLength;
+    size_t                              FeatureStride;
+};
+
+class VisualKeyframe
+{
+public:
+    typedef boost::shared_ptr<VisualKeyframe>            Ptr;
+    typedef boost::shared_ptr<const VisualKeyframe>      ConstPtr;
+
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    Eigen::Isometry3f                                                       RelativeMotion;
+    Eigen::Isometry3f                                                       GlobalPose;
+    std::vector<VisualFeature>                                              Features;
+    VisualFeatureData                                                       DataPool;
+    
+    void Reset()
+    {
+        RelativeMotion.setIdentity();
+        GlobalPose.setIdentity();
+        Features.clear();
+        DataPool.clear();
+    }
+};
+
 
 class VisualOdometryInterface : public Interface
 {
@@ -61,16 +89,6 @@ public:
 
     VisualOdometryInterface();
     virtual ~VisualOdometryInterface();
-    
-    struct Keyframe
-    {
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-        Eigen::Isometry3f                                                       RelativeMotion;
-        Eigen::Isometry3f                                                       GlobalPose;
-        std::vector<VisualFeature, Eigen::aligned_allocator<VisualFeature> >    Features;
-    };
-    
-    typedef std::vector<Keyframe, Eigen::aligned_allocator<Keyframe> >  KeyframeVector;
     
     virtual void                                RegisterToKinect(KinectInterface::Ptr ki);
     virtual bool                                Converged() = 0;
@@ -87,12 +105,10 @@ public:
     inline KinectInterface::Ptr                 GetKinect() const;
     inline Eigen::Isometry3f                    GetMotionEstimate() const;
     inline Eigen::Isometry3f                    GetCurrRelativeMotion() const;
-    inline const KeyframeVector&                GetKeyframes() const;
-    inline const Keyframe&                      GetLastKeyframe() const;
-    inline Keyframe&                            GetLastKeyframe();
     inline Eigen::Isometry3f                    GetGlobalPose() const;
     inline void                                 SetAxisTransform(const Eigen::Isometry3f& trans);
     inline Eigen::Isometry3f                    GetAxisTransform() const;
+    inline VisualKeyframe::Ptr                  GetLatestKeyframe();
     
     // methods useful for when we are inside OnCycleFinished event.
     inline KinectPointCloud::ConstPtr           GetCurrentPointCloud() const;
@@ -101,7 +117,7 @@ public:
     inline KinectFloatDepthImage::ConstPtr      GetCurrentFloatDepthImage() const;
     
 
-    inline boost::signals2::connection          RegisterKeyframeReceiver(boost::function<void(const Keyframe&)> fn);
+    inline boost::signals2::connection          RegisterKeyframeReceiver(boost::function<void(const VisualKeyframe::Ptr)> fn);
 protected:
     void                                        ProjectToGround();
     void                                        NotifyKeyframeReceivers();
@@ -109,7 +125,7 @@ protected:
     // It will update internal values such as global pose.
     virtual bool                                CheckForKeyframe();
     virtual void                                FinishCycle();
-    virtual void                                AddKeyframeFeatures(Keyframe& kf) = 0;
+    virtual void                                PublishKeyframeFeatures(VisualKeyframe::Ptr kf) = 0;
 protected:
     class MotionInfo
     {
@@ -121,21 +137,21 @@ protected:
             MotionEstimate.setIdentity();
             CurrRelativeMotion.setIdentity();
             GlobalPose.setIdentity();
-            LastKeypointPose.setIdentity();
+            LastKeyframePose.setIdentity();
             AxisTransform.setIdentity();
         }
         
         Eigen::Isometry3f                       MotionEstimate;
         Eigen::Isometry3f                       CurrRelativeMotion;
         Eigen::Isometry3f                       GlobalPose;
-        Eigen::Isometry3f                       LastKeypointPose;
+        Eigen::Isometry3f                       LastKeyframePose;
         Eigen::Isometry3f                       AxisTransform;
     };
     
     MotionInfo*                                 mMotion;
     
     KinectInterface::Ptr                        mKinect;
-    KeyframeVector                              mKeyframes;
+    VisualKeyframe::Ptr                         mLatestKeyframe;
     
     int                                         mLastKinectCycle;
     float                                       mMaxKeyframesDist;
@@ -149,7 +165,7 @@ protected:
     KinectRawDepthImage::ConstPtr               mCurrRawDepth;
     KinectFloatDepthImage::ConstPtr             mCurrFloatDepth;
     
-    boost::signals2::signal<void(const Keyframe&)>             mKeyframeReceivers;
+    boost::signals2::signal<void(const VisualKeyframe::Ptr)>             mKeyframeReceivers;
     Timer::Ptr                                  mOdomTimer;
 };
 
@@ -163,21 +179,9 @@ inline Eigen::Isometry3f VisualOdometryInterface::GetCurrRelativeMotion() const
     return mMotion->CurrRelativeMotion;
 }
 
-inline const VisualOdometryInterface::KeyframeVector& VisualOdometryInterface::GetKeyframes() const
+inline VisualKeyframe::Ptr VisualOdometryInterface::GetLatestKeyframe()
 {
-    return mKeyframes;
-}
-
-inline const VisualOdometryInterface::Keyframe& VisualOdometryInterface::GetLastKeyframe() const
-{
-    assert(mKeyframes.size() != 0);
-    return mKeyframes.back();
-}
-
-inline VisualOdometryInterface::Keyframe& VisualOdometryInterface::GetLastKeyframe()
-{
-    assert(mKeyframes.size() != 0);
-    return mKeyframes.back();
+    return mLatestKeyframe;
 }
 
 
@@ -222,7 +226,7 @@ inline KinectRgbImage::ConstPtr VisualOdometryInterface::GetCurrentRgbImage() co
     return mCurrRgb;
 }
 
-inline boost::signals2::connection VisualOdometryInterface::RegisterKeyframeReceiver(boost::function<void(const Keyframe&)> fn)
+inline boost::signals2::connection VisualOdometryInterface::RegisterKeyframeReceiver(boost::function<void(const VisualKeyframe::Ptr)> fn)
 {
     return mKeyframeReceivers.connect(fn);
 }

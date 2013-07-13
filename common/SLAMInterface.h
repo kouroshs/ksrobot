@@ -50,16 +50,16 @@ public:
     virtual void                                RegisterToLoopDetector(LoopDetector::Ptr ld);
     virtual bool                                RunSingleCycle();
 private:
-    void                                        OnKeyframeDetected(const VisualOdometryInterface::Keyframe& kf);
+    void                                        OnKeyframeDetected(const VisualKeyframe::Ptr kf);
     void                                        OnLoopDetected(const LoopDetector::LoopClosure& lc);// called from visual odometry
 protected:
-    virtual void                                AddKeyframe(const VisualOdometryInterface::Keyframe& kf) = 0;
+    virtual void                                AddKeyframe(const VisualKeyframe::Ptr kf) = 0;
     virtual void                                AddLoopClosure(const LoopDetector::LoopClosure& lc) = 0;
 protected:
     VisualOdometryInterface::Ptr                                        mVO;
     int                                                                 mLastKeyframe;
     tbb::concurrent_bounded_queue<LoopDetector::LoopClosure>            mLoops;
-    tbb::concurrent_bounded_queue<VisualOdometryInterface::Keyframe>    mKeyframes;
+    tbb::concurrent_bounded_queue<VisualKeyframe::Ptr>                  mKeyframes;
 };
 
 } // end namespace common

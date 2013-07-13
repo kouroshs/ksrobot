@@ -313,7 +313,7 @@ void RobXControl::EnableTimeout(bool enable)
     RESET_CURR_FN;
 }
 
-static int SwapBytes(int val)
+static inline int SwapBytes(int val)
 {
     int b0, b1, b2, b3;
     b0 = (val & 0x000000FF);
@@ -329,8 +329,6 @@ void RobXControl::GetEncoders()
     try
     {
         int value = 0;
-//         unsigned char c;
-//        std::cout << "(RobXControl::GetEncoders) Start get ... " << std::flush;
         SET_CURR_FN;
         
         Write(CMD_GET_ENCODER_1);
@@ -342,14 +340,11 @@ void RobXControl::GetEncoders()
         mEncoder2 = SwapBytes(value);
 
         RESET_CURR_FN;
-//        std::cout << " Encoder1 = " <<  mEncoder1 << " Encoder2 = " << mEncoder2 << std::endl << std::flush;
     }
-    catch(std::exception& ex)
+    catch(TimeoutException& ex)
     {
-        std::cout << "(RobXControl::GetEncoders) Exception occured: " << ex.what() << std::endl << std::flush;
-        //RESET Serial Port
-        mPort.Close();
-        mPort.Open(mDeviceName, 9600);
+        std::cout << "(RobXControl::GetEncoders) Timeout. Reset.\n" << std::flush;
+        ResetOnTimeout();
     }
     catch(...)
     {
@@ -360,14 +355,34 @@ void RobXControl::GetEncoders()
 int RobXControl::GetVoltage()
 {
     Write(CMD_GET_VOLTS);
-    Read(1);
+    try
+    {
+        Read(1);
+    }
+    catch(TimeoutException& ex)
+    {
+        std::cout << "(RobXControl::GetVoltage) Serial port timeout. Reset.\n" << std::flush;
+        ResetOnTimeout();
+        mReadBuffer.clear();
+        mReadBuffer.push_back(0);
+    }
     return (int)mReadBuffer[0];
 }
 
 int RobXControl::GetVersion()
 {
     Write(CMD_GET_VERSION);
-    Read(1);
+    try
+    {
+        Read(1);
+    }
+    catch(TimeoutException& ex)
+    {
+        std::cout << "(RobXControl::GetVersion) Serial port timeout. Reset.\n" << std::flush;
+        ResetOnTimeout();
+        mReadBuffer.clear();
+        mReadBuffer.push_back(0);
+    }
     return (int)mReadBuffer[0];
 }
 
@@ -402,10 +417,7 @@ void RobXControl::Init()
 
 void RobXControl::OnFeedback()
 {
-//     static int i = 0;
-//     std::cout << "(ONFeedback) before encoderes ... " << i++ << std::flush;
     GetEncoders();
-//     std::cout << " done feedback \n " << std::flush;
 }
 
 int RobXControl::GetEncoderValue(int index) const
@@ -420,6 +432,11 @@ int RobXControl::GetEncoderValue(int index) const
     }
 }
 
+void RobXControl::ResetOnTimeout()
+{
+    mPort.Close();
+    mPort.Open(mDeviceName, 9600);
+}
 
 
 

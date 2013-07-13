@@ -168,9 +168,36 @@ bool FovisInterface::CheckForKeyframe()
     return mIsCycleKeyframe;
 }
 
-void FovisInterface::AddKeyframeFeatures(common::VisualOdometryInterface::Keyframe& kf)
+void FovisInterface::PublishKeyframeFeatures(common::VisualKeyframe::Ptr kf)
 {
-    //TODO: IMPLEMENT THIS
+    // This function extracts feature data from fovis.
+    const fovis::OdometryFrame* curr_frame = mImpl->mFovis->getTargetFrame();
+    //NOTE: Extract features only for the first pyramid.
+    const fovis::PyramidLevel* pyr = curr_frame->getLevel(0);
+    kf->DataPool.FeatureLength = pyr->getDescriptorLength();
+    kf->DataPool.FeatureStride = pyr->getDescriptorStride();
+    kf->DataPool.resize(kf->DataPool.FeatureStride * pyr->getNumKeypoints());
+
+    size_t num_saved_keypoints = 0;
+    for(int i = 0; i < pyr->getNumKeypoints(); i++)
+    {
+        const fovis::KeypointData* data = pyr->getKeypointData(i);
+        if( !data->has_depth )
+            continue; // Only feature with depth are allowed.
+        
+        common::VisualFeature f;
+        f.Score = data->kp.score;
+        f.U = data->kp.u;
+        f.V = data->kp.v;
+        f.RelativePosition = data->xyz.cast<float>();
+        //Now copy feature data.
+//         for(int j = 0; j <= kf->DataPool.FeatureLength; j++)
+//             kf->DataPool.push_back(*(pyr->getDescriptor(i) + j));
+        memcpy(kf->DataPool.data() + num_saved_keypoints * pyr->getDescriptorStride(), pyr->getDescriptor(i), pyr->getDescriptorLength());
+        num_saved_keypoints++;
+    }
+    
+    kf->DataPool.resize(num_saved_keypoints * pyr->getDescriptorStride());
 }
 
 } // end namespace utils

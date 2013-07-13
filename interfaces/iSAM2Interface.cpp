@@ -53,7 +53,7 @@ void iSAM2Interface::WriteSettings(common::ProgramOptions::Ptr po)
     //TODO:
 }
 
-void iSAM2Interface::AddKeyframe(const common::VisualOdometryInterface::Keyframe& kf)
+void iSAM2Interface::AddKeyframe(const common::VisualKeyframe& kf)
 {
     //TODO:
 }
