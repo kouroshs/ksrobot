@@ -74,84 +74,16 @@ static RobXCommandInfo  allCommands[] = {
     {RobXControl::CMD_DISABLE_TIMEOUT,      "CMD_DISABLE_TIMEOUT",      0x38, 2, 0}, 
     {RobXControl::CMD_ENABLE_TIMEOUT,       "CMD_ENABLE_TIMEOUT",       0x39, 2, 0}
 };
-    
-// class RobXControl::CommImpl
-// {
-// public:
-//     Com() : mSerial(NULL), mIO(NULL) {;}
-//     CommImpl(const std::string& device) : mSerial(NULL), mIO(NULL)
-//     {
-//         Open(device);
-//     }
-//     
-//     ~CommImpl()
-//     {
-//         if( Serial().is_open() )
-//             Serial().close();
-//     }
-//     
-//     bool InternalCheckState() const
-//     {
-//         return mSerial != NULL && mIO != NULL;
-//     }
-//     
-//     bool IsOpen()
-//     {
-//         return InternalCheckState() && Serial().is_open();
-//     }
-//     
-//     void Open(const std::string& device)
-//     {
-//         if( IsOpen() )
-//             Close();
-//         
-//         mIO = new boost::asio::io_service();
-//         mSerial = new boost::asio::serial_port(Service(), device);
-//         Serial().set_option(boost::asio::serial_port_base::baud_rate(9600));
-//         Serial().set_option(boost::asio::serial_port_base::character_size(8));
-//         Serial().set_option(boost::asio::serial_port_base::parity(boost::asio::serial_port_base::parity::none));
-//         Serial().set_option(boost::asio::serial_port_base::stop_bits(boost::asio::serial_port_base::stop_bits::two));
-//         Serial().set_option(boost::asio::serial_port_base::flow_control(boost::asio::serial_port_base::flow_control::software));
-//         mTimeout = boost::chrono::seconds(1000); // default is almost infinite time.
-//     }
-//     
-//     void Close()
-//     {
-//         if( IsOpen() )
-//             Serial().close();
-//     }
-//     
-//     void SetTimeout(const common::Duration& dur)
-//     {
-//         mTimeout = dur;
-//     }
-//     
-//     void Write()
-//     {
-//     }
-//     void WriteByteByByte()
-//     {
-//     }
-//     
-//     void Read()
-//     {
-//     }
-//     
-//     void ReadByteByByte()
-//     {
-//     }
-//     
-//     boost::asio::io_service&   Service() { return *mIO; }
-//     boost::asio::serial_port&  Serial() { return *mSerial; }
-//     
-// private:
-//     boost::asio::serial_port*    mSerial;
-//     boost::asio::io_service*     mIO;
-//     
-//     common::Duration             mTimeout;
-// };
 
-RobXControl::RobXControl(QObject* parent): QObject(parent), mUseReadTimeout(false), mReadTimeoutMillisecs(100), mReadSingleByte(true)
+#ifndef NDEBUG
+    #define SET_CURR_FN         mCallerName.push(__PRETTY_FUNCTION__);
+    #define RESET_CURR_FN       mCallerName.pop();
+#else
+    #define SET_CURR_FN
+    #define RESET_CURR_FN
+#endif
+
+RobXControl::RobXControl(QObject* parent): QObject(parent), mUseReadTimeout(true), mReadTimeoutMillisecs(500), mReadSingleByte(true)
 {
     mMoveTimer = new QTimer(this);
     mTurnTimer = new QTimer(this);
@@ -179,39 +111,24 @@ void RobXControl::ReadSettings(common::ProgramOptions::Ptr po)
 
 bool RobXControl::IsOpen()
 {
-//    return mImpl.get() && mImpl->Serial().is_open();
     return mPort.IsOpen();
 }
 
 void RobXControl::Open(const QString& device)
 {
-//     std::cout << "(RobXControl::Open) " << flush;
-//     Close();
-//     std::cout << " after close " << flush;
-//     mImpl.reset(new CommImpl(device.toStdString()));
-//     std::cout << " after new " << flush;
-//     Init();
-//     std::cout << " after init " << endl << flush;
-    mPort.Open(device.toStdString(), 9600);
+    mDeviceName = device.toStdString();
+    mPort.Open(mDeviceName, 9600);
+    Init();
 }
 
 void RobXControl::Close()
 {
     mPort.Close();
-//     if( IsOpen() )
-//     {
-//         mImpl->Serial().close();
-//     }
 }
 
 void RobXControl::Read(unsigned char* buffer, size_t numBytes)
 {
-//     std::cout << "READ " << numBytes << endl << flush;
-//     boost::system::error_code ec;
-//     for(size_t i = 0; i < numBytes; i++)
-//         boost::asio::read(mImpl->Serial(), boost::asio::buffer(buffer + i, 1), ec);
-//     
-    
+    //std::cout << "(RobXControl::Read) start " << numBytes << std::flush;
     if( mUseReadTimeout )
     {
         mPort.SetTimeout(boost::chrono::milliseconds(mReadTimeoutMillisecs));
@@ -221,7 +138,8 @@ void RobXControl::Read(unsigned char* buffer, size_t numBytes)
     {
         mPort.ReadBlocking(buffer, numBytes, mReadSingleByte);
     }
-    //std::cout << ec.message() << std::endl << std::flush;
+    
+    //std::cout << " done\n" << std::flush;
 }
 
 void RobXControl::Read(std::vector<unsigned char>& buffer, size_t numBytes)
@@ -246,7 +164,7 @@ void RobXControl::Write(RobXMotorCommand cmd, unsigned char val1, unsigned char 
     if( info.bytesSend > 4 )
         mWriteBuffer.push_back(val3);
     
-    std::cout << "(RobXControl::Write) " << info.name << endl << flush;
+//     std::cout << "(RobXControl::Write) " << info.name << endl << flush;
 //    boost::asio::write(mImpl->Serial(), boost::asio::buffer(mWriteBuffer.data(), info.bytesSend));
     mPort.Write(mWriteBuffer.data(), info.bytesSend);
 }
@@ -263,10 +181,11 @@ void RobXControl::OnMoveTimer()
     if( abs(mEncoder1) > abs(mEncoderGoalForward) || abs(mEncoder2) > abs(mEncoderGoalForward) )
     {
         std::cout << "(RobXControl::OnMoveTimer) Move command done\n" << std::flush;
+        SET_CURR_FN;
         Stop();
         mMoveTimer->stop();
         Write(CMD_RESET_ENCODERES);
-        
+        RESET_CURR_FN;
         emit OnCommandDone();
     }
 }
@@ -277,10 +196,11 @@ void RobXControl::OnTurnTimer()
     {
         if( abs(mEncoder2) > abs(mEncoderGoal) )
         {
+            SET_CURR_FN;
             Stop();
             mTurnTimer->stop();
             Write(CMD_RESET_ENCODERES);
-            
+            RESET_CURR_FN;
             emit OnCommandDone();
         }
     }
@@ -288,8 +208,10 @@ void RobXControl::OnTurnTimer()
 
 void RobXControl::Stop()
 {
+    SET_CURR_FN;
     Write(CMD_SET_SPEED_1, 128);
     Write(CMD_SET_SPEED_2, 128);
+    RESET_CURR_FN;
 }
 
 void RobXControl::Forward(int cm, float speed_index)
@@ -298,11 +220,15 @@ void RobXControl::Forward(int cm, float speed_index)
     int speed_amount = (int)(128 - speed_index * 10);
     //int speed_amount2 = (int)(128 - speed_index * 10);
     
+    SET_CURR_FN;
+    
     Write(CMD_RESET_ENCODERES);
     GetEncoders();
     
     Write(CMD_SET_SPEED_1, (byte)speed_amount);
     Write(CMD_SET_SPEED_2, (byte)speed_amount);
+    
+    RESET_CURR_FN;
     
     std::cout << "(RobXControl::Forward) Amount = " << speed_amount << " ToByte " << (int)(byte)speed_amount << std::endl << std::flush;
     std::cout << "\t Encoder must = " << encoder_amount << endl << flush;
@@ -317,11 +243,15 @@ void RobXControl::Backward(int cm, float speed_index)
     int speed_amount = (int)(128 + speed_index * 10);
     //int speed_amoufnt2 = (int)(128 + speed_index * 10);
 
+    SET_CURR_FN;
+    
     Write(CMD_RESET_ENCODERES);
     GetEncoders();
     
     Write(CMD_SET_SPEED_1, speed_amount);
     Write(CMD_SET_SPEED_2, speed_amount);
+    
+    RESET_CURR_FN;
     
     std::cout << "(RobXControl::Backward) Amount = " << speed_amount << " ToByte " << (int)(byte)speed_amount << std::endl << std::flush;
     
@@ -335,8 +265,12 @@ void RobXControl::TurnLeft(int degree, float speed_index)
     int speed_amount1 = (int)(speed_index * 10 + 128);
     int speed_amount2 = (int)(128 - speed_index * 10);
     
+    SET_CURR_FN;
+    
     Write(CMD_SET_SPEED_1, speed_amount1);
     Write(CMD_SET_SPEED_2, speed_amount2);
+    
+    RESET_CURR_FN;
     
     mEncoderGoal = encoder_amount;
     mTurnTimer->start();
@@ -348,8 +282,12 @@ void RobXControl::TurnRight(int degree, float speed_index)
     int speed_amount1 = (int)(128 - speed_index * 10);
     int speed_amount2 = (int)(speed_index * 10 + 128);
     
+    SET_CURR_FN;
+    
     Write(CMD_SET_SPEED_1, speed_amount1);
     Write(CMD_SET_SPEED_2, speed_amount2);
+    
+    RESET_CURR_FN;
     
     mEncoderGoal = encoder_amount;
     mTurnTimer->start();
@@ -357,18 +295,22 @@ void RobXControl::TurnRight(int degree, float speed_index)
 
 void RobXControl::EnableAutoregulator(bool enable)
 {
+    SET_CURR_FN;
     if( enable )
         Write(CMD_ENABLE_REGULATOR);
     else
         Write(CMD_DISABLE_REGULATOR);
+    RESET_CURR_FN;
 }
 
 void RobXControl::EnableTimeout(bool enable)
 {
+    SET_CURR_FN;
     if( enable )
         Write(CMD_ENABLE_TIMEOUT);
     else
         Write(CMD_DISABLE_TIMEOUT);
+    RESET_CURR_FN;
 }
 
 static int SwapBytes(int val)
@@ -388,19 +330,26 @@ void RobXControl::GetEncoders()
     {
         int value = 0;
 //         unsigned char c;
-        Write(CMD_GET_ENCODERS);
+//        std::cout << "(RobXControl::GetEncoders) Start get ... " << std::flush;
+        SET_CURR_FN;
+        
+        Write(CMD_GET_ENCODER_1);
         Read((unsigned char*)&value, 4);
         mEncoder1 = SwapBytes(value);
         
-        //Write(CMD_GET_ENCODER_2);
+        Write(CMD_GET_ENCODER_2);
         Read((unsigned char*)&value, 4);
         mEncoder2 = SwapBytes(value);
 
-        std::cout << "(RobXControl::GetEncoders) Encoder1 = " <<  mEncoder1 << " Encoder2 = " << mEncoder2 << std::endl << std::flush;
+        RESET_CURR_FN;
+//        std::cout << " Encoder1 = " <<  mEncoder1 << " Encoder2 = " << mEncoder2 << std::endl << std::flush;
     }
     catch(std::exception& ex)
     {
         std::cout << "(RobXControl::GetEncoders) Exception occured: " << ex.what() << std::endl << std::flush;
+        //RESET Serial Port
+        mPort.Close();
+        mPort.Open(mDeviceName, 9600);
     }
     catch(...)
     {
