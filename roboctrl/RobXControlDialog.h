@@ -24,7 +24,7 @@ public:
 
 
     void                SetController(RobXControl* ctrl);
-    
+    void                ReadSettings(common::ProgramOptions::Ptr po);
 private slots:
     void on_btnConnectDevice_clicked();
     void on_btnStop_clicked();

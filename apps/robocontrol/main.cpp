@@ -12,11 +12,17 @@ void MyFunc()
 int main(int argc, char** argv)
 {
     QApplication app(argc, argv);
-    KSRobot::common::RegisterDebugModeStackTracePrinter();
-    KSRobot::roboctrl::RobXControlDialog dlg;
     
+//     KSRobot::common::ProgramOptions::Ptr po(new KSRobot::common::ProgramOptions());
+//     po->LoadFromFile("roboctrl-settings.xml");
+    
+    //KSRobot::common::RegisterDebugModeStackTracePrinter();
+    KSRobot::roboctrl::RobXControlDialog dlg;
+//    dlg.ReadSettings(po);
     dlg.show();
     
-    return app.exec();
+    int ret = app.exec();
+//    po->SaveToFile("roboctrl-settings.xml");
+    return ret;
 }
 

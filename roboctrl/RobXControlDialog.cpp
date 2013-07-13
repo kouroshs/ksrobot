@@ -34,15 +34,16 @@ RobXControlDialog::RobXControlDialog(QWidget *parent) :
 
 RobXControlDialog::~RobXControlDialog()
 {
+    delete mCtrl;
     delete ui;
 }
 
 void RobXControlDialog::Connect(const QString& device)
 {
-    mCtrl = new RobXControl(this);
     try
     {
         DISABLE;
+        mCtrl = new RobXControl(this);
         mCtrl->Open(device);
         ENABLE;
         mEncoderUpdateTimer->start();
@@ -65,7 +66,8 @@ void RobXControlDialog::Disconnect()
     {
         try
         {
-            mCtrl->Stop();
+            if( mCtrl->IsOpen() )
+                mCtrl->Stop();
         }
         catch(std::exception& ex)
         {
@@ -244,6 +246,12 @@ void RobXControlDialog::SetController(RobXControl* ctrl)
     mCtrl = ctrl;
     ENABLE;
 }
+
+void RobXControlDialog::ReadSettings(common::ProgramOptions::Ptr po)
+{
+    mCtrl->ReadSettings(po->StartNode("SerialPort"));
+}
+
 
 
 };
