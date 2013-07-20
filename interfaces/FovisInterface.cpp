@@ -176,7 +176,9 @@ void FovisInterface::PublishKeyframeFeatures(common::VisualKeyframe::Ptr kf)
     const fovis::PyramidLevel* pyr = curr_frame->getLevel(0);
     kf->DataPool.FeatureLength = pyr->getDescriptorLength();
     kf->DataPool.FeatureStride = pyr->getDescriptorStride();
-    kf->DataPool.resize(kf->DataPool.FeatureStride * pyr->getNumKeypoints());
+    
+    if( KeyframeDescriptorPublishingEnabled() )
+        kf->DataPool.resize(kf->DataPool.FeatureStride * pyr->getNumKeypoints());
 
     size_t num_saved_keypoints = 0;
     for(int i = 0; i < pyr->getNumKeypoints(); i++)
@@ -191,13 +193,13 @@ void FovisInterface::PublishKeyframeFeatures(common::VisualKeyframe::Ptr kf)
         f.V = data->kp.v;
         f.RelativePosition = data->xyz.cast<float>();
         //Now copy feature data.
-//         for(int j = 0; j <= kf->DataPool.FeatureLength; j++)
-//             kf->DataPool.push_back(*(pyr->getDescriptor(i) + j));
-        memcpy(kf->DataPool.data() + num_saved_keypoints * pyr->getDescriptorStride(), pyr->getDescriptor(i), pyr->getDescriptorLength());
+        if( KeyframeDescriptorPublishingEnabled() )
+            memcpy(kf->DataPool.data() + num_saved_keypoints * pyr->getDescriptorStride(), pyr->getDescriptor(i), pyr->getDescriptorLength());
         num_saved_keypoints++;
     }
     
-    kf->DataPool.resize(num_saved_keypoints * pyr->getDescriptorStride());
+    if( KeyframeDescriptorPublishingEnabled() )
+        kf->DataPool.resize(num_saved_keypoints * pyr->getDescriptorStride());
 }
 
 } // end namespace utils

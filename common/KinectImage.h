@@ -90,6 +90,11 @@ public:
         return idx + NumChannels;
     }
     
+    size_t GetElementStartIndex(int x, int y) const
+    {
+        return ScanLineIndex(y) + x * NumChannels;
+    }
+    
 private:
     ArrayType                                           mData;
     int                                                 mHeight;

@@ -116,6 +116,8 @@ public:
     inline KinectRawDepthImage::ConstPtr        GetCurrentRawDepthImage() const;
     inline KinectFloatDepthImage::ConstPtr      GetCurrentFloatDepthImage() const;
     
+    inline bool                                 KeyframeDescriptorPublishingEnabled() const;
+    inline void                                 EnableKeyframeDescriptorPublishing(bool enable);
 
     inline boost::signals2::connection          RegisterKeyframeReceiver(boost::function<void(const VisualKeyframe::Ptr)> fn);
 protected:
@@ -159,6 +161,7 @@ protected:
     float                                       mRobotHeight;
     bool                                        mIsCycleKeyframe;
     bool                                        mProjectOnGround;
+    bool                                        mPublishKeyframeDescriptors;
     
     KinectPointCloud::ConstPtr                  mCurrPointCloud;
     KinectRgbImage::ConstPtr                    mCurrRgb;
@@ -235,6 +238,17 @@ inline bool VisualOdometryInterface::IsThisCycleKeyframe() const
 {
     return mIsCycleKeyframe;
 }
+
+inline void VisualOdometryInterface::EnableKeyframeDescriptorPublishing(bool enable)
+{
+    mPublishKeyframeDescriptors = enable;
+}
+
+inline bool VisualOdometryInterface::KeyframeDescriptorPublishingEnabled() const
+{
+    return mPublishKeyframeDescriptors;
+}
+
 
 } // end namespace common
 } // end namespace KSRobot

@@ -54,8 +54,8 @@ void ExportPCL()
 {
     using namespace boost::python;
     using namespace KSRobot::common;
-    scope namespace_scope = class_<DummyScopeClass_PCL, boost::noncopyable>("pcl", no_init).
-        def("transformPointCloud", make_function(TransformPointCloud))
+    scope namespace_scope = class_<DummyScopeClass_PCL, boost::noncopyable>("pcl", no_init)
+        .def("transformPointCloud", make_function(TransformPointCloud))
         .staticmethod("transformPointCloud")
         .def("removeNaNFromPointCloud", make_function(RemoveNaNFromPointCloud))
         .staticmethod("removeNaNFromPointCloud")
@@ -88,8 +88,7 @@ void ExportPCL()
         .def("setInputCloud", &PassThrough::setInputCloud)
         .def("filter", make_function(PassThrough_FilterHelper))
         .def("setFilterLimitsNegative", &PassThrough::setFilterLimitsNegative)
-       .def("getFilterLimitsNegative", make_function(PassThrough_GetFilterLimitsNegativeHelper))
-        
+        .def("getFilterLimitsNegative", make_function(PassThrough_GetFilterLimitsNegativeHelper))
     ;
     
 }

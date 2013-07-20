@@ -6,15 +6,18 @@ from libksrobot import *
 if __name__ == "__main__":
     xmlConfigFile = 'build_pcd_file_settings.xml'
     datasetDir = ''
-    defaultDatasetDir = '/windows/E/Datasets/rgbd_dataset_freiburg2_pioneer_slam/'
-    defaultSaveDir = '~/test/pointclouds/'
+    #defaultDatasetDir = '/windows/E/Datasets/rgbd_dataset_freiburg2_pioneer_slam/'
+    defaultDatasetDir = '/home/kourosh/projects/ksrobot/build/bin/'
+    defaultSaveDir = '/home/kourosh/test/pointclouds/lab/'
     
     po = common.ProgramOptions()
     
     if os.path.exists(xmlConfigFile):
         po.LoadFromFile(xmlConfigFile)
-    datasetDir = po.GetString('DatasetDir', defaultDatasetDir)
-    saveDir = po.GetString('SaveDir', defaultSaveDir)
+    #datasetDir = po.GetString('DatasetDir', defaultDatasetDir)
+    #saveDir = po.GetString('SaveDir', defaultSaveDir)
+    datasetDir = defaultDatasetDir
+    saveDir = defaultSaveDir
     
     if not os.path.exists(datasetDir):
         print 'Path <', datasetDir, '> does not exist.'
@@ -64,7 +67,9 @@ if __name__ == "__main__":
             voxFilter.setLeafSize(voxResolution, voxResolution, voxResolution)
             voxFilter.setInputCloud(pc)
             voxFilter.filter(filteredCloud)
-        
+        else:
+            filteredCloud = pc
+            
         if passEnabled:
             passFilter.setInputCloud(filteredCloud)
             passFilter.filter(filteredCloud)

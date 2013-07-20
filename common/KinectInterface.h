@@ -71,6 +71,13 @@ public:
     inline bool                                 PointCloudGenerationEnabled() const;
     inline bool                                 FloatDepthGenerationEnabled() const;
     
+    bool                                        Get3DPosition(int rgbX, int rgbY, pcl::PointXYZ& ret) const;
+    bool                                        Get3DPosition(int rgbX, int rgbY, int depthInCM, pcl::PointXYZ& ret) const;
+
+    bool                                        Get3DPosition(int rgbX, int rgbY, Eigen::Vector3f& ret) const;
+    bool                                        Get3DPosition(int rgbX, int rgbY, int depthInCM, Eigen::Vector3f& ret) const;
+    
+    
     static KinectPointCloud::Ptr                GeneratePointCloudFromImages(KinectRgbImage::Ptr rgb, 
                                                                    KinectRawDepthImage::Ptr depth, 
                                                                    const CameraParameters& camParams);

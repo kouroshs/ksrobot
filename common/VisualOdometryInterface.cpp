@@ -35,6 +35,7 @@ VisualOdometryInterface::VisualOdometryInterface(): Interface(),
     mRobotHeight(DEFAULT_ROBOT_HEIGHT),
     mProjectOnGround(false),
     mIsCycleKeyframe(true), // first cycle is always keyframe
+    mPublishKeyframeDescriptors(true),
     mLastKinectCycle(-1), mOdomTimer(new Timer("Odometry time"))
 {
     mMotion = new MotionInfo;

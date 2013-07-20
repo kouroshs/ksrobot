@@ -9,5 +9,5 @@ find_package(PNG REQUIRED)
 include_directories(${PNG_INCLUDE_DIR})
 
 add_library(ksrobot_common SHARED ${COMMON_SRC})
-target_link_libraries(ksrobot_common ${GLOBAL_LIBRARIES} ${PNG_LIBRARY} octomap gtsam)
+target_link_libraries(ksrobot_common ${GLOBAL_LIBRARIES} ${PNG_LIBRARY} octomap gtsam pmk pmk_util incremental_vtree)
 

@@ -15,7 +15,7 @@ endif()
 
 
 #NOTE: This configuration should be set for each computer:
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules")
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(EIGEN REQUIRED eigen3)
@@ -23,8 +23,10 @@ pkg_check_modules(EIGEN REQUIRED eigen3)
 SET(QT_USE_QTOPENGL TRUE)
 SET(QT_USE_QTNETWORK TRUE)
 
-find_package(Qt4 COMPONENTS QtCore QtGui QtNetwork REQUIRED)
+#set(OpenCV_DIR "/usr/local/share/OpenCV/")
+find_package(OpenCV REQUIRED)
 find_package(Boost COMPONENTS system filesystem thread date_time program_options chrono python REQUIRED)
+find_package(Qt4 COMPONENTS QtCore QtGui QtNetwork REQUIRED)
 find_package(PythonLibs 2.7.4 REQUIRED)
 #TODO: For my system there is a bug which causes cmake to include python 2.7 include filesystem
 #      but link to 3.2 libraries. Should be tested for each system and the following lines should be
@@ -39,21 +41,16 @@ find_package(VTK REQUIRED)
 find_package(octomap REQUIRED)
 find_package(TBB REQUIRED)
 
-#message(STATUS "==========================================================================")
-#message(STATUS ${PYTHON_LIBRARIES})
-
 # Use thread safe boost components
 set(Boost_USE_MULTITHREADED ON)
-
-set(GLOBAL_LIBRARIES ${PCL_LIBRARIES} ${Boost_LIBRARIES} ${TBB_LIBRARIES})
+set(GLOBAL_LIBRARIES ${PCL_LIBRARIES} ${Boost_LIBRARIES} ${TBB_LIBRARIES} ${OpenCV_LIBS})
 
 include(${VTK_USE_FILE})
-
-
 include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} 
                     ${Boost_INCLUDE_DIR}
                     ${EIGEN_INCLUDE_DIRS} ${OpenNI_INCLUDE_DIRS}
-                    ${PCL_INCLUDE_DIRS})
+                    ${PCL_INCLUDE_DIRS}
+                    ${OpenCV_INCLUDE_DIR})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
                     
@@ -71,6 +68,12 @@ endif(CMAKE_COMPILER_IS_GNUCXX)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
+
+#TODO: ADD LIBPMK OPTIONS
+set(LIBPMK_PATH "/home/kourosh/soft/libpmk")
+include_directories(/home/kourosh/soft/libpmk/libpmk2 /home/kourosh/soft/libpmk/avt /home/kourosh/soft/libpmk/)
+
+message(STATUS ${OpenCV_LIBS})
 
 add_subdirectory(common)
 add_subdirectory(interfaces)

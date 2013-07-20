@@ -85,6 +85,49 @@ KinectPointCloud::Ptr KinectInterface::GeneratePointCloudFromImages(KinectRgbIma
     return cloud;
 }
 
+bool KinectInterface::Get3DPosition(int rgbX, int rgbY, pcl::PointXYZ& ret) const
+{
+    return Get3DPosition(rgbX, rgbY, mFloatDepth->At(rgbY * mFloatDepth->GetWidth() + rgbX), ret);
+}
+
+bool KinectInterface::Get3DPosition(int rgbX, int rgbY, int depth, pcl::PointXYZ& p) const
+{
+    if( depth == 0 )
+    {
+        p.x = p.y = p.z = std::numeric_limits<float>::quiet_NaN();
+        return false;
+    }
+    else
+    {
+        p.z = depth * 0.001f;
+        p.x = (rgbX - mParams.CenterX) * p.z / mParams.FocalX;
+        p.y = (rgbY - mParams.CenterY) * p.z / mParams.FocalY;
+        return true;
+    }
+}
+
+bool KinectInterface::Get3DPosition(int rgbX, int rgbY, Eigen::Vector3f& p) const
+{
+    return Get3DPosition(rgbX, rgbY, mFloatDepth->At(rgbY * mFloatDepth->GetWidth() + rgbX), p);
+}
+
+bool KinectInterface::Get3DPosition(int rgbX, int rgbY, int depthInCM, Eigen::Vector3f& p) const
+{
+    if( depthInCM == 0 )
+    {
+        p[0] = p[1] = p[2] = std::numeric_limits<float>::quiet_NaN();
+        return false;
+    }
+    else
+    {
+        p[2] = depthInCM * 0.001f;
+        p[0] = (rgbX - mParams.CenterX) * p[2] / mParams.FocalX;
+        p[1] = (rgbY - mParams.CenterY) * p[2] / mParams.FocalY;
+        return true;
+    }
+}
+
+
 
 } // end namespace utils
 } // end namespace KSRobot
