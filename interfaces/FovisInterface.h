@@ -57,5 +57,5 @@ protected:
 
 #endif // FOVISINTERFACE_H
 
-} // end namespace utils
+} // end namespace interfaces
 } // end namespace KSRobot

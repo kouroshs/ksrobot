@@ -166,7 +166,6 @@ void MappingInterface::ReInitialize()
     mMapper->mFilteredCloud.reset(new KinectPointCloud());
 }
 
-
 void MappingInterface::OnNewKeypoint()
 {
     if( !mVO->IsThisCycleKeyframe() )
@@ -235,8 +234,6 @@ void MappingInterface::ReadSettings(ProgramOptions::Ptr po)
     
     ReInitialize();
 }
-
-
 
 } // end namespace common
 } // end namespace KSRobot

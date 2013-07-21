@@ -23,13 +23,13 @@
 
 #include <common/Interface.h>
 #include <common/VisualOdometryInterface.h>
-#include <boost/signals2.hpp>
 #include <tbb/concurrent_queue.h>
 
 #include <libpmk/avt/incremental-vocabulary-tree.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 
+#include <boost/random/mersenne_twister.hpp>
 
 namespace KSRobot
 {
@@ -70,6 +70,7 @@ protected:
         KinectRgbImage::ConstPtr        Image;
         KinectRawDepthImage::ConstPtr   RawDepth;
     };
+    typedef std::vector<Eigen::Vector3f>                    PointArray;
     
     void                                                    OnNewKeyframe();
     void                                                    ExtractSceneDescriptors();
@@ -79,10 +80,22 @@ protected:
     void                                                    Extract3DPositions(const KeyframeData& kd, const std::vector<cv::KeyPoint>& keypoints);
     cv::Mat&                                                CurrentDescriptor() { assert(mKeyframeImageKeypointDescriptors.size() != 0); return mKeyframeImageKeypointDescriptors.back(); }
     
-    void                                                    ExtractValidMatches(const std::vector<cv::DMatch>& matches, int prev_cycle, int curr_cycle,
-                                                                                std::vector<int>& idx_prevcycle, std::vector<int>& idx_currcycle);
-    bool                                                    Ransac(int prev_cycle, int curr_cycle, const std::vector<int>& prev_idx, 
-                                                                   const std::vector<int>& curr_idx, Eigen::Isometry3f& transform);
+    void                                                    ExtractValidMatches(const std::vector<cv::DMatch>& matches, 
+                                                                                const PointArray& prev, const PointArray& curr,
+                                                                                std::vector<cv::DMatch>& out);
+    bool                                                    Ransac(const PointArray& prev_points, const PointArray& curr_points,
+                                                                   const std::vector<cv::DMatch>& matches, Eigen::Isometry3f& transform);
+    
+    static bool                                             ComputeHornTransform(const PointArray& prev_points, 
+                                                                                 const PointArray& curr_points,
+                                                                                 const std::vector<cv::DMatch>& matches,
+                                                                                 const std::vector<int>& indexer,
+                                                                                 Eigen::Isometry3f& transform);
+    bool                                                    IsInlier(const Eigen::Vector3f& prev, const Eigen::Vector3f& curr,
+                                                                     const Eigen::Isometry3f& transform);
+    static float                                            ComputeError(const PointArray& prev_points, const PointArray& curr_points,
+                                                                         const std::vector<cv::DMatch>& matches,
+                                                                         const std::vector<int>& consensus_set, const Eigen::Isometry3f& trans);
 protected:
     tbb::concurrent_queue<KeyframeData>                     mKeyframesQueue;
     VisualOdometryInterface::Ptr                            mVO;
@@ -90,15 +103,24 @@ protected:
     incremental_vtree::IncrementalVocabularyTree            mVTree;
     PointSet*                                               mCurrSceneDescriptor;
     
-    int                                                     mNumCandidateImages;
+    size_t                                                  mNumCandidateImages;
     bool                                                    mUseFovisDescriptor;
     bool                                                    mNormalizeFovisDescriptor;
     std::string                                             mFeatureDetectorName;
     std::string                                             mDescriptorExtractorName;
-    int                                                     mMinimumFeatureMatches;
+    size_t                                                  mMinimumFeatureMatches;
+    
+    //RANSAC parameters
+    size_t                                                  mRansacMinSetSize;
+    size_t                                                  mRansacMaxSteps;
+    float                                                   mRansacGoodModelPercentage;
+    size_t                                                  mRansacMinInliers;
+    float                                                   mRansacMaxAcceptableError;
+    float                                                   mRansacInlierMaxSquaredDist;
+    boost::random::mt19937                                  mRansacRNG;
     
     std::vector<cv::Mat>                                    mKeyframeImageKeypointDescriptors;
-    std::vector<std::vector<Eigen::Vector3f> >              mPointArrayList;
+    std::vector<PointArray>                                 mPointArrayList;
     cv::Ptr<cv::FeatureDetector>                            mFeatureDetector;
     cv::Ptr<cv::DescriptorExtractor>                        mDescExtractor;
     cv::FlannBasedMatcher                                   mMatcher;
