@@ -1,6 +1,7 @@
 (PRIORITY)                 Description
 ==========================================================================
 
+(HIGH)  Test LoopClosure and OctomapInterface
 (HIGH)  Import GTMAP 
 (HIGH)  Find a program to search in environment
 
