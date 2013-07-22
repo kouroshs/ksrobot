@@ -4,6 +4,7 @@
 #include <interfaces/MTEngine.h>
 #include <interfaces/KinectDatasetReader.h>
 #include <interfaces/KinectDeviceReader.h>
+#include <interfaces/OctomapInterface.h>
 
 #include <boost/signals2.hpp>
 
@@ -54,5 +55,22 @@ void ExportInterfaces()
         .def("Start", &MTEngine::Start)
         .def("Stop", &MTEngine::Stop)
         .def("RunSingleCycle", &MTEngine::RunSingleCycle)
+    ;
+    
+    class_<OctomapInterface, boost::shared_ptr<OctomapInterface>, 
+        bases<MappingInterface>, boost::noncopyable >("OctomapInterface", no_init)
+        .def("GetMapResolution", &OctomapInterface::GetMapResolution)
+        .def("GetMaxRange", &OctomapInterface::GetMaxRange)
+        .def("SetMapResolution", &OctomapInterface::SetMapResolution)
+        .def("SetMaxRange", &OctomapInterface::SetMaxRange)
+        .def("SetApplyVoxelGrid", &OctomapInterface::SetApplyVoxelGrid)
+        .def("GetApplyVoxelGrid", &OctomapInterface::GetApplyVoxelGrid)
+        .def("SetVoxelGridResolution", &OctomapInterface::SetVoxelGridResolution)
+        .def("GetVoxelGridResolution", &OctomapInterface::GetVoxelGridResolution)
+        .def("Initialize", &OctomapInterface::Initialize)
+        .def("RegisterToVO", &OctomapInterface::RegisterToVO)
+        .def("SaveToFile", &OctomapInterface::SaveToFile)
+        .def("ReadSettings", &OctomapInterface::ReadSettings)
+        .def("RunSingleCycle", &OctomapInterface::RunSingleCycle)
     ;
 }

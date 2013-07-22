@@ -137,6 +137,7 @@ bool LoopDetector::RunSingleCycle()
             }
         
         mVTree.InsertImage(*mCurrSceneDescriptor);
+        FinishCycle();
     }
     return count != 0;
 }

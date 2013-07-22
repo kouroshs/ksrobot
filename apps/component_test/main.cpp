@@ -4,7 +4,7 @@
 #include <common/Defenitions.h>
 #include <interfaces/KinectDatasetReader.h>
 #include <interfaces/FovisInterface.h>
-#include <common/MappingInterface.h>
+#include <interfaces/OctomapInterface.h>
 
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/passthrough.h>
@@ -35,12 +35,13 @@ int main(int argc, char** argv)
     Eigen::Quaternionf quatAxis(Eigen::AngleAxisf(angle, Eigen::Vector3f::UnitX()));
     
     
-    MappingInterface::Ptr map(new MappingInterface);
+    OctomapInterface::Ptr map(new OctomapInterface);
     map->RegisterToVO(fovis);
-    map->EnableFiltering(true);
+    map->SetApplyVoxelGrid(true);
+    map->SetVoxelGridResolution(0.05);
     map->SetMapResolution(0.05);
     map->SetMaxRange(4);
-    map->ReInitialize();
+    map->Initialize();
     
     pcl::VoxelGrid<KinectPointCloud::PointType> vg;
     vg.setLeafSize(0.05, 0.05, 0.05);
@@ -106,7 +107,7 @@ int main(int argc, char** argv)
     pcl::io::savePCDFileBinaryCompressed("/home/kourosh/test/pointclouds/fovis.pcd", final_pc);
     po->SaveToFile("component-test-settings.xml");
     
-    map->SaveMapToFile("/home/kourosh/map.ot");
+    map->SaveToFile("/home/kourosh/map.ot");
     
 //     KinectDatasetReader::Ptr kinect(new KinectDatasetReader());
 //     kinect->Initialize("/windows/E/Datasets/rgbd_dataset_freiburg2_pioneer_slam/");

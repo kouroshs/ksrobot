@@ -5,4 +5,4 @@ set(INTERFACES_SRCS OctomapInterface.cpp ICPInterface.cpp iSAM2Interface.cpp Fov
 link_directories("${LIBPMK_PATH}/libpmk2/build ${LIBPMK_PATH}/avt/build")
 
 add_library(ksrobot_interfaces SHARED ${INTERFACES_SRCS})
-target_link_libraries(ksrobot_interfaces ${GLOBAL_LIBRARIES} ksrobot_common fovis gtsam)
+target_link_libraries(ksrobot_interfaces ${GLOBAL_LIBRARIES} ksrobot_common fovis gtsam octomap)

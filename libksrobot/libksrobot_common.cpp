@@ -220,17 +220,6 @@ void ExportCommon()
     
     class_<MappingInterface, boost::shared_ptr<MappingInterface>, 
         bases<Interface>, boost::noncopyable >("MappingInterface", no_init)
-        .def("GetMapResolution", &MappingInterface::GetMapResolution)
-        .def("GetMaxRange", &MappingInterface::GetMaxRange)
-        .def("SetMapResolution", &MappingInterface::SetMapResolution)
-        .def("SetMaxRange", &MappingInterface::SetMaxRange)
-        .def("IsFilteringEnabled", &MappingInterface::IsFilteringEnabled)
-        .def("EnableFiltering", &MappingInterface::EnableFiltering)
-        .def("ReInitialize", &MappingInterface::ReInitialize)
-        .def("RegisterToVO", &MappingInterface::RegisterToVO)
-        .def("SaveMapToFile", &MappingInterface::SaveMapToFile)
-        .def("ReadSettings", &MappingInterface::ReadSettings)
-        .def("RunSingleCycle", &MappingInterface::RunSingleCycle)
     ;
     
 }

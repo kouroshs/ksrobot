@@ -1,8 +1,6 @@
 (PRIORITY)                 Description
 ==========================================================================
 
-(HIGH)  Extract FOVIS Keypoints, using OdometryFrame or PyramidLevel (probably reimplement inside fovis itself!)
-        In that case I have to implement copy constructors for those classes.
 (HIGH)  import GTMAP 
 
 (HIGH)  Find a program to search in environment

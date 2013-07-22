@@ -19,11 +19,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake-mo
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(EIGEN REQUIRED eigen3)
-
-SET(QT_USE_QTOPENGL TRUE)
-SET(QT_USE_QTNETWORK TRUE)
-
-#set(OpenCV_DIR "/usr/local/share/OpenCV/")
 find_package(OpenCV REQUIRED)
 find_package(Boost COMPONENTS system filesystem thread date_time program_options chrono python REQUIRED)
 find_package(Qt4 COMPONENTS QtCore QtGui QtNetwork REQUIRED)

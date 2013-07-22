@@ -26,10 +26,48 @@
 #include <common/Timer.h>
 #include <Eigen/Geometry>
 
+#include <tbb/concurrent_queue.h>
+
 namespace KSRobot
 {
 namespace common
 {
+
+class OccupancyMap2D
+{
+public:
+    
+    enum CellValue
+    {
+        OccupiedCell    = 100,
+        FreeCell        = 0,
+        UnknownCell     = 50
+    };
+    
+    OccupancyMap2D(int width, int height) : mWidth(width), mHeight(height), mData(width * height, UnknownCell) {;}
+    ~OccupancyMap2D();
+    
+    int                     GetWidth() const { return mWidth; }
+    void                    SetWidth(int w) { mWidth = w; }
+    int                     GetHeight() const { return mHeight; }
+    void                    SetHeight(int h) { mHeight = h; }
+    int                     GetSize() const { return mWidth * mHeight; }
+    
+    int                     Index(int i, int j) const { return mWidth * i + j; }
+    
+    char                    At(int idx) const { return mData[idx]; }
+    char&                   At(int idx) { return mData[idx]; }
+    
+    char                    At(int i, int j) const { return mData[Index(i, j)]; }
+    char&                   At(int i, int j) { return mData[Index(i, j)]; }
+    
+    bool                    IsValidIndex(int idx) const { return idx < (int)mData.size(); }
+    
+private:
+    int                     mWidth;
+    int                     mHeight;
+    std::vector<char>       mData;
+};
 
 class MappingInterface : public Interface
 {
@@ -42,68 +80,23 @@ public:
     virtual ~MappingInterface();
     
     // Not neccessary to call
-    inline double                       GetMapResolution() const;
-    inline double                       GetMaxRange() const;
-    inline void                         SetMapResolution(const double& res);
-    inline void                         SetMaxRange(const double& range);
-    inline bool                         IsFilteringEnabled() const;
-    inline void                         EnableFiltering(bool enable);
+    virtual void                                Initialize();
+    void                                        RegisterToVO(VisualOdometryInterface::Ptr vo);
+    virtual void                                SaveToFile(const std::string& filename) = 0;
     
-    void                                ReInitialize();
-    void                                RegisterToVO(VisualOdometryInterface::Ptr vo);
+    virtual void                                ConvertToOccupancyGrid(OccupancyMap2D& map, int center_i, int center_j, bool lock_interface = false) = 0;
+protected:
+    void                                        OnNewKeyframe();
+protected:
+    VisualOdometryInterface::Ptr                mVO;
+    struct MapInfo
+    {
+        Eigen::Isometry3f                       Transform;
+        common::KinectPointCloud::ConstPtr      PointCloud;
+    };
     
-    void                                SaveMapToFile(const std::string& filename);
-    
-    virtual void                        ReadSettings(ProgramOptions::Ptr po);
-    
-    virtual bool                        RunSingleCycle();
-private:
-    void                                OnNewKeypoint();
-private:
-    //TODO: Add list of kinect pointclouds
-    VisualOdometryInterface::Ptr        mVO;
-    class KOctreeMap;
-    boost::shared_ptr<KOctreeMap>       mMapper;
-    
-    double                              mMapRes;
-    double                              mMaxRange;
-    bool                                mApplyFilter;
-    
-    Timer::Ptr                          mFilterTimer;
-    Timer::Ptr                          mUpdateTimer;
+    tbb::concurrent_bounded_queue<MapInfo>      mKeyframesQueue;
 };
-
-inline double MappingInterface::GetMapResolution() const
-{
-    return mMapRes;
-}
-
-inline double MappingInterface::GetMaxRange() const
-{
-    return mMaxRange;
-}
-
-inline void MappingInterface::SetMapResolution(const double& res)
-{
-    mMapRes = res;
-}
-
-inline void MappingInterface::SetMaxRange(const double& range)
-{
-    mMaxRange = range;
-}
-
-inline void MappingInterface::EnableFiltering(bool enable)
-{
-    mApplyFilter = enable;
-}
-
-inline bool MappingInterface::IsFilteringEnabled() const
-{
-    return mApplyFilter;
-}
-
-
 
 } // end namespace common
 } // end namespace KSRobot

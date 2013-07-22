@@ -43,196 +43,32 @@ namespace KSRobot
 namespace common
 {
 
-class MapElement
+MappingInterface::MappingInterface() : Interface()
 {
-public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    
-    MapElement() {;}
-    MapElement(const MapElement& o) : PC(o.PC), Transform(o.Transform) {;}
-    ~MapElement() {;}
-    
-    MapElement& operator = (const MapElement& o) { PC = o.PC; Transform = o.Transform; return *this; }
-    
-    Eigen::Isometry3f               Transform;
-    KinectPointCloud::ConstPtr      PC;
-};    
-
-class MappingInterface::KOctreeMap : public octomap::ColorOcTree
-{
-public:
-    typedef octomap::ColorOcTree                BaseType;
-    typedef KOctreeMap                          ThisType;
-    
-
-    
-    typedef tbb::concurrent_bounded_queue<MapElement, Eigen::aligned_allocator<MapElement> >   QueueType;
-    QueueType                           mQ;
-    
-    
-    pcl::VoxelGrid<pcl::PointXYZRGBA>           mGrid;
-    KinectPointCloud::Ptr                       mFilteredCloud;
-    
-    octomap::Pointcloud         mPC;
-    std::vector<int>            mIndexes;
-    double                      mMaxRange;
-    
-    KOctreeMap(double res = 0.01, double max_range = 5.0) : BaseType(res), mMaxRange(max_range) {;}
-    
-    void Convert(common::KinectPointCloud::ConstPtr pc, const octomath::Quaternion rot)
-    {
-        // also update mIndexes
-        mIndexes.clear();
-        mIndexes.reserve(pc->size()); // some are wasted, but it's better than many reallocations
-        mPC.clear();
-        for(unsigned int i = 0; i < pc->points.size(); i++)
-        {
-            const pcl::PointXYZRGBA& p = pc->points[i];
-            if( pcl::isFinite(p) )
-            {
-                mPC.push_back(p.x, p.y, p.z);
-                mIndexes.push_back(i);
-            }
-        }
-        
-        mPC.transform(octomath::Pose6D(octomath::Vector3(0, 0, 0), rot));
-    }
-    
-    void InsertPointCloud(common::KinectPointCloud::ConstPtr pc, const Eigen::Isometry3f& pose, bool lazy_eval = false)
-    {
-        Eigen::Vector3f eig_trans(pose.translation());
-        Eigen::Quaternionf eig_quat(pose.linear());
-        
-        octomath::Vector3 trans(eig_trans[0], eig_trans[1], eig_trans[2]);
-        octomath::Quaternion rot(eig_quat.w(), eig_quat.x(), eig_quat.y(), eig_quat.z());
-        
-        octomap::KeySet free_cells, occupied_cells;
-        Convert(pc, rot);
-        computeUpdate(mPC, trans, free_cells, occupied_cells, mMaxRange);
-        
-        for(octomap::KeySet::iterator it = free_cells.begin(); it != free_cells.end(); it++)
-        {
-            updateNode(*it, false, lazy_eval);
-        }
-        
-        int index = 0;
-        for(octomap::KeySet::iterator it = occupied_cells.begin(); it != occupied_cells.end(); it++, index++)
-        {
-            const pcl::PointXYZRGBA& p = pc->points[mIndexes[index]];
-            updateNode(*it, true, lazy_eval);
-            integrateNodeColor(*it, p.r, p.g, p.b);
-        }
-    }
-    
-    void Test()
-    {
-        for(leaf_iterator iter = this->begin_leafs(); iter != this->end_leafs(); iter++)
-        {
-            //TODO: 
-        }
-    }
-
-};
-
-// MappingInterface::MappingInterface(): Interface(""), mMapRes(0.01), mMaxRange(-1),
-// mApplyFilter(true), mFilterTimer(new Timer("FilterDownSample")), mUpdateTimer(new Timer("Update"))
-// {
-//     mQ.set_capacity(1000); // Storing this much pointcloud will need 5GB of memory, so it's better to fail!
-//     ReInitialize();
-//     
-//     RegisterTimer(mFilterTimer);
-//     RegisterTimer(mUpdateTimer);
-// }
-
-
-MappingInterface::MappingInterface() : Interface(), mMapRes(0.01), mMaxRange(-1),
-    mApplyFilter(true), mFilterTimer(new Timer("FilterDownSample")), mUpdateTimer(new Timer("Update"))
-{
-    ReInitialize();
-    
-    RegisterTimer(mFilterTimer);
-    RegisterTimer(mUpdateTimer);
+    mKeyframesQueue.set_capacity(100);
 }
 
 MappingInterface::~MappingInterface()
 {
 }
 
-void MappingInterface::ReInitialize()
+void MappingInterface::Initialize()
 {
-    mMapper.reset(new KOctreeMap(mMapRes, mMaxRange));
-    mMapper->mQ.set_capacity(1000); // Storing this much pointcloud will need 5GB of memory, so it's better to fail!
-    mMapper->mGrid.setLeafSize(mMapRes / 2, mMapRes / 2, mMapRes / 2);
-    mMapper->mFilteredCloud.reset(new KinectPointCloud());
 }
 
-void MappingInterface::OnNewKeypoint()
+void MappingInterface::OnNewKeyframe()
 {
-    if( !mVO->IsThisCycleKeyframe() )
-        return;
-    
-    MapElement me;
-    me.PC = mVO->GetCurrentPointCloud();
-    me.Transform = mVO->GetGlobalPose();
-    mMapper->mQ.try_push(me);
+    MapInfo mi;
+    mi.PointCloud = mVO->GetCurrentPointCloud();
+    mi.Transform = mVO->GetGlobalPose();
+    if( !mKeyframesQueue.try_push(mi) )
+        throw std::runtime_error("(MappingInterface::OnNewKeypoint) Keyframe queue is full.");
 }
 
 void MappingInterface::RegisterToVO(VisualOdometryInterface::Ptr vo)
 {
     mVO = vo;
-    mVO->RegisterKeyframeReceiver(boost::bind(&MappingInterface::OnNewKeypoint, this));
-}
-
-bool MappingInterface::RunSingleCycle()
-{
-    int count = 0;
-    MapElement me;
-    while( mMapper->mQ.try_pop(me) )
-    {
-        KinectPointCloud::ConstPtr final_output;
-        if( mApplyFilter )
-        {
-            mFilterTimer->Start();
-                mMapper->mFilteredCloud->points.clear(); // in case the filter doesn't do this
-                mMapper->mGrid.setInputCloud(me.PC);
-                mMapper->mGrid.filter(*(mMapper->mFilteredCloud));
-                
-                Eigen::Quaternionf quat(Eigen::AngleAxisf(6, Eigen::Vector3f::UnitX()));
-                pcl::transformPointCloud(*(mMapper->mFilteredCloud), *(mMapper->mFilteredCloud), Eigen::Vector3f(0,0,0), quat);
-                
-                final_output = mMapper->mFilteredCloud;
-            mFilterTimer->Stop();
-        }
-        else
-            final_output = me.PC;
-        
-        
-        mUpdateTimer->Start();
-            mMapper->InsertPointCloud(final_output, me.Transform);
-        mUpdateTimer->Stop();
-        count++;
-    }
-    
-    if( count != 0 )
-        FinishCycle();
-    
-    return (count != 0);
-}
-
-void MappingInterface::SaveMapToFile(const std::string& filename)
-{
-    mMapper->write(filename);
-}
-
-void MappingInterface::ReadSettings(ProgramOptions::Ptr po)
-{
-    Interface::ReadSettings(po);
-    
-    mMapRes = po->GetDouble("MapResolution", 0.1);
-    mMaxRange = po->GetDouble("MaxRange", -1.0);
-    mApplyFilter = po->GetBool("ApplyFilter", true);
-    
-    ReInitialize();
+    mVO->RegisterKeyframeReceiver(boost::bind(&MappingInterface::OnNewKeyframe, this));
 }
 
 } // end namespace common

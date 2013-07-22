@@ -22,110 +22,186 @@
 
 #include <common/MappingInterface.h>
 #include <common/KinectInterface.h>
+#include <common/VisualOdometryInterface.h>
 
-#include <pcl/filters/voxel_grid.h>
-#include <octomap/AbstractOccupancyOcTree.h>
+#include <octomap/ColorOcTree.h>
+#include <octomap/Pointcloud.h>
+
 #include <tbb/concurrent_queue.h>
-#include <sys/mman.h>
+
+
 
 namespace KSRobot
 {
 namespace interfaces
 {
-
+//TODO: Probably needs robot params
 class OctomapInterface : public common::MappingInterface
 {
 public:
     typedef OctomapInterface                    this_type;
     typedef boost::shared_ptr<this_type>        Ptr;
     typedef boost::shared_ptr<const this_type>  ConstPtr;
+    typedef octomap::ColorOcTree                                    OcTreeType;
     
     OctomapInterface();
     virtual ~OctomapInterface();
     
-    virtual void Initialize();
+    virtual void                                                    Initialize();
+    virtual bool                                                    RunSingleCycle();
+    virtual void                                                    SaveToFile(const std::string& filename);
+    virtual void                                                    ReadSettings(common::ProgramOptions::Ptr po);
+    virtual void                                                    ConvertToOccupancyGrid(common::OccupancyMap2D& map, 
+                                                                                           int center_i, int center_j, bool lock_interface = false);
     
-    inline boost::shared_ptr<octomap::AbstractOccupancyOcTree>      GetOctree() const;
+    inline boost::shared_ptr<const OcTreeType>                      GetOctree() const;
     inline bool                                                     GetUseColor() const;
     inline void                                                     SetUseColor(bool useColor);
     inline float                                                    GetMapResolution() const;
     inline void                                                     SetMapResolution(float res);
-    inline float                                                    GetMaxRange() const;
-    inline void                                                     SetMaxRange(float range);
+    inline double                                                   GetMaxRange() const;
+    inline void                                                     SetMaxRange(double range);
     inline bool                                                     GetApplyVoxelGrid() const;
     inline void                                                     SetApplyVoxelGrid(bool enable);
     inline float                                                    GetVoxelGridResolution() const;
     inline void                                                     SetVoxelGridResolution(float res);
-    
+    inline bool                                                     GetLazyEval() const;
+    inline void                                                     SetLazyEval(bool enable);
 protected:
-    boost::shared_ptr<octomap::AbstractOccupancyOcTree>     mOctree;
+    void                                                            ConvertInternal(common::KinectPointCloud::ConstPtr pc, const Eigen::Isometry3f& transform);
+    void                                                            UpdateMap(common::KinectPointCloud::ConstPtr pc);
+    bool                                                            CheckHeight(const OcTreeType::leaf_iterator &iter) const;
     
-    bool                                                    mUseColor;
-    float                                                   mMapResolution;
-    float                                                   mMaxRange;
+    bool                                                            ExtractGroundPlane(const common::KinectPointCloud& pc,
+                                                                                       common::KinectPointCloud& ground,
+                                                                                       common::KinectPointCloud& nonground);
+protected:
+    boost::shared_ptr<OcTreeType>                                   mOctree;
     
-    bool                                                    mApplyVoxelGrid;
-    float                                                   mVoxelGridResolution;
+    bool                                                            mUseColor;
+    float                                                           mMapResolution;
+    double                                                          mMaxRange;
     
-    common::KinectPointCloud::Ptr                           mFilteredCloud;
-    pcl::VoxelGrid<common::KinectPointCloud::PointType>     mVoxelGrid;
+    bool                                                            mApplyVoxelGrid;
+    float                                                           mVoxelGridResolution;
+    
+    bool                                                            mLazyEval;
+    
+    common::KinectPointCloud::Ptr                                   mFilteredCloud;
+    common::KinectPointCloud::Ptr                                   mGroundPC;
+    common::KinectPointCloud::Ptr                                   mNonGroundPC;
+    
+    octomap::Pointcloud                                             mPoints;
+    std::vector<int>                                                mIndexes;
+
+    struct GroundFilter
+    {
+        bool                                                        Enabled;
+        int                                                         Axis;
+        float                                                       Distance;
+        float                                                       PlaneDistance;
+        float                                                       Angle;
+    };
+    
+    struct RobotLocalTransform
+    {
+        // for now only kinect local -> robot transform is available
+        // which means when we get data from kinect, the forward is z+ direction
+        // but we want to convert it to y+. This means a 90 degree rotation around
+        // x axis.
+        bool                                                        Enabled; // should be true if groundfilter is used
+        float                                                       RobotHeight;
+        int                                                         RobotHeightAxis;
+        
+        int                                                         FirstRotationAxis;
+        float                                                       FirstRotationDegree;
+        int                                                         SecondRotationAxis;
+        float                                                       SecondRotationDegree;
+    };
+    
+    struct PassThroughFilter
+    {
+        bool                                                        Enabled;
+        float                                                       LimitMin;
+        float                                                       LimitMax;
+    };
+    
+    //TODO: Write get&set for these
+    bool                                                            mEnableHeightFiltering;
+    int                                                             mHeightFilterAxis;
+    float                                                           mHeightFilterMaxValue;
+    float                                                           mHeightFilterMinValue;
+    
+    PassThroughFilter                                               mPassThrough;
+    GroundFilter                                                    mGroundFilter;
+    RobotLocalTransform                                             mLocalTransformInfo;
+    Eigen::Affine3f      mCameraTransformCached;
 };
 
-inline boost::shared_ptr<octomap::AbstractOccupancyOcTree> OctomapInterface::GetOctree() const
+inline boost::shared_ptr<const OctomapInterface::OcTreeType> OctomapInterface::GetOctree() const
 {
     return mOctree;
 }
 
-bool OctomapInterface::GetUseColor() const
+inline bool OctomapInterface::GetUseColor() const
 {
     return mUseColor;
 }
 
-void OctomapInterface::SetUseColor(bool useColor)
+inline void OctomapInterface::SetUseColor(bool useColor)
 {
     mUseColor = useColor;
 }
 
-float OctomapInterface::GetMapResolution() const
+inline float OctomapInterface::GetMapResolution() const
 {
     return mMapResolution;
 }
 
-void OctomapInterface::SetMapResolution(float res)
+inline void OctomapInterface::SetMapResolution(float res)
 {
     mMapResolution = res;
 }
 
-float OctomapInterface::GetMaxRange() const
+inline double OctomapInterface::GetMaxRange() const
 {
     return mMaxRange;
 }
 
-void OctomapInterface::SetMaxRange(float range)
+inline void OctomapInterface::SetMaxRange(double range)
 {
     mMaxRange = range;
 }
 
-bool OctomapInterface::GetApplyVoxelGrid() const
+inline bool OctomapInterface::GetApplyVoxelGrid() const
 {
     return mApplyVoxelGrid;
 }
 
-void OctomapInterface::SetApplyVoxelGrid(bool enable)
+inline void OctomapInterface::SetApplyVoxelGrid(bool enable)
 {
     mApplyVoxelGrid = enable;
 }
 
-float OctomapInterface::GetVoxelGridResolution() const
+inline float OctomapInterface::GetVoxelGridResolution() const
 {
     return mVoxelGridResolution;
 }
 
-void OctomapInterface::SetVoxelGridResolution(float res)
+inline void OctomapInterface::SetVoxelGridResolution(float res)
 {
     mVoxelGridResolution = res;
 }
 
+inline bool OctomapInterface::GetLazyEval() const
+{
+    return mLazyEval;
+}
+
+inline void OctomapInterface::SetLazyEval(bool enable)
+{
+    mLazyEval = enable;
+}
 
 
 } // end namespace interfaces
