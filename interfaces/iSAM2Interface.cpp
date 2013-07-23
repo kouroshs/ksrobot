@@ -29,28 +29,27 @@ namespace interfaces
 
 iSAM2Interface::iSAM2Interface() : common::SLAMInterface()
 {
-    mISAM2 = new gtsam::ISAM2();
-    mPriorNoise = gtsam::noiseModel::Diagonal::Sigmas(gtsam::Vector_(1,0,0,1));
-    mOdometryNoise = gtsam::noiseModel::Diagonal::Sigmas(gtsam::Vector_(1,0,0,1));
+    Initialize();
 }
 
 iSAM2Interface::~iSAM2Interface()
 {
 }
 
+void iSAM2Interface::Initialize()
+{
+    //TODO: Change these by model
+    mISAM2 = new gtsam::ISAM2();
+    mPriorNoise = gtsam::noiseModel::Diagonal::Sigmas(gtsam::Vector_(1,0,0,1));
+    mOdometryNoise = gtsam::noiseModel::Diagonal::Sigmas(gtsam::Vector_(1,0,0,1));
+}
+
 
 void iSAM2Interface::ReadSettings(common::ProgramOptions::Ptr po)
 {
-    KSRobot::common::Interface::ReadSettings(po);
+    //TODO:
     
-    //This should result in a new mISAM2 instance.
-    //TODO:
-}
-
-void iSAM2Interface::WriteSettings(common::ProgramOptions::Ptr po)
-{
-    KSRobot::common::Interface::WriteSettings(po);
-    //TODO:
+    Initialize();
 }
 
 void iSAM2Interface::AddKeyframe(const common::VisualKeyframe& kf)

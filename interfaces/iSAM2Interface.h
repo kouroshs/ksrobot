@@ -36,9 +36,8 @@ public:
     iSAM2Interface();
     virtual ~iSAM2Interface();
     
-    
+    virtual void Initialize();
     virtual void ReadSettings(common::ProgramOptions::Ptr po);
-    virtual void WriteSettings(common::ProgramOptions::Ptr po);
     
 protected:
     virtual void                AddKeyframe(const common::VisualKeyframe& kf);

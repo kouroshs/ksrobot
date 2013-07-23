@@ -24,70 +24,56 @@
 #include <fovis/visual_odometry.hpp>
 #include <fovis/depth_image.hpp>
 
+#define SAFE_DELETE(x) if(x) delete (x);
+
 namespace KSRobot
 {
 namespace interfaces
 {
 
-class FovisInterface::FovisImpl
-{
-public:
-    fovis::VisualOdometry*                      mFovis;
-    fovis::DepthImage*                          mDepthImage;
-    unsigned char*                              mGrayImage;
-    
-    fovis::VisualOdometryOptions                mOptions;
-    fovis::Rectification*                       mRectification;
-    
-    FovisImpl(const common::KinectInterface::CameraParameters& kinectParams)
-    {
-        Init(kinectParams, fovis::VisualOdometry::getDefaultOptions());
-    }
-    
-    ~FovisImpl()
-    {
-        delete mFovis;
-        delete mDepthImage;
-        delete mGrayImage;
-        delete mRectification;
-    }
-    
-    void Init(const common::KinectInterface::CameraParameters& kinectParams,
-              const fovis::VisualOdometryOptions& options)
-    {
-        mOptions = options;
-        fovis::CameraIntrinsicsParameters camParams;
-        memset(&camParams, 0, sizeof(camParams));
-        
-        camParams.width = kinectParams.Width;
-        camParams.height = kinectParams.Height;
-        camParams.fx = kinectParams.FocalX;
-        camParams.fy = kinectParams.FocalY;
-        camParams.cx = kinectParams.CenterX;
-        camParams.cy = kinectParams.CenterY;
-        camParams.k1 = kinectParams.K1;
-        camParams.k2 = kinectParams.K2;
-        camParams.k3 = kinectParams.K3;
-        camParams.p1 = kinectParams.P1;
-        camParams.p2 = kinectParams.P2;
-        
-        mRectification = new fovis::Rectification(camParams);
-        mFovis = new fovis::VisualOdometry(mRectification, mOptions);
-        mDepthImage = new fovis::DepthImage(camParams, camParams.width, camParams.height);
-        mGrayImage = new unsigned char[camParams.width * camParams.height];
-    }
-    
-};
-    
 FovisInterface::FovisInterface() : 
             common::VisualOdometryInterface(), 
-            mDataCopyTimer(new common::Timer("Data copying"))
+            mDataCopyTimer(new common::Timer("Data copying")),
+            mFovis(NULL), mDepthImage(NULL), mGrayImage(NULL), mRectification(NULL)
 {
     RegisterTimer(mDataCopyTimer);
 }
 
 FovisInterface::~FovisInterface()
 {
+    SAFE_DELETE(mFovis);
+    SAFE_DELETE(mRectification);
+    SAFE_DELETE(mGrayImage);
+    SAFE_DELETE(mRectification);
+}
+
+void FovisInterface::InitInternal(const common::KinectInterface::CameraParameters& kinectParams, const fovis::VisualOdometryOptions& options)
+{
+    mOptions = options;
+    fovis::CameraIntrinsicsParameters camParams;
+    memset(&camParams, 0, sizeof(camParams));
+    
+    camParams.width = kinectParams.Width;
+    camParams.height = kinectParams.Height;
+    camParams.fx = kinectParams.FocalX;
+    camParams.fy = kinectParams.FocalY;
+    camParams.cx = kinectParams.CenterX;
+    camParams.cy = kinectParams.CenterY;
+    camParams.k1 = kinectParams.K1;
+    camParams.k2 = kinectParams.K2;
+    camParams.k3 = kinectParams.K3;
+    camParams.p1 = kinectParams.P1;
+    camParams.p2 = kinectParams.P2;
+
+    SAFE_DELETE(mFovis);
+    SAFE_DELETE(mRectification);
+    SAFE_DELETE(mGrayImage);
+    SAFE_DELETE(mRectification);
+    
+    mRectification  = new fovis::Rectification(camParams);
+    mFovis          = new fovis::VisualOdometry(mRectification, mOptions);
+    mDepthImage     = new fovis::DepthImage(camParams, camParams.width, camParams.height);
+    mGrayImage      = new unsigned char[camParams.width * camParams.height];
 }
 
 void FovisInterface::RegisterToKinect(common::KinectInterface::Ptr ki)
@@ -95,7 +81,7 @@ void FovisInterface::RegisterToKinect(common::KinectInterface::Ptr ki)
     assert(ki.get());
     VisualOdometryInterface::RegisterToKinect(ki);
     mKinect->EnableFloatDepthGeneration(true);
-    mImpl.reset(new FovisImpl(mKinect->GetCameraParams()));
+    InitInternal(mKinect->GetCameraParams(), fovis::VisualOdometry::getDefaultOptions());
 }
 
 bool FovisInterface::RunSingleCycle()
@@ -107,8 +93,7 @@ bool FovisInterface::RunSingleCycle()
     
     mDataCopyTimer->Start();
     
-    assert(mImpl.get());
-    assert(mImpl->mDepthImage && mImpl->mFovis && mImpl->mGrayImage && mImpl->mRectification);
+    assert(mDepthImage && mFovis && mGrayImage && mRectification);
     assert(mCurrFloatDepth.get());
     assert(mCurrRgb.get());
     assert(mCurrFloatDepth->GetWidth() != 0 && mCurrFloatDepth->GetHeight() != 0);
@@ -116,7 +101,7 @@ bool FovisInterface::RunSingleCycle()
     assert(mCurrFloatDepth->GetArray().size() != 0);
     assert(mCurrRgb->GetArray().size() != 0);
     
-    mImpl->mDepthImage->setDepthImage(mCurrFloatDepth->GetArray().data());
+    mDepthImage->setDepthImage(mCurrFloatDepth->GetArray().data());
     
     size_t size = mCurrRgb->GetHeight() * mCurrRgb->GetWidth();
     const common::KinectRgbImage::ArrayType& array = mCurrRgb->GetArray();
@@ -129,13 +114,13 @@ bool FovisInterface::RunSingleCycle()
         g = array[startIndex + 1];
         b = array[startIndex + 2];
         
-        mImpl->mGrayImage[i] = (int)roundf(((int)r+(int)g+(int)b)/3.0f);//(int)roundf(0.2125 * r + 0.7154 * g + 0.0721 * b);
+        mGrayImage[i] = (int)roundf(((int)r+(int)g+(int)b)/3.0f);//(int)roundf(0.2125 * r + 0.7154 * g + 0.0721 * b);
     }
     mDataCopyTimer->Stop();
 
     mOdomTimer->Start();
-        mImpl->mFovis->processFrame(mImpl->mGrayImage, mImpl->mDepthImage);
-        mMotion->MotionEstimate = mImpl->mFovis->getMotionEstimate().cast<float>();
+        mFovis->processFrame(mGrayImage, mDepthImage);
+        mMotion->MotionEstimate = mFovis->getMotionEstimate().cast<float>();
     mOdomTimer->Stop();
 
     FinishCycle();
@@ -144,8 +129,8 @@ bool FovisInterface::RunSingleCycle()
 
 bool FovisInterface::Converged()
 {
-    assert(mImpl.get() && mImpl->mFovis);
-    return mImpl->mFovis->getMotionEstimateStatus() == fovis::SUCCESS;
+    assert(mFovis);
+    return mFovis->getMotionEstimateStatus() == fovis::SUCCESS;
 }
 
 float FovisInterface::GetConvergenceError()
@@ -162,7 +147,7 @@ bool FovisInterface::CheckForKeyframe()
     if( VisualOdometryInterface::CheckForKeyframe() )
         return true;
     
-    if( mImpl->mFovis->getChangeReferenceFrames() )
+    if( mFovis->getChangeReferenceFrames() )
         mIsCycleKeyframe = true; // TODO: Should I make this cycle keyframe or the next one? does it really matter?
     
     return mIsCycleKeyframe;
@@ -171,7 +156,7 @@ bool FovisInterface::CheckForKeyframe()
 void FovisInterface::PublishKeyframeFeatures(common::VisualKeyframe::Ptr kf)
 {
     // This function extracts feature data from fovis.
-    const fovis::OdometryFrame* curr_frame = mImpl->mFovis->getTargetFrame();
+    const fovis::OdometryFrame* curr_frame = mFovis->getTargetFrame();
     //NOTE: Extract features only for the first pyramid.
     const fovis::PyramidLevel* pyr = curr_frame->getLevel(0);
     kf->DataPool.FeatureLength = pyr->getDescriptorLength();

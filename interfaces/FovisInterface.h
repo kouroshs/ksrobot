@@ -26,6 +26,9 @@
 #include <boost/shared_array.hpp>
 #include <Eigen/Geometry>
 
+#include <fovis/visual_odometry.hpp>
+#include <fovis/depth_image.hpp>
+
 namespace KSRobot
 {
 namespace interfaces
@@ -47,11 +50,15 @@ public:
 protected:
     virtual bool        CheckForKeyframe();
     virtual void        PublishKeyframeFeatures(common::VisualKeyframe::Ptr kf);
+    void                InitInternal(const common::KinectInterface::CameraParameters& kinectParams, const fovis::VisualOdometryOptions& options);
 protected:
+    fovis::VisualOdometry*                      mFovis;
+    fovis::DepthImage*                          mDepthImage;
+    unsigned char*                              mGrayImage;
     
-    class FovisImpl;
-    boost::shared_ptr<FovisImpl>                mImpl;
-
+    fovis::VisualOdometryOptions                mOptions;
+    fovis::Rectification*                       mRectification;
+    
     common::Timer::Ptr                          mDataCopyTimer;
 };
 
