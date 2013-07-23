@@ -72,6 +72,7 @@ bool SLAMInterface::RunSingleCycle()
     {
         count++;
         AddKeyframe(kf);
+        FinishCycle();
     }
     
     common::LoopDetector::LoopClosure lc;
@@ -79,6 +80,7 @@ bool SLAMInterface::RunSingleCycle()
     {
         count++;
         AddLoopClosure(lc);
+        FinishCycle();
     }
     
     return count > 0;
