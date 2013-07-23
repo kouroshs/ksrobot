@@ -8,14 +8,14 @@ most of the work is done in common and interfaces directories.
 
 cmake-modules:
 ==============
-This firectory contains CMake configuration files which are not availabled by default. Since they were not provided by default, there is no gaurantee that 
-they will work on other systems.
+This directory contains CMake configuration files which are not available by default. Since they were not provided by default, there is no gaurantee 
+that they will work on other systems.
 
 common:
 ==============
-This is the most important directory. All the functionallity that is used and all interfaces are defined here. interfaces all derive from 
+This is the most important directory. All the functionallity that is used and all interfaces are defined here. Interfaces all derive from 
 KSRobot::common::Interface class, which declares basic functionality that every interface should support. EngineInterface is the base class that 
-provides the full capabilities of the robot.
+acts as a collection and bridge between all interfaces of a robot.
 
 gui:
 =============
