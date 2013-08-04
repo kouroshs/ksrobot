@@ -1,8 +1,8 @@
 (PRIORITY)                 Description
 ==========================================================================
 
+IMPLEMENT:
 (HIGH)  Implement code for moving robot while turning
-(HIGH)  Test LoopClosure and OctomapInterface
 (HIGH)  Import GTMAP
 (HIGH)  Fovis (or ICP) How to provide feature match, and not just features.
         This probably means I should write a different class for robot trajectory
@@ -10,8 +10,11 @@
         but also introduces additional problems like locking or on slam update.
         Also takes time, probably at least a day.
 
-(HIGH)  common::PlannerInterface: It is probably better if it was not an interface, but just a helper class
-        which can be used by other classes. Implementing a motion planner using OMPL and OccupancyGridMap 
-        should be easy (relatively).
+(HIGH) Implement final robot algorithm
 
-(HIGH) Implement robot algorithm
+TEST:
+
+(HIGH)  Test LoopClosure and OctomapInterface
+(HIGH)  Test motion planner.
+
+
