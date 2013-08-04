@@ -56,10 +56,19 @@ protected:
     virtual void                                AddKeyframe(const VisualKeyframe::Ptr kf) = 0;
     virtual void                                AddLoopClosure(const LoopDetector::LoopClosure& lc) = 0;
 protected:
+    struct SLAMDataArrival
+    {
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+        LoopDetector::LoopClosure       Loop;
+        VisualKeyframe::Ptr             Keyframe;
+        bool                            IsLoopClosure;
+    };
+    
     VisualOdometryInterface::Ptr                                        mVO;
     int                                                                 mLastKeyframe;
-    tbb::concurrent_bounded_queue<LoopDetector::LoopClosure>            mLoops;
-    tbb::concurrent_bounded_queue<VisualKeyframe::Ptr>                  mKeyframes;
+//     tbb::concurrent_bounded_queue<LoopDetector::LoopClosure>            mLoops;
+//     tbb::concurrent_bounded_queue<VisualKeyframe::Ptr>                  mKeyframes;
+    tbb::concurrent_queue<SLAMDataArrival>                              mUnprocessedData;
 };
 
 } // end namespace common

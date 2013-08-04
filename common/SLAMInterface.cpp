@@ -28,8 +28,9 @@ namespace common
 
 SLAMInterface::SLAMInterface() : Interface(), mLastKeyframe(-1)
 {
-    mLoops.set_capacity(1000);
-    mKeyframes.set_capacity(1000);
+//     mLoops.set_capacity(1000);
+//     mKeyframes.set_capacity(1000);
+    
 }
 
 SLAMInterface::~SLAMInterface()
@@ -49,7 +50,11 @@ void SLAMInterface::ReadFromFile(const std::string& filename)
 
 void SLAMInterface::OnLoopDetected(const LoopDetector::LoopClosure& lc)
 {
-    mLoops.push(lc);
+    //mLoops.push(lc);
+    SLAMDataArrival da;
+    da.IsLoopClosure = true;
+    da.Loop = lc;
+    mUnprocessedData.push(da);
 }
 
 void SLAMInterface::RegisterToLoopDetector(LoopDetector::Ptr ld)
@@ -59,7 +64,11 @@ void SLAMInterface::RegisterToLoopDetector(LoopDetector::Ptr ld)
 
 void SLAMInterface::OnKeyframeDetected(const VisualKeyframe::Ptr kf)
 {
-    mKeyframes.push(kf);
+    //mKeyframes.push(kf);
+    SLAMDataArrival da;
+    da.IsLoopClosure = false;
+    da.Keyframe = kf;
+    mUnprocessedData.push(da);
 }
 
 bool SLAMInterface::RunSingleCycle()
@@ -67,19 +76,31 @@ bool SLAMInterface::RunSingleCycle()
     common::Interface::ScopedLock lock(this);
     
     int count = 0;
-    common::VisualKeyframe::Ptr kf;
-    while( mKeyframes.try_pop(kf) )
-    {
-        count++;
-        AddKeyframe(kf);
-        FinishCycle();
-    }
+//     common::VisualKeyframe::Ptr kf;
+//     while( mKeyframes.try_pop(kf) )
+//     {
+//         count++;
+//         AddKeyframe(kf);
+//         FinishCycle();
+//     }
+//     
+//     common::LoopDetector::LoopClosure lc;
+//     while( mLoops.try_pop(lc) )
+//     {
+//         count++;
+//         AddLoopClosure(lc);
+//         FinishCycle();
+//     }
     
-    common::LoopDetector::LoopClosure lc;
-    while( mLoops.try_pop(lc) )
+    SLAMDataArrival da;
+    while( mUnprocessedData.try_pop(da) )
     {
         count++;
-        AddLoopClosure(lc);
+        if( da.IsLoopClosure )
+            AddLoopClosure(da.Loop);
+        else
+            AddKeyframe(da.Keyframe);
+        
         FinishCycle();
     }
     
