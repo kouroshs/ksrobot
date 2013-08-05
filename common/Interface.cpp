@@ -20,13 +20,35 @@
 
 #include <common/Interface.h>
 #include <boost/thread/thread.hpp>
+#include <fstream>
+#include <stdarg.h>
+#include <cstdio>
+
+#define WRITE_TO_BUFFER         va_list args;                                       \
+                                va_start(args, format);                             \
+                                std::vsprintf(mLogBuffer, format, args);            \
+                                va_end(args);
+
 
 namespace KSRobot
 {
 namespace common
 {
 
-Interface::Interface() : mSleepMillisecs(0.0f), mCycles(0)
+class NullStreamBuffer : public std::streambuf
+{
+public:
+    virtual int overflow(int c)
+    {
+        return c;
+    }
+};
+
+static NullStreamBuffer s_nullStreamBuff;
+std::ostream Interface::s_NullOutput(&s_nullStreamBuff); // NOTE: Portability issue.
+
+Interface::Interface() : mSleepMillisecs(0.0f), mCycles(0), mLoggerOutputFile("cout"), mLogFile(&std::cout), mLoggingEnabled(true),
+    mDebugEnabled(true), mErrorEnabled(true), mMessageEnabled(true)
 {
     mContinueExec = true;
 }
@@ -37,6 +59,12 @@ Interface::~Interface()
         Stop();
     for(ConnectionList::iterator iter = mConnections.begin(); iter != mConnections.end(); iter++)
         iter->disconnect();
+    
+    if( mLogFile )
+        *mLogFile << std::flush;
+    
+    if( mLogFile && mLogFile != &std::cout )
+        delete mLogFile;
 }
 
 void Interface::SpinOnce()
@@ -44,13 +72,6 @@ void Interface::SpinOnce()
     if( !ContinueExecution() || mSleepMillisecs < 0.01 )
         return;
     boost::this_thread::sleep_until(mLastTime + boost::chrono::milliseconds(mSleepMillisecs));
-//     TimePoint currTime = Clock::now();
-//     Duration dur = currTime - mLastTime;
-//     int milisecs = Milliseconds(dur);
-//     
-//     if( milisecs < mSleepMillisecs )
-//        boost::this_thread::sleep_for(boost::chrono::milliseconds(mSleepMillisecs - milisecs));
-//     mLastTime = Clock::now();
 }
 
 void Interface::Start()
@@ -70,8 +91,7 @@ void Interface::ThreadEntry()
 {
     while( ContinueExecution() )
     {
-        if( RunSingleCycle() )
-            mOnCycleCompleteSignal();
+        RunSingleCycle();
         SpinOnce();
     }
     mOnFinishSignal();
@@ -101,8 +121,23 @@ boost::signals2::connection Interface::RegisterOnFinishReceiver(boost::function<
 
 void Interface::ReadSettings(ProgramOptions::Ptr po)
 {
-    //Nothing to do here
-    (void)po;
+    ProgramOptions::Ptr logpo = po->StartNode("Logger");
+    mLoggingEnabled = logpo->GetBool("Enabled", true);
+    mLoggerOutputFile = logpo->GetString("Output", std::string("__interface_name__"));
+    
+    if( mLoggingEnabled )
+    {
+        if( mLoggerOutputFile == "__interface_name__" )
+            mLogFile = new std::ofstream((GetInterfaceName() + ".txt").c_str());
+        else if( mLoggerOutputFile == "cout" )
+            mLogFile = &std::cout; //NOTE: This is dangerous for multithreaded programs
+        else
+            mLogFile = new std::ofstream(mLoggerOutputFile.c_str());
+    }
+    
+    mDebugEnabled = logpo->GetBool("DebugEnabled", true);
+    mErrorEnabled = logpo->GetBool("ErrorEnabled", true);
+    mMessageEnabled = logpo->GetBool("MessageEnabled", true);
 }
 
 void Interface::WriteSettings(ProgramOptions::Ptr po)
@@ -113,7 +148,40 @@ void Interface::WriteSettings(ProgramOptions::Ptr po)
 
 void Interface::FinishCycle()
 {
+    mOnCycleCompleteSignal();
     IncrementCycle();
+}
+
+std::ostream& Interface::WriteLog(const char* header, const char* msg)
+{
+    if( header )
+        *mLogFile << header;
+    *mLogFile << msg;
+    return *mLogFile;
+}
+
+std::ostream& Interface::Debug(const char* format, ... )
+{
+    if( !mDebugEnabled || !mLoggingEnabled )
+        return s_NullOutput;
+    WRITE_TO_BUFFER;
+    return WriteLog("DEBUG: ", mLogBuffer);
+}
+
+std::ostream& Interface::Error(const char* format, ... )
+{
+    if( !mErrorEnabled || !mLoggingEnabled )
+        return s_NullOutput;
+    WRITE_TO_BUFFER;
+    return WriteLog("ERROR: ", mLogBuffer);
+}
+
+std::ostream& Interface::Message(const char* format, ... )
+{
+    if( !mMessageEnabled || !mLoggingEnabled )
+        return s_NullOutput;
+    WRITE_TO_BUFFER;
+    return WriteLog("MESSAGE: ", mLogBuffer);
 }
 
 
