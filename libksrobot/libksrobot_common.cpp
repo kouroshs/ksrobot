@@ -8,21 +8,22 @@
 #include <common/KinectInterface.h>
 #include <common/LoopDetector.h>
 #include <common/MappingInterface.h>
-#include <common/PlannerInterface.h>
 #include <common/ProgramOptions.h>
 #include <common/SLAMInterface.h>
 #include <common/Timer.h>
 #include <common/VisualOdometryInterface.h>
+#include <common/RobotInfo.h>
 
 #include <libksrobot/interface_boost_optional.h>
 
-//TODO: Add std::vector support
-//TODO: Add pointcloud support
+using namespace boost::python;
+using namespace KSRobot::common;
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(GetIntOverloads, GetInt, 1, 2)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(GetDoubleOverloads, GetDouble, 1, 2)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(GetStringOverloads, GetString, 1, 2)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(GetBoolOverloads, GetBool, 1, 2)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(OccupancyMapExtractFrontiers, ExtractFrontiers, 1, 2)
 
 template <class X>
 struct DefineKinectImageType
@@ -61,11 +62,13 @@ struct STRUCT
 //     }
 };
 
-void ExportCommon()
+void OccupancyConvertToNumpy(KSRobot::common::OccupancyMap::Ptr ocmap)
 {
-    using namespace boost::python;
-    using namespace KSRobot::common;
-    
+    //TODO: IMPLEMENT THIS
+}
+
+void ExportCommon()
+{    
     //Register boost::optional types to python
     KSRobot::pyksrobot::optional_<bool>();
     KSRobot::pyksrobot::optional_<int>();
@@ -101,7 +104,7 @@ void ExportCommon()
         .def("Stop", &Interface::Stop)
         .def("ContinueExecution", &Interface::ContinueExecution)
         .def("RunSingleCycle", pure_virtual(&Interface::RunSingleCycle))
-        .def("ReadSetttings", &Interface::ReadSettings)
+        .def("ReadSettings", &Interface::ReadSettings)
         .def("WriteSettings", &Interface::WriteSettings)
     ;
     
@@ -184,7 +187,6 @@ void ExportCommon()
     //TODO: complete this if necessary
     class_<ExecCtrlData>("ExecCtrlData", init<>())
         .def("CheckConsistancy", &ExecCtrlData::CheckConsistancy)
-    
     ;
     
     class_<EngineInterface, EngineInterface::Ptr, boost::noncopyable, bases<Interface> >("EngineInterface", no_init)
@@ -195,8 +197,6 @@ void ExportCommon()
         .def("GetMappingInterface", &EngineInterface::GetMappingInterface)
         .def("Initialize", &EngineInterface::Initialize)
     ;
-    
-    //class_<MappingInterface>("MappingInterface", init<const std::string&>());
     
     class_<VisualOdometryInterface, VisualOdometryInterface::Ptr, 
         boost::noncopyable, bases<Interface> >("VisualOdometryInterface", no_init)
@@ -216,10 +216,83 @@ void ExportCommon()
         
         .def("GetConvergenceError", pure_virtual(&VisualOdometryInterface::GetConvergenceError))
         .def("Converged", pure_virtual(&VisualOdometryInterface::Converged))
+        
+        .def("SetRobotInfo", &VisualOdometryInterface::SetRobotInfo)
     ;
     
     class_<MappingInterface, boost::shared_ptr<MappingInterface>, 
-        bases<Interface>, boost::noncopyable >("MappingInterface", no_init)
+        bases<Interface>, boost::noncopyable>("MappingInterface", no_init)
+        .def("SaveToFile", pure_virtual(&MappingInterface::SaveToFile))
+        .def("LoadFromFile", pure_virtual(&MappingInterface::LoadFromFile))
+        .def("ConvertToOccupancyGrid", pure_virtual(&MappingInterface::ConvertToOccupancyGrid))
+        .def("SetRobotInfo", &MappingInterface::SetRobotInfo)
+        .def("RegisterToVO", &MappingInterface::RegisterToVO)
     ;
     
+    {
+        class_<std::vector<OccupancyMap::MapPointDataType> >("OccupancyMapArray")
+            .def(vector_indexing_suite<std::vector<OccupancyMap::MapPointDataType> >())
+        ;
+        
+        scope occmap_class_scope =
+        class_<OccupancyMap, boost::shared_ptr<OccupancyMap> >("OccupancyMap", init<>())
+            .def(init<size_t, size_t>())
+            .def("LoadFromFile", &OccupancyMap::LoadFromFile)
+            .def("SaveToFile", &OccupancyMap::SaveToFile)
+            .def("GetSize", &OccupancyMap::GetSize)
+            .def("Index", &OccupancyMap::Index)
+            .def("ConvertToNumpy", make_function(OccupancyConvertToNumpy))
+            .def("IsValidIndex", &OccupancyMap::IsValidIndex)
+            .def("IsValidPosition", &OccupancyMap::IsValidPosition)
+            .def("AddPointToROI", &OccupancyMap::AddPointToROI)
+            .def("ExtractFrontiers", &OccupancyMap::ExtractFrontiers, OccupancyMapExtractFrontiers())
+            .def_readwrite("Width", &OccupancyMap::Width)
+            .def_readwrite("Height", &OccupancyMap::Height)
+            .def_readwrite("OccupiedCellsCount", &OccupancyMap::OccupiedCellsCount)
+            .def_readwrite("FreeCellsCount", &OccupancyMap::FreeCellsCount)
+            .def_readwrite("UnknownCellsCount", &OccupancyMap::UnknownCellsCount)
+            .def_readwrite("CenterX", &OccupancyMap::CenterX)
+            .def_readwrite("CenterY", &OccupancyMap::CenterY)
+            .def_readwrite("Resolution", &OccupancyMap::Resolution)
+            .def_readwrite("ROI", &OccupancyMap::ROI)
+            .def_readwrite("Data", &OccupancyMap::Data)
+        ;
+        
+        enum_<OccupancyMap::CellValue>("CellValue")
+            .value("UnknownCell", OccupancyMap::UnknownCell)
+            .value("OccupiedCell", OccupancyMap::OccupiedCell)
+            .value("FreeCell", OccupancyMap::FreeCell)
+            .value("FrontierCell", OccupancyMap::FrontierCell)
+            .value("FrontierStartID", OccupancyMap::FrontierStartID)
+            .value("FrontierEndID", OccupancyMap::FrontierEndID)
+        ;
+        
+        class_<OccupancyMap::Rect>("Rect", init<>())
+            .def_readwrite("Top", &OccupancyMap::Rect::Top)
+            .def_readwrite("Left", &OccupancyMap::Rect::Left)
+            .def_readwrite("Right", &OccupancyMap::Rect::Right)
+            .def_readwrite("Buttom", &OccupancyMap::Rect::Buttom)
+        ;
+        
+        //TODO: Needs definition of Eigen::Vector2f and Eigen::Matrix2f
+        class_<OccupancyMap::Frontier>("Frontier", init<>())
+            .def_readwrite("Position", &OccupancyMap::Frontier::Position)
+            .def_readwrite("Variance", &OccupancyMap::Frontier::Variance)
+            .def_readwrite("Rotation", &OccupancyMap::Frontier::Rotation)
+            .def_readwrite("Size", &OccupancyMap::Frontier::Size)
+            .def_readwrite("ID", &OccupancyMap::Frontier::ID)
+        ;
+        
+        class_<std::vector<OccupancyMap::Frontier> >("FrontierArray")
+            .def(vector_indexing_suite<std::vector<OccupancyMap::Frontier> >())
+        ;
+        
+    }
+    
+    class_<RobotInfo, RobotInfo::Ptr>("RobotInfo", init<>())
+        .def("ReadSettings", &RobotInfo::ReadSettings)
+        .def("AddHeightToOdometry", &RobotInfo::AddHeightToOdometry)
+        .def("ConstantHeight", &RobotInfo::GetConstantHeight)
+        .def("Radius", &RobotInfo::GetRadius)
+    ;
 }

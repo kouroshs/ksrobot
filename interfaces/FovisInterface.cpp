@@ -34,8 +34,10 @@ namespace interfaces
 FovisInterface::FovisInterface() : 
             common::VisualOdometryInterface(), 
             mDataCopyTimer(new common::Timer("Data copying")),
-            mFovis(NULL), mDepthImage(NULL), mGrayImage(NULL), mRectification(NULL)
+            mFovis(NULL), mDepthImage(NULL), mGrayImage(NULL), mRectification(NULL), mNextCycleKeyframe(false),
+            mPrevFovisReferenceFrame()
 {
+    SetInterfaceName("FovisInterface");
     RegisterTimer(mDataCopyTimer);
 }
 
@@ -114,7 +116,7 @@ bool FovisInterface::RunSingleCycle()
         g = array[startIndex + 1];
         b = array[startIndex + 2];
         
-        mGrayImage[i] = (int)roundf(((int)r+(int)g+(int)b)/3.0f);//(int)roundf(0.2125 * r + 0.7154 * g + 0.0721 * b);
+        mGrayImage[i] = (int)roundf(0.2125 * r + 0.7154 * g + 0.0721 * b);
     }
     mDataCopyTimer->Stop();
 
@@ -129,7 +131,6 @@ bool FovisInterface::RunSingleCycle()
 
 bool FovisInterface::Converged()
 {
-    assert(mFovis);
     return mFovis->getMotionEstimateStatus() == fovis::SUCCESS;
 }
 
@@ -138,19 +139,22 @@ float FovisInterface::GetConvergenceError()
     return 0;
 }
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif//M_PI
-
 bool FovisInterface::CheckForKeyframe()
 {
-    if( VisualOdometryInterface::CheckForKeyframe() )
+    if( mNextCycleKeyframe )
+    {
+        //NOTE: I should set this variable to false, but since this should also change the mPrevFovisReferenceFrame
+        //      to the current cycle, but PublishKeyframeFeatures needs that var to represent the previous reference frame,
+        //      I've moved this portion of the code to PublishKeyframeFeatures.
         return true;
+    }
     
+    if( VisualOdometryInterface::CheckForKeyframe() )
+        return true;    
     if( mFovis->getChangeReferenceFrames() )
-        mIsCycleKeyframe = true; // TODO: Should I make this cycle keyframe or the next one? does it really matter?
-    
-    return mIsCycleKeyframe;
+        mNextCycleKeyframe = true; //NOTE: This cycle is not keyframe, but the next cycle will be.
+
+    return false;
 }
 
 void FovisInterface::PublishKeyframeFeatures(common::VisualKeyframe::Ptr kf)
@@ -185,6 +189,41 @@ void FovisInterface::PublishKeyframeFeatures(common::VisualKeyframe::Ptr kf)
     
     if( KeyframeDescriptorPublishingEnabled() )
         kf->DataPool.resize(num_saved_keypoints * pyr->getDescriptorStride());
+    
+    // now publish feature matches
+    const fovis::MotionEstimator* est = mFovis->getMotionEstimator();
+    const fovis::FeatureMatch* matches_base = est->getMatches();
+    common::VisualKeyframe::MatchedPair pair;
+    
+    kf->MatchedPairs.reserve(est->getNumInliers()); // only inliers will be considered.
+    kf->CurrentCycle = GetCycle();
+    
+    
+    if( mFovis->estimateUsingReferenceFrame() )
+        kf->ReferenceCycle = mPrevFovisReferenceFrame;
+    else
+        kf->ReferenceCycle = GetCycle() - 1;
+    
+    for(int i = 0; i < est->getNumMatches(); i++)
+    {
+        const fovis::FeatureMatch* currMatch = matches_base + i;
+        if( !currMatch->inlier )
+            continue;
+        
+        pair.CurrentRelPosition = currMatch->target_keypoint->xyz.cast<float>();
+        pair.ReferenceRelPosition = currMatch->ref_keypoint->xyz.cast<float>();
+        kf->MatchedPairs.push_back(pair);
+    }
+    
+    if( mNextCycleKeyframe )
+    {
+        //NOTE: The code moved from CheckForKeyframe
+        //TODO: Since fovis sets the reference frame to PREVIOUS frame, check if we should
+        //      set it to GetCycle() - 1 or not.
+        mNextCycleKeyframe = false;
+        mIsCycleKeyframe = true;
+        mPrevFovisReferenceFrame = GetCycle(); // now future frames will reference to this frame
+    }
 }
 
 } // end namespace utils

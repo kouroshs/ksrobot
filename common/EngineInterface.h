@@ -25,7 +25,7 @@
 #include <common/KinectInterface.h>
 #include <common/VisualOdometryInterface.h>
 #include <common/SLAMInterface.h>
-#include <common/PlannerInterface.h>
+#include <common/MotionPlanner.h>
 #include <common/MappingInterface.h>
 #include <common/ExecCtrlData.h>
 
@@ -50,7 +50,6 @@ public:
     VisualOdometryInterface::Ptr        GetVisualOdometryInterface() const { return mVO; }
     SLAMInterface::Ptr                  GetSlamInterface() const { return mSLAM; }
     MappingInterface::Ptr               GetMappingInterface() const { return mMapper; }
-    PlannerInterface::Ptr               GetPlannerInterface() const { return mPlanner; }
     
     virtual void                        Initialize();
 protected:
@@ -60,7 +59,6 @@ protected:
     VisualOdometryInterface::Ptr        mVO;
     SLAMInterface::Ptr                  mSLAM;
     MappingInterface::Ptr               mMapper;
-    PlannerInterface::Ptr               mPlanner;
 };
 
 inline void EngineInterface::SetExecutionParams(const ExecCtrlData& data)

@@ -50,8 +50,9 @@ public:
     virtual void                                                    Initialize();
     virtual bool                                                    RunSingleCycle();
     virtual void                                                    SaveToFile(const std::string& filename);
+    virtual void                                                    LoadFromFile(const std::string& filename);
     virtual void                                                    ReadSettings(common::ProgramOptions::Ptr po);
-    virtual void                                                    ConvertToOccupancyGrid(common::OccupancyMap2D& map, 
+    virtual void                                                    ConvertToOccupancyGrid(common::OccupancyMap::Ptr map, 
                                                                                            int center_i, int center_j, bool lock_interface = false);
     
     inline boost::shared_ptr<const OcTreeType>                      GetOctree() const;
@@ -67,9 +68,16 @@ public:
     inline void                                                     SetVoxelGridResolution(float res);
     inline bool                                                     GetLazyEval() const;
     inline void                                                     SetLazyEval(bool enable);
+    
+    inline common::KinectPointCloud::Ptr                            GetGroundPoints() const;
+    inline common::KinectPointCloud::Ptr                            GetNonGroundPoints() const;
 protected:
-    void                                                            ConvertInternal(common::KinectPointCloud::ConstPtr pc, const Eigen::Isometry3f& transform);
-    void                                                            UpdateMap(common::KinectPointCloud::ConstPtr pc);
+    void                                                            ConvertInternal(common::KinectPointCloud::ConstPtr nonground,
+                                                                                    common::KinectPointCloud::ConstPtr ground,
+                                                                                    const Eigen::Isometry3f& transform);
+    
+    void                                                            UpdateMap(common::KinectPointCloud::ConstPtr pc,
+                                                                              const Eigen::Vector3f& origin);
     bool                                                            CheckHeight(const OcTreeType::leaf_iterator &iter) const;
     
     bool                                                            ExtractGroundPlane(const common::KinectPointCloud& pc,
@@ -91,9 +99,12 @@ protected:
     common::KinectPointCloud::Ptr                                   mGroundPC;
     common::KinectPointCloud::Ptr                                   mNonGroundPC;
     
-    octomap::Pointcloud                                             mPoints;
+    octomap::Pointcloud                                             mOctoNonGroundPoints;
+    octomap::Pointcloud                                             mOctoGroundPoints;
+    
     std::vector<int>                                                mIndexes;
 
+    //TODO: For later: Some of these filters and code should be moved to MappingInterface
     struct GroundFilter
     {
         bool                                                        Enabled;
@@ -101,6 +112,7 @@ protected:
         float                                                       Distance;
         float                                                       PlaneDistance;
         float                                                       Angle;
+        bool                                                        AddGroundPointsAsFreeSpace;
     };
     
     struct RobotLocalTransform
@@ -126,16 +138,25 @@ protected:
         float                                                       LimitMax;
     };
     
-    //TODO: Write get&set for these
-    bool                                                            mEnableHeightFiltering;
-    int                                                             mHeightFilterAxis;
-    float                                                           mHeightFilterMaxValue;
-    float                                                           mHeightFilterMinValue;
+    struct HeightFilter
+    {
+        bool                                                        Enabled;
+        int                                                         Axis;
+        float                                                       MaxValue;
+        float                                                       MinValue;
+    };
     
+    //TODO: Write get&set for these
+//     bool                                                            mEnableHeightFiltering;
+//     int                                                             mHeightFilterAxis;
+//     float                                                           mHeightFilterMaxValue;
+//     float                                                           mHeightFilterMinValue;
+    
+    HeightFilter                                                    mHeightFilter;
     PassThroughFilter                                               mPassThrough;
     GroundFilter                                                    mGroundFilter;
     RobotLocalTransform                                             mLocalTransformInfo;
-    Eigen::Affine3f      mCameraTransformCached;
+    Eigen::Affine3f                                                 mCameraTransformCached;
 };
 
 inline boost::shared_ptr<const OctomapInterface::OcTreeType> OctomapInterface::GetOctree() const
@@ -202,6 +223,17 @@ inline void OctomapInterface::SetLazyEval(bool enable)
 {
     mLazyEval = enable;
 }
+
+inline common::KinectPointCloud::Ptr OctomapInterface::GetGroundPoints() const
+{
+    return mGroundPC;
+}
+
+inline common::KinectPointCloud::Ptr OctomapInterface::GetNonGroundPoints() const
+{
+    return mNonGroundPC;
+}
+
 
 
 } // end namespace interfaces

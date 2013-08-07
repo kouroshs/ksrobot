@@ -45,8 +45,11 @@ namespace interfaces
 
 OctomapInterface::OctomapInterface() : common::MappingInterface(), mUseColor(DEFAULT_USE_COLOR), mMapResolution(DEFAULT_MAP_RESOLUTION),
     mMaxRange(DEFAULT_MAX_RANGE), mApplyVoxelGrid(DEFAULT_APPLY_VOXEL_GRID), mVoxelGridResolution(DEFAULT_MAP_RESOLUTION),
-    mLazyEval(DEFAULT_LAZY_EVAL), mEnableHeightFiltering(false), mHeightFilterAxis(1), mHeightFilterMaxValue(0), mHeightFilterMinValue(0)
+    mLazyEval(DEFAULT_LAZY_EVAL), mFilteredCloud(new common::KinectPointCloud), mGroundPC(new common::KinectPointCloud),
+    mNonGroundPC(new common::KinectPointCloud)
 {
+    SetInterfaceName("OctomapInterface");
+    mHeightFilter.Enabled = false;
     mGroundFilter.Enabled = false; // disable it, no need to set defaults
     mLocalTransformInfo.Enabled = false;
     mPassThrough.Enabled = false;
@@ -61,8 +64,8 @@ void OctomapInterface::Initialize()
     common::MappingInterface::Initialize();    
     mOctree.reset(new octomap::ColorOcTree(mMapResolution));
     
-    if( mGroundFilter.Enabled && ! mLocalTransformInfo.Enabled )
-        throw std::runtime_error("(OctomapInterface::Initialize) Cannot enable ground filter while local transform filter is disabled.");
+//     if( mGroundFilter.Enabled && ! mLocalTransformInfo.Enabled )
+//         throw std::runtime_error("(OctomapInterface::Initialize) Cannot enable ground filter while local transform filter is disabled.");
     
     if( mLocalTransformInfo.Enabled )
     {
@@ -72,13 +75,13 @@ void OctomapInterface::Initialize()
         {
             Eigen::Vector3f axis(0, 0, 0);
             axis[mLocalTransformInfo.FirstRotationAxis] = 1;
-            r1 = Eigen::AngleAxisf(mLocalTransformInfo.FirstRotationDegree, axis);
+            r1 = Eigen::AngleAxisf(mLocalTransformInfo.FirstRotationDegree * M_PI / 180, axis);
         }
         if( mLocalTransformInfo.SecondRotationAxis != -1 )
         {
             Eigen::Vector3f axis(0, 0, 0);
             axis[mLocalTransformInfo.SecondRotationAxis] = 1;
-            r2 = Eigen::AngleAxisf(mLocalTransformInfo.SecondRotationDegree, axis);
+            r2 = Eigen::AngleAxisf(mLocalTransformInfo.SecondRotationDegree * M_PI / 180, axis);
         }
         
         mCameraTransformCached.setIdentity();
@@ -91,6 +94,12 @@ void OctomapInterface::Initialize()
 void OctomapInterface::SaveToFile(const std::string& filename)
 {
     mOctree->write(filename);
+}
+
+void OctomapInterface::LoadFromFile(const std::string& filename)
+{
+    OcTreeType* ptr = dynamic_cast<OcTreeType*>(octomap::AbstractOcTree::read(filename));
+    mOctree.reset(ptr);
 }
 
 static inline int GetAxisFromString(std::string& axis)
@@ -110,6 +119,8 @@ static inline int GetAxisFromString(std::string& axis)
 
 void OctomapInterface::ReadSettings(common::ProgramOptions::Ptr po)
 {
+    common::Interface::ReadSettings(po);
+    
     mUseColor = po->GetBool("UseColor", DEFAULT_USE_COLOR);
     mMapResolution = po->GetDouble("MapResolution", DEFAULT_MAP_RESOLUTION);
     mMaxRange = po->GetDouble("MaxRange", DEFAULT_MAX_RANGE);
@@ -117,19 +128,22 @@ void OctomapInterface::ReadSettings(common::ProgramOptions::Ptr po)
     mApplyVoxelGrid = po->GetBool("VoxelGrid.Enabled", DEFAULT_APPLY_VOXEL_GRID);
     mVoxelGridResolution = po->GetDouble("VoxelGrid.Resolution", DEFAULT_VOXEL_GRID_RESOLUTION);
     
-    mEnableHeightFiltering = po->GetBool("HeightFilter.Enabled", false);
-    std::string axis = po->GetString("HeightFilter.Axis", std::string("y"));
-    mHeightFilterAxis = GetAxisFromString(axis);
-    assert(mHeightFilterAxis != -1);
+    mHeightFilter.Enabled = po->GetBool("HeightFilter.Enabled", false);
+    std::string axis = po->GetString("HeightFilter.Axis", std::string("z"));
+    mHeightFilter.Axis = GetAxisFromString(axis);
+    assert(mHeightFilter.Axis != -1);
     
-    mHeightFilterMaxValue = po->GetDouble("HeightFilter.MaxValue", 0.0);
-    mHeightFilterMinValue = po->GetDouble("HeightFilter.MinValue", 0.0);
+    mHeightFilter.MaxValue = po->GetDouble("HeightFilter.MaxValue", 0.0);
+    mHeightFilter.MinValue = po->GetDouble("HeightFilter.MinValue", 0.0);
     
     mGroundFilter.Enabled = po->GetBool("GroundFilter.Enabled", false);
-    mGroundFilter.Axis = po->GetInt("GroundFilter.Axis", 1);
     mGroundFilter.Distance = po->GetDouble("GroundFilter.Distance", 0.04);
     mGroundFilter.PlaneDistance = po->GetDouble("GroundFilter.PlaneDistance", 0.04);
     mGroundFilter.Angle = po->GetDouble("GroundFilter.Angle", 0.15);
+    mGroundFilter.AddGroundPointsAsFreeSpace = po->GetBool("GroundFilter.AddGroundPointsAsFreeSpace", true);
+    axis = po->GetString("GroundFilter.Axis", std::string("z"));
+    mGroundFilter.Axis = GetAxisFromString(axis);
+    assert(mGroundFilter.Axis != -1);
     
     common::ProgramOptions::Ptr p = po->StartNode("LocalTransform");
     mLocalTransformInfo.Enabled = p->GetBool("Enabled", false);
@@ -173,6 +187,10 @@ bool OctomapInterface::RunSingleCycle()
     
     while( mKeyframesQueue.try_pop(mi) )
     {
+        mFilteredCloud->clear();
+        mGroundPC->clear();
+        mNonGroundPC->clear();
+        
         common::Interface::ScopedLock locker(this);
         count++;
         
@@ -187,50 +205,69 @@ bool OctomapInterface::RunSingleCycle()
             // since we usually should use voxel grids and pass throughs, then this is no problem
             *mFilteredCloud = *(mi.PointCloud);
         }
-        
+
         if( mPassThrough.Enabled )
         {
             pass.setInputCloud(mFilteredCloud);
-            pass.filter(pc);
+            pass.filter(pc); // filtered cloud should not be the same as input cloud, so we have to do a copy
             *mFilteredCloud = pc;
         }
-        
+
         if( mLocalTransformInfo.Enabled )
+        {
             pcl::transformPointCloud(*mFilteredCloud, *mFilteredCloud, mCameraTransformCached);
-        
+            //TODO: VERY IMPORTANT: I Should change mi.Transform according to mCameraTransformCached
+        }
         if( mGroundFilter.Enabled && ExtractGroundPlane(*mFilteredCloud, *mGroundPC, *mNonGroundPC) )
-            *mFilteredCloud = *mGroundPC;
-        
-        ConvertInternal(mFilteredCloud, mi.Transform);
-        UpdateMap(mFilteredCloud);
+        {
+            //TODO: Should I Add ground plane points as non occupied? this could help with OccupancyGrid explorations.
+            ConvertInternal(mNonGroundPC, mGroundPC, mi.Transform);
+            UpdateMap(mNonGroundPC, mi.Transform.translation());
+        }
+        else
+        {
+            ConvertInternal(mFilteredCloud, common::KinectPointCloud::Ptr(), mi.Transform);
+            UpdateMap(mFilteredCloud, mi.Transform.translation());
+        }
         
         FinishCycle();
     }
     return count != 0;
 }
 
-void OctomapInterface::ConvertInternal(common::KinectPointCloud::ConstPtr pc, const Eigen::Isometry3f& transform)
+void OctomapInterface::ConvertInternal(common::KinectPointCloud::ConstPtr nonground, common::KinectPointCloud::ConstPtr ground, 
+                                       const Eigen::Isometry3f& transform)
 {
-    mPoints.clear();
+    mOctoNonGroundPoints.clear();
+    if( mGroundFilter.AddGroundPointsAsFreeSpace && ground.get() != 0 )
+    {
+        for(size_t i = 0; i < ground->size(); i++)
+        {
+            const common::KinectPointCloud::PointType& p = ground->at(i);
+            if( pcl::isFinite(p) )
+                mOctoGroundPoints.push_back(p.x, p.y, p.z);
+        }
+    }
+    
     if( !mUseColor )
     {
-        for(size_t i = 0; i < pc->size(); i++)
+        for(size_t i = 0; i < nonground->size(); i++)
         {
-            const common::KinectPointCloud::PointType& p = pc->at(i);
+            const common::KinectPointCloud::PointType& p = nonground->at(i);
             if( pcl::isFinite(p) )
-                mPoints.push_back(p.x, p.y, p.z);
+                mOctoNonGroundPoints.push_back(p.x, p.y, p.z);
         }
     }
     else
     {
         mIndexes.clear();
-        mIndexes.reserve(pc->size());
-        for(size_t i = 0; i < pc->size(); i++)
+        mIndexes.reserve(nonground->size());
+        for(size_t i = 0; i < nonground->size(); i++)
         {
-            const common::KinectPointCloud::PointType& p = pc->at(i);
+            const common::KinectPointCloud::PointType& p = nonground->at(i);
             if( pcl::isFinite(p) )
             {
-                mPoints.push_back(p.x, p.y, p.z);
+                mOctoNonGroundPoints.push_back(p.x, p.y, p.z);
                 mIndexes.push_back(i);
             }
         }
@@ -239,19 +276,22 @@ void OctomapInterface::ConvertInternal(common::KinectPointCloud::ConstPtr pc, co
     const Eigen::Quaternionf eigen_rot(transform.linear());
     const Eigen::Vector3f translate = transform.translation();
     octomath::Quaternion rot(eigen_rot.w(), eigen_rot.x(), eigen_rot.y(), eigen_rot.z());
-    mPoints.transform(octomath::Pose6D(octomath::Vector3(translate[0], translate[1], translate[2]), rot));
+    mOctoNonGroundPoints.transform(octomath::Pose6D(octomath::Vector3(translate[0], translate[1], translate[2]), rot));
 }
 
-void OctomapInterface::UpdateMap(common::KinectPointCloud::ConstPtr pc)
+//TODO: What should I pass as compute update? 
+void OctomapInterface::UpdateMap(common::KinectPointCloud::ConstPtr pc, const Eigen::Vector3f& translate)
 {
     octomap::KeySet occupied, free;
-    mOctree->computeUpdate(mPoints, octomap::point3d(0,0,0), free, occupied, mMaxRange);
+    octomap::point3d sensor_origin(translate[0], translate[1], translate[2]);
+    
+    mOctree->computeUpdate(mOctoNonGroundPoints, sensor_origin, free, occupied, mMaxRange);
     
     for(octomap::KeySet::iterator iter = free.begin(); iter != free.end(); iter++)
-        mOctree->updateNode(*iter, false, mLazyEval);
+        mOctree->updateNode(*iter, false, mLazyEval); // add a free cell
     
     for(octomap::KeySet::iterator iter = occupied.begin(); iter != free.end(); iter++)
-        mOctree->updateNode(*iter, true, mLazyEval);
+        mOctree->updateNode(*iter, true, mLazyEval); // add an occupied cell
     
     if( mUseColor )
     {
@@ -262,50 +302,92 @@ void OctomapInterface::UpdateMap(common::KinectPointCloud::ConstPtr pc)
             mOctree->integrateNodeColor(*iter, p.r, p.g, p.b);
         }
     }
+    
+    // now add ground points
+    if( mGroundFilter.AddGroundPointsAsFreeSpace )
+    {
+        free.clear();
+        occupied.clear();
+        mOctree->computeUpdate(mOctoGroundPoints, sensor_origin, free, occupied, mMaxRange);
+        //set BOTH free and occupied cells as free. 
+        //NOTE: This is beneficial for occupancy grid generation and frontier extraction
+        for(octomap::KeySet::iterator iter = free.begin(); iter != free.end(); iter++)
+            mOctree->updateNode(*iter, false, mLazyEval); // add a free cell
+            
+        for(octomap::KeySet::iterator iter = occupied.begin(); iter != free.end(); iter++)
+            mOctree->updateNode(*iter, false, mLazyEval); // again, add it as a free cell. 
+    }
 }
 
-void OctomapInterface::ConvertToOccupancyGrid(common::OccupancyMap2D& map, int center_i, int center_j, bool lock_interface)
+//it's a helper inline function to put a value when converting map to occupancy grid
+static inline void PutValueToMap(common::OccupancyMap::Ptr map, int i, int j, char val)
+{
+    map->AddPointToROI(i, j);
+    if( map->At(i, j) != common::OccupancyMap::OccupiedCell )
+        map->At(i, j) = val; // only change the value of the map if it was not occupied. (if we do not do this, there might be cases that occupied 
+                             // cell be overwritten by a free cell.
+}
+
+void OctomapInterface::ConvertToOccupancyGrid(common::OccupancyMap::Ptr map, int center_i, int center_j, bool lock_interface)
 {
     if( lock_interface )
         LockData();
     
-    const unsigned int max_depth = mOctree->getTreeDepth();
+    const unsigned int max_depth = mOctree->getTreeDepth(); // this should be 16 at the time of implementation.
     octomap::OcTreeKey origin_key;
     if( !mOctree->coordToKeyChecked(octomap::point3d(0, 0, 0), max_depth, origin_key) )
         throw std::runtime_error("(OctomapInterface::ConvertToOccupancyGrid) Failed to convert robot origin to OcTreeKey.");
+
+    map->Resolution = mMapResolution;
+    map->ROI.Top = std::numeric_limits<size_t>::max();
+    map->ROI.Left = std::numeric_limits<size_t>::max();
+    map->ROI.Width = 0;
+    map->ROI.Height = 0;
+    
     for(octomap::ColorOcTree::leaf_iterator iter = mOctree->begin_leafs(); iter != mOctree->end_leafs(); iter++)
     {
         if( !CheckHeight(iter) )
             continue;
         
-        char occVal = mOctree->isNodeOccupied(*iter) ? common::OccupancyMap2D::OccupiedCell : common::OccupancyMap2D::FreeCell;
+        char occVal = mOctree->isNodeOccupied(*iter) ? common::OccupancyMap::OccupiedCell : common::OccupancyMap::FreeCell;
+        int numCellsMarked = 0;
         
         if( iter.getDepth() == max_depth )
         {
+            numCellsMarked = 1;
             const octomap::OcTreeKey key = iter.getKey();
             int i = key[0] - origin_key[0] + center_i;
             int j = key[1] - origin_key[1] + center_j;
-            int index = map.Index(i, j);
-            if( map.IsValidIndex(index) )
-                map.At(i, j) = occVal; // only set it it is withing the boundary of the map.
+            
+            assert(i >= 0 && j >= 0);
+            if( map->IsValidPosition(i, j) )
+                PutValueToMap(map, i, j, occVal);
         }
         else
         {
             // should break this node down
             int intSize = 1 << (max_depth - iter.getDepth());
             const octomap::OcTreeKey minKey = iter.getIndexKey();
+            numCellsMarked = intSize * intSize; // number of cells affected
             for(int dx = 0; dx < intSize; dx++)
             {
                 int i = minKey[0] + dx - origin_key[0] + center_i;
                 for(int dy = 0; dy < intSize; dy++)
                 {
                     int j = minKey[1] + dy - origin_key[1] + center_j;
-                    int index = map.Index(i, j);
-                    if( map.IsValidIndex(index) )
-                        map.At(index) = occVal;
+                    assert(i >= 0 && j >= 0);
+                    if( map->IsValidPosition(i, j) )
+                        PutValueToMap(map, i, j, occVal);
                 }
             }
         }
+        
+        //Now update book keeping info.
+        map->UnknownCellsCount -= numCellsMarked;
+        if( occVal == common::OccupancyMap::OccupiedCell )
+            map->OccupiedCellsCount += numCellsMarked;
+        else
+            map->FreeCellsCount += numCellsMarked;
     }
     
     if( lock_interface )
@@ -315,10 +397,10 @@ void OctomapInterface::ConvertToOccupancyGrid(common::OccupancyMap2D& map, int c
 bool OctomapInterface::CheckHeight(const OcTreeType::leaf_iterator& iter) const
 {
     //TODO: Ask a question about it later
-    if( mEnableHeightFiltering )
+    if( mHeightFilter.Enabled )
     {
-        float val = iter.getCoordinate()(mHeightFilterAxis);
-        return val >= mHeightFilterMinValue && val <= mHeightFilterMaxValue;
+        float val = iter.getCoordinate()(mHeightFilter.Axis);
+        return val >= mHeightFilter.MinValue && val <= mHeightFilter.MaxValue;
     }
     return true;
 }
@@ -346,33 +428,36 @@ bool OctomapInterface::ExtractGroundPlane(const common::KinectPointCloud& pc, co
     seg.setAxis(axis);
     seg.setEpsAngle(mGroundFilter.Angle);
     
-    common::KinectPointCloud cloud_filtered(pc);
+    common::KinectPointCloud filtered_cloud(pc);
     pcl::ExtractIndices<common::KinectPointCloud::PointType> extract;
     bool bGroundPlaneFound = false;
     
-    while( cloud_filtered.size() > 10 && !bGroundPlaneFound )
+    while( filtered_cloud.size() > 10 && !bGroundPlaneFound )
     {
-        seg.setInputCloud(cloud_filtered.makeShared());
+        seg.setInputCloud(filtered_cloud.makeShared());
         seg.segment(*inliers, *coefficients);
         
         if( inliers->indices.size() == 0 )
             break; // no plane found
         
-        extract.setInputCloud(cloud_filtered.makeShared());
+        extract.setInputCloud(filtered_cloud.makeShared());
         extract.setIndices(inliers);
+        
+//         Debug("Plane found with coefs: (%f, %f, %f, %f)\n", coefficients->values[0], coefficients->values[1], coefficients->values[2],
+//               coefficients->values[3]);
         
         if( std::abs(coefficients->values.at(3)) < mGroundFilter.PlaneDistance )
         {
             extract.setNegative(false);
             extract.filter(ground);
             
-            if( inliers->indices.size() != cloud_filtered.size() )
+            if( inliers->indices.size() != filtered_cloud.size() )
             {
                 extract.setNegative(true);
                 common::KinectPointCloud cloud_out;
                 extract.filter(cloud_out);
                 nonground += cloud_out;
-                cloud_filtered = cloud_out;
+                filtered_cloud = cloud_out;
             }
             bGroundPlaneFound = true;
         }
@@ -384,24 +469,25 @@ bool OctomapInterface::ExtractGroundPlane(const common::KinectPointCloud& pc, co
             extract.filter(cloud_out);
             nonground += cloud_out;
             
-            if(inliers->indices.size() != cloud_filtered.size())
+            if(inliers->indices.size() != filtered_cloud.size())
             {
                 extract.setNegative(true);
                 cloud_out.points.clear();
                 extract.filter(cloud_out);
-                cloud_filtered = cloud_out;
+                filtered_cloud = cloud_out;
             }
             else
             {
-                cloud_filtered.points.clear();
+                filtered_cloud.points.clear();
             }
         }
     }
     
-    //TODO: SHOULD CHECK FOR STARES HERE
+    //TODO: SHOULD CHECK FOR STAIRS HERE
     
     if( !bGroundPlaneFound )
     {
+        Debug("Ground plane not found\n");
         pcl::PassThrough<common::KinectPointCloud::PointType> second_pass;
         second_pass.setFilterFieldName( mGroundFilter.Axis == 0 ? "x" : (mGroundFilter.Axis == 1 ? "y" : "z") );
         
@@ -412,7 +498,6 @@ bool OctomapInterface::ExtractGroundPlane(const common::KinectPointCloud& pc, co
         second_pass.setFilterLimitsNegative(true);
         second_pass.filter(nonground);
     }
-    
     return true;
 }
 

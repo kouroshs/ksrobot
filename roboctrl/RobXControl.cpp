@@ -230,8 +230,8 @@ void RobXControl::Forward(int cm, float speed_index)
     
     RESET_CURR_FN;
     
-    std::cout << "(RobXControl::Forward) Amount = " << speed_amount << " ToByte " << (int)(byte)speed_amount << std::endl << std::flush;
-    std::cout << "\t Encoder must = " << encoder_amount << endl << flush;
+//     std::cout << "(RobXControl::Forward) Amount = " << speed_amount << " ToByte " << (int)(byte)speed_amount << std::endl << std::flush;
+//     std::cout << "\t Encoder must = " << encoder_amount << endl << flush;
     
     mEncoderGoalForward = encoder_amount;
     mMoveTimer->start();
@@ -253,7 +253,7 @@ void RobXControl::Backward(int cm, float speed_index)
     
     RESET_CURR_FN;
     
-    std::cout << "(RobXControl::Backward) Amount = " << speed_amount << " ToByte " << (int)(byte)speed_amount << std::endl << std::flush;
+//     std::cout << "(RobXControl::Backward) Amount = " << speed_amount << " ToByte " << (int)(byte)speed_amount << std::endl << std::flush;
     
     mEncoderGoalForward = encoder_amount;
     mMoveTimer->start();
@@ -275,6 +275,16 @@ void RobXControl::TurnLeft(int degree, float speed_index)
     mEncoderGoal = encoder_amount;
     mTurnTimer->start();
 }
+
+void RobXControl::TestTurn(int si1, int si2)
+{
+    int speed1 = (int)(si1 * 10 + 128);
+    int speed2 = (int)(si2 * 10 + 128);
+    
+    Write(CMD_SET_SPEED_1, speed1);
+    Write(CMD_SET_SPEED_2, speed2);
+}
+
 
 void RobXControl::TurnRight(int degree, float speed_index)
 {
@@ -339,6 +349,8 @@ void RobXControl::GetEncoders()
         Read((unsigned char*)&value, 4);
         mEncoder2 = SwapBytes(value);
 
+        std::cout << "Encoders " << mEncoder1 << "\t" << mEncoder2 << std::endl << std::flush;
+        
         RESET_CURR_FN;
     }
     catch(TimeoutException& ex)

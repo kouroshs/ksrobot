@@ -156,7 +156,7 @@ std::ostream& Interface::WriteLog(const char* header, const char* msg)
 {
     if( header )
         *mLogFile << header;
-    *mLogFile << msg;
+    *mLogFile << msg << std::flush;
     return *mLogFile;
 }
 

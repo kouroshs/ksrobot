@@ -28,9 +28,6 @@ namespace common
 
 SLAMInterface::SLAMInterface() : Interface(), mLastKeyframe(-1)
 {
-//     mLoops.set_capacity(1000);
-//     mKeyframes.set_capacity(1000);
-    
 }
 
 SLAMInterface::~SLAMInterface()
@@ -50,7 +47,6 @@ void SLAMInterface::ReadFromFile(const std::string& filename)
 
 void SLAMInterface::OnLoopDetected(const LoopDetector::LoopClosure& lc)
 {
-    //mLoops.push(lc);
     SLAMDataArrival da;
     da.IsLoopClosure = true;
     da.Loop = lc;
@@ -64,7 +60,6 @@ void SLAMInterface::RegisterToLoopDetector(LoopDetector::Ptr ld)
 
 void SLAMInterface::OnKeyframeDetected(const VisualKeyframe::Ptr kf)
 {
-    //mKeyframes.push(kf);
     SLAMDataArrival da;
     da.IsLoopClosure = false;
     da.Keyframe = kf;
@@ -73,28 +68,11 @@ void SLAMInterface::OnKeyframeDetected(const VisualKeyframe::Ptr kf)
 
 bool SLAMInterface::RunSingleCycle()
 {
-    common::Interface::ScopedLock lock(this);
-    
     int count = 0;
-//     common::VisualKeyframe::Ptr kf;
-//     while( mKeyframes.try_pop(kf) )
-//     {
-//         count++;
-//         AddKeyframe(kf);
-//         FinishCycle();
-//     }
-//     
-//     common::LoopDetector::LoopClosure lc;
-//     while( mLoops.try_pop(lc) )
-//     {
-//         count++;
-//         AddLoopClosure(lc);
-//         FinishCycle();
-//     }
-    
     SLAMDataArrival da;
     while( mUnprocessedData.try_pop(da) )
     {
+        common::Interface::ScopedLock lock(this);
         count++;
         if( da.IsLoopClosure )
             AddLoopClosure(da.Loop);
@@ -105,6 +83,12 @@ bool SLAMInterface::RunSingleCycle()
     }
     
     return count > 0;
+}
+
+void SLAMInterface::FinishCycle()
+{
+    Update();
+    common::Interface::FinishCycle();
 }
 
 } // end namespace common

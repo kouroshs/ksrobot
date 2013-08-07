@@ -88,6 +88,8 @@ public:
     
     boost::signals2::connection RegisterOnFinishReceiver(boost::function<void()> fn);
     boost::signals2::connection RegisterOnCycleCompleteReceiver(boost::function<void ()> fn);
+private:
+    std::ostream&               WriteLog(const char* header, const char* msg);
 protected:
     inline void                 RegisterTimer(Timer::Ptr timer);
 
@@ -98,6 +100,14 @@ protected:
     // Other classes can override it, but must call Interface::FinishCycle
     virtual void                FinishCycle();
     void                        IncrementCycle() { mCycles++; }
+    
+    inline std::ostream&        Debug();
+    inline std::ostream&        Error();
+    inline std::ostream&        Message();
+    
+    std::ostream&               Debug(const char* format, ...);
+    std::ostream&               Error(const char* format, ...);
+    std::ostream&               Message(const char* format, ...);
 protected:
     int                         mSleepMillisecs;
     TimePoint                   mLastTime;
@@ -114,7 +124,49 @@ protected:
     
     typedef std::vector<boost::signals2::connection>  ConnectionList;
     ConnectionList              mConnections;
+    
+    std::ostream*               mLogFile;
+    bool                        mLoggingEnabled;
+    std::string                 mLoggerOutputFile;
+    bool                        mDebugEnabled;
+    bool                        mErrorEnabled;
+    bool                        mMessageEnabled;
+    static std::ostream         s_NullOutput;
+    char                        mLogBuffer[3 * 1024];
 };
+
+inline std::ostream& Interface::Debug()
+{
+    if( mLoggingEnabled && mDebugEnabled )
+    {
+        *mLogFile << "DEBUG: ";
+        return *mLogFile;
+    }
+    else
+        return s_NullOutput;
+}
+
+inline std::ostream& Interface::Error()
+{
+    if( mLoggingEnabled && mErrorEnabled )
+    {
+        *mLogFile << "ERROR: ";
+        return *mLogFile;
+    }
+    else
+        return s_NullOutput;
+}
+
+inline std::ostream& Interface::Message()
+{
+    if( mLoggingEnabled && mMessageEnabled )
+    {
+        *mLogFile << "MESSAGE: ";
+        return *mLogFile;
+    }
+    else
+        return s_NullOutput;
+}
 
 inline int Interface::GetCycle() const
 {

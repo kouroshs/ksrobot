@@ -25,6 +25,7 @@ KinectDatasetReader::KinectDatasetReader() : KinectInterface(),
     mTimerPCGenerator(new common::Timer("PointCloud generation time")),
     mReadFiles(true)
 {
+    SetInterfaceName("KinectDatasetReader");
     RegisterTimer(mTimerLoadTimes);
     RegisterTimer(mTimerPCGenerator);
 }

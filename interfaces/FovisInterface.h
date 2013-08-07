@@ -60,6 +60,9 @@ protected:
     fovis::Rectification*                       mRectification;
     
     common::Timer::Ptr                          mDataCopyTimer;
+    bool                                        mNextCycleKeyframe;
+    
+    size_t                                      mPrevFovisReferenceFrame;
 };
 
 #endif // FOVISINTERFACE_H

@@ -55,6 +55,8 @@ private:
 protected:
     virtual void                                AddKeyframe(const VisualKeyframe::Ptr kf) = 0;
     virtual void                                AddLoopClosure(const LoopDetector::LoopClosure& lc) = 0;
+    virtual void                                Update() = 0; // called if AddKeyframe and AddLoopClosure need finilization code to perform.
+    virtual void                                FinishCycle();
 protected:
     struct SLAMDataArrival
     {
@@ -66,8 +68,6 @@ protected:
     
     VisualOdometryInterface::Ptr                                        mVO;
     int                                                                 mLastKeyframe;
-//     tbb::concurrent_bounded_queue<LoopDetector::LoopClosure>            mLoops;
-//     tbb::concurrent_bounded_queue<VisualKeyframe::Ptr>                  mKeyframes;
     tbb::concurrent_queue<SLAMDataArrival>                              mUnprocessedData;
 };
 

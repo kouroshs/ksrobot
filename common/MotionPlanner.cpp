@@ -18,28 +18,39 @@
  *
  */
 
-#ifndef PLANNERINTERFACE_H
-#define PLANNERINTERFACE_H
-
-#include <common/Interface.h>
+#include <common/MotionPlanner.h>
 
 namespace KSRobot
 {
 namespace common
 {
 
-class PlannerInterface : public Interface
+MotionPlanner::MotionPlanner()
 {
-public:
-    typedef PlannerInterface                    this_type;
-    typedef boost::shared_ptr<this_type>        Ptr;
-    typedef boost::shared_ptr<const this_type>  ConstPtr;
+    mRobotRadius = 0.0f;
+    mSafeThr = 0.0f;
+    mTimeout = 1.0f; // 1 second
+    mGloalState.Position = mStartState.Position = Eigen::Vector2f(0, 0);
+    mGloalState.Yaw = mStartState.Yaw = 0.0f;
+}
 
-    PlannerInterface();
-    virtual ~PlannerInterface();
-};
+MotionPlanner::~MotionPlanner()
+{
+
+}
+
+void MotionPlanner::ReadSettings(ProgramOptions::Ptr po)
+{
+    mRobotRadius = po->GetDouble("RobotRadius", 0.0f);
+    mSafeThr = po->GetDouble("SafeThreshold", 0.0f);
+    mTimeout = po->GetDouble("Timeout", 1.0f);
+}
+
+void MotionPlanner::Initialize()
+{
+    mEffectiveRadius = mRobotRadius + mSafeThr;
+}
+
 
 } // end namespace common
 } // end namespace KSRobot
-
-#endif // PLANNERINTERFACE_H

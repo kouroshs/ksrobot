@@ -31,6 +31,7 @@ namespace interfaces
 
 MTEngine::MTEngine() : common::EngineInterface()
 {
+    SetInterfaceName("MTEngine");
 }
 
 MTEngine::~MTEngine()

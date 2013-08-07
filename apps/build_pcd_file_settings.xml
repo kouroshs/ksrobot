@@ -6,6 +6,17 @@
     <MaxKeyframesAngle>20</MaxKeyframesAngle>
     <ProjectOnGround>true</ProjectOnGround>
     <RobotSensorHeight>0.57</RobotSensorHeight>
+    <Logger>
+        <Enabled>true</Enabled>
+        <Output>cout</Output>
+        <DebugEnabled>true</DebugEnabled>
+        <ErrorEnabled>true</ErrorEnabled>
+        <MessageEnabled>true</MessageEnabled>
+    </Logger>
+    <IsEveryCycleKeyframe>false</IsEveryCycleKeyframe>
+    <UseMovementThresholdsForKeyframes>false</UseMovementThresholdsForKeyframes>
+    <MovementThr>0</MovementThr>
+    <YawThr>0</YawThr>
 </Fovis>
 <VoxelGrid>
     <Resolution>0.05</Resolution>
@@ -17,4 +28,54 @@
     <Enabled>true</Enabled>
     <FieldName>z</FieldName>
 </PassThrough>
-<MaxCycles>700</MaxCycles>
+<MaxCycles>10</MaxCycles>
+<Octomap>
+    <UseColor>false</UseColor>
+    <MapResolution>0.05</MapResolution>
+    <MaxRange>4</MaxRange>
+    <LazyEval>false</LazyEval>
+    <Logger>
+        <Enabled>true</Enabled>
+        <Output>cout</Output>
+        <DebugEnabled>true</DebugEnabled>
+        <ErrorEnabled>true</ErrorEnabled>
+        <MessageEnabled>true</MessageEnabled>
+    </Logger>
+    <VoxelGrid>
+        <Enabled>true</Enabled>
+        <Resolution>0.05</Resolution>
+    </VoxelGrid>
+    <HeightFilter>
+        <Enabled>false</Enabled>
+        <Axis>y</Axis>
+        <MaxValue>0</MaxValue>
+        <MinValue>0</MinValue>
+    </HeightFilter>
+    <GroundFilter>
+        <Enabled>true</Enabled>
+        <Axis>y</Axis>
+        <Distance>0.04</Distance>
+        <PlaneDistance>0.50</PlaneDistance>
+        <Angle>0.15</Angle>
+        <AddGroundPointsAsFreeSpace>true</AddGroundPointsAsFreeSpace>
+    </GroundFilter>
+    <LocalTransform>
+        <Enabled>false</Enabled>
+        <RobotHeight>0</RobotHeight>
+        <RobotHeightAxis>z</RobotHeightAxis>
+        <FirstRotationAxis>x</FirstRotationAxis>
+        <FirstRotationDegree>90</FirstRotationDegree>
+        <SecondRotationAxis>none</SecondRotationAxis>
+        <SecondRotationDegree>0</SecondRotationDegree>
+    </LocalTransform>
+    <PassThroughFilter>
+        <Enabled>true</Enabled>
+        <LimitMin>0.5</LimitMin>
+        <LimitMax>4</LimitMax>
+    </PassThroughFilter>
+</Octomap>
+<RobotInfo>
+    <AddHeightToOdometry>true</AddHeightToOdometry>
+    <ConstantHeight>0</ConstantHeight>
+    <Radius>0</Radius>
+</RobotInfo>

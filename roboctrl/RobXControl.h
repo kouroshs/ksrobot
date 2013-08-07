@@ -74,10 +74,11 @@ public:
     explicit RobXControl(QObject* parent = 0);
     virtual ~RobXControl();
     
-    
     void                                Open(const QString& device);
     void                                Close();
     bool                                IsOpen();
+    
+    void                                TestTurn(int si1, int si2);
     
     void                                ResetOnTimeout();
     

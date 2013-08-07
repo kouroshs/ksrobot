@@ -122,7 +122,7 @@ Isometry3f IsometryCastToFloat(const Isometry3d& iso)
     return iso.cast<float>();
 }
 
-Vector3d Isometry3d_translation3(const Isometry3d& iso)
+Vector3f Isometry3f_translation3(const Isometry3f& iso)
 {
     return iso.translation();
 }
@@ -321,7 +321,7 @@ void ExportEigen()
     class_<Isometry3f>("Isometry3f", init<>())
         .def_readonly("IsDouble", false)
         .def("rotation", &Isometry3f::rotation)
-        //.def("translation", &Isometry3f::translation)
+        .def("translation", make_function(Isometry3f_translation3))
         .def("CastToDouble", make_function(IsometryCastToDouble))
         .def_readonly("Identity", iso_identity_f)
         .def("__str__", make_function(IsometryfToString))

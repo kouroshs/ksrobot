@@ -46,8 +46,8 @@ public:
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
         Eigen::Isometry3f               Transform; // Transform from 1 to 2
-        int                             Cycle1;
-        int                             Cycle2;
+        size_t                          Cycle1;
+        size_t                          Cycle2;
     };
     
     typedef LoopDetector                                    this_type;

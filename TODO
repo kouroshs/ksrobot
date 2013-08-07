@@ -2,19 +2,16 @@
 ==========================================================================
 
 IMPLEMENT:
+(HIGH)  TEST FOR YAW PITCH ROLL
 (HIGH)  Implement code for moving robot while turning
 (HIGH)  Import GTMAP
-(HIGH)  Fovis (or ICP) How to provide feature match, and not just features.
-        This probably means I should write a different class for robot trajectory
-        and share it across VO,SLAM, Mapping,etc. This causes updates in one class be easier
-        but also introduces additional problems like locking or on slam update.
-        Also takes time, probably at least a day.
+(HIGH)  Implement final robot algorithm
 
-(HIGH) Implement final robot algorithm
+(MID)   Add robot trajectory and features class.
 
 TEST:
 
-(HIGH)  Test LoopClosure and OctomapInterface
+(HIGH)  Test LoopClosure
 (HIGH)  Test motion planner.
 
 

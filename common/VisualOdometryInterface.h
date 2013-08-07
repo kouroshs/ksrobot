@@ -24,6 +24,8 @@
 #include <common/Interface.h>
 #include <common/KinectInterface.h>
 #include <common/Timer.h>
+#include <common/RobotInfo.h>
+
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
 
@@ -63,11 +65,24 @@ public:
     typedef boost::shared_ptr<VisualKeyframe>            Ptr;
     typedef boost::shared_ptr<const VisualKeyframe>      ConstPtr;
 
+    struct MatchedPair
+    {
+        Eigen::Vector3f                                     CurrentRelPosition;
+        Eigen::Vector3f                                     ReferenceRelPosition;
+    };
+    
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     Eigen::Isometry3f                                                       RelativeMotion;
     Eigen::Isometry3f                                                       GlobalPose;
     std::vector<VisualFeature>                                              Features;
     VisualFeatureData                                                       DataPool;
+    //TODO: Add feature matches to this class 
+    
+    size_t                                                                  CurrentCycle;
+    size_t                                                                  ReferenceCycle;
+    
+    std::vector<MatchedPair>                                                MatchedPairs;
+    bool                                                                    MotionEstimateAvailable;
     
     void Reset()
     {
@@ -75,9 +90,10 @@ public:
         GlobalPose.setIdentity();
         Features.clear();
         DataPool.clear();
+        MatchedPairs.clear();
+        MotionEstimateAvailable = false;
     }
 };
-
 
 class VisualOdometryInterface : public Interface
 {
@@ -95,7 +111,7 @@ public:
     virtual float                               GetConvergenceError() = 0;
 
     virtual void                                ReadSettings(ProgramOptions::Ptr po);
-    virtual void                                WriteSettings(ProgramOptions::Ptr po);
+    virtual void                                SetRobotInfo(RobotInfo::Ptr roboinfo);
     
     inline  bool                                IsThisCycleKeyframe() const;
     
@@ -121,7 +137,6 @@ public:
 
     inline boost::signals2::connection          RegisterKeyframeReceiver(boost::function<void(const VisualKeyframe::Ptr)> fn);
 protected:
-    void                                        ProjectToGround();
     void                                        NotifyKeyframeReceivers();
     // For VO, this function should be called after a motion estimate is calculated. 
     // It will update internal values such as global pose.
@@ -150,17 +165,15 @@ protected:
         Eigen::Isometry3f                       AxisTransform;
     };
     
+    
+    
     MotionInfo*                                 mMotion;
     
     KinectInterface::Ptr                        mKinect;
     VisualKeyframe::Ptr                         mLatestKeyframe;
     
     int                                         mLastKinectCycle;
-    float                                       mMaxKeyframesDist;
-    float                                       mMaxKeyframesAngle;
-    float                                       mRobotHeight;
     bool                                        mIsCycleKeyframe;
-    bool                                        mProjectOnGround;
     bool                                        mPublishKeyframeDescriptors;
     
     KinectPointCloud::ConstPtr                  mCurrPointCloud;
@@ -170,6 +183,14 @@ protected:
     
     boost::signals2::signal<void(const VisualKeyframe::Ptr)>             mKeyframeReceivers;
     Timer::Ptr                                  mOdomTimer;
+    
+    bool                                        mSetHeight;
+    float                                       mRobotHeight;
+    
+    bool                                        mIsEveryCycleKeyframe;
+    bool                                        mUseMovementThresholdsForKeyframes;
+    float                                       mMovementThr;
+    float                                       mYawThr;
 };
 
 inline Eigen::Isometry3f VisualOdometryInterface::GetMotionEstimate() const

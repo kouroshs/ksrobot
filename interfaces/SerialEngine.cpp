@@ -27,6 +27,7 @@ namespace interfaces
 
 SerialEngine::SerialEngine() : EngineInterface()
 {
+    SetInterfaceName("SerialEngine");
 }
 
 SerialEngine::~SerialEngine()

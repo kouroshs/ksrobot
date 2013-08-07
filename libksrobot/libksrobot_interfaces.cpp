@@ -56,9 +56,9 @@ void ExportInterfaces()
         .def("Stop", &MTEngine::Stop)
         .def("RunSingleCycle", &MTEngine::RunSingleCycle)
     ;
-    
+//     
     class_<OctomapInterface, boost::shared_ptr<OctomapInterface>, 
-        bases<MappingInterface>, boost::noncopyable >("OctomapInterface", no_init)
+        bases<MappingInterface>, boost::noncopyable >("OctomapInterface", init<>())
         .def("GetMapResolution", &OctomapInterface::GetMapResolution)
         .def("GetMaxRange", &OctomapInterface::GetMaxRange)
         .def("SetMapResolution", &OctomapInterface::SetMapResolution)
@@ -68,9 +68,12 @@ void ExportInterfaces()
         .def("SetVoxelGridResolution", &OctomapInterface::SetVoxelGridResolution)
         .def("GetVoxelGridResolution", &OctomapInterface::GetVoxelGridResolution)
         .def("Initialize", &OctomapInterface::Initialize)
-        .def("RegisterToVO", &OctomapInterface::RegisterToVO)
         .def("SaveToFile", &OctomapInterface::SaveToFile)
+        .def("LoadFromFile", &OctomapInterface::LoadFromFile)
         .def("ReadSettings", &OctomapInterface::ReadSettings)
         .def("RunSingleCycle", &OctomapInterface::RunSingleCycle)
+        .def("GetGroundPoints", &OctomapInterface::GetGroundPoints)
+        .def("GetNonGroundPoints", &OctomapInterface::GetNonGroundPoints)
+        .def("ConvertToOccupancyGrid", &OctomapInterface::ConvertToOccupancyGrid)
     ;
 }

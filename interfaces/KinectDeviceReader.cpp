@@ -26,6 +26,7 @@ public:
 
 KinectDeviceReader::KinectDeviceReader() : common::KinectInterface()
 {
+    SetInterfaceName("KinectDeviceReader");
 }
 
 KinectDeviceReader::~KinectDeviceReader()

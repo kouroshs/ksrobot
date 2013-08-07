@@ -44,7 +44,7 @@ void SaverThread()
             depthListFile << time << "  depth/" << ss.str() << std::endl;
             
         }
-        std::cout << "hello!\n" << std::flush;
+        //std::cout << "hello!\n" << std::flush;
     }
 }
 

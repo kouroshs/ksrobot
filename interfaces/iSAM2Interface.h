@@ -24,6 +24,7 @@
 #include <common/SLAMInterface.h>
 #include <gtsam/nonlinear/ISAM2.h>
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
+#include <set>
 
 namespace KSRobot
 {
@@ -40,14 +41,16 @@ public:
     virtual void ReadSettings(common::ProgramOptions::Ptr po);
     
 protected:
-    virtual void                AddKeyframe(const common::VisualKeyframe& kf);
+    virtual void                AddKeyframe(const common::VisualKeyframe::Ptr kf);
     virtual void                AddLoopClosure(const common::LoopDetector::LoopClosure& lc);
-    
+    virtual void                Update();
 private:
     gtsam::ISAM2*                               mISAM2;
     gtsam::NonlinearFactorGraph                 mGraph;
     gtsam::noiseModel::Diagonal::shared_ptr     mPriorNoise;
     gtsam::noiseModel::Diagonal::shared_ptr     mOdometryNoise;
+    std::set<size_t>                            mSeenCycles;
+    size_t                                      mLastestCycle;
 };
 
 };

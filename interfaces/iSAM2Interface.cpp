@@ -27,8 +27,9 @@ namespace KSRobot
 namespace interfaces
 {
 
-iSAM2Interface::iSAM2Interface() : common::SLAMInterface()
+iSAM2Interface::iSAM2Interface() : common::SLAMInterface(), mLastestCycle(0)
 {
+    SetInterfaceName("iSAM2Interface");
     Initialize();
 }
 
@@ -52,14 +53,57 @@ void iSAM2Interface::ReadSettings(common::ProgramOptions::Ptr po)
     Initialize();
 }
 
-void iSAM2Interface::AddKeyframe(const common::VisualKeyframe& kf)
+void iSAM2Interface::AddKeyframe(const common::VisualKeyframe::Ptr kf)
 {
-    //TODO:
+    //TODO: IMPLEMENT
+    bool ref_frame_found = (mSeenCycles.find(kf->ReferenceCycle) != mSeenCycles.end());
+    
+    if( !ref_frame_found && mLastestCycle == 0 )
+    {
+        // this is the first cucle
+        
+    }
+    else if( !ref_frame_found )
+    {
+        // This means this is not the first cycle, but reference frame was not found.
+        // What this means is that the reference frame was changed by the VO algorithm
+        // internally but the change was not registered as keyframe e.g. when FOVIS fails
+        // to calculate motion from the reference frame but can calculate it using previous frame.
+        
+        //NOTE: in this case, since there are no nodes for the ref_frame, we should ignore unfortunately.
+        Debug("Reference frame %d was not found.\n", kf->ReferenceCycle);
+        return;
+    }
+    else
+    {
+        assert(ref_frame_found == true);
+        // This means it is not the first cycle, and reference frame was found. In this case
+        // we should add a node to the graph for this frame (the reference frame is already in the graph)
+        // and we should add feature matches between this frame and reference frame.
+    }
 }
 
 void iSAM2Interface::AddLoopClosure(const common::LoopDetector::LoopClosure& lc)
 {
     //TODO:
+    // NOTE: For loop closure, both frames should have been visited and exist inside the graph.
+    if( mSeenCycles.find(lc.Cycle1) == mSeenCycles.end() || mSeenCycles.find(lc.Cycle2) == mSeenCycles.end() )
+    {
+        // THIS IS BAD
+        if( lc.Cycle1 > mLastestCycle || lc.Cycle2 > mLastestCycle )
+        {
+            // This means we have cycles not registered to the graph.
+            //TODO: We should add it to the queue again, but it could cause infinite loop.
+            Error("Unknown loop closure cycles (%lu, %lu) were passed. Latest Cycle = %lu.\n", lc.Cycle1, lc.Cycle2, mLastestCycle);
+        }
+        return; // in any case, do no furthur processing.
+    }
+    //TODO: IMPLEMENT
+}
+
+void iSAM2Interface::Update()
+{
+    //TODO: Implement;
 }
 
 

@@ -2,12 +2,12 @@ project(ksrobot)
 cmake_minimum_required(VERSION 2.8)
 
 # Set CMake build type here. the default is Debug.
-if(NOT CMAKE_BUILD_TYPE)
+#if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "DEBUG")
   #set(CMAKE_BUILD_TYPE "RELEASE")
   #set(CMAKE_BUILD_TYPE "RELWITHDEBINFO")
   #set(CMAKE_BUILD_TYPE "MINSIZEREL")
-endif()
+#endif()
 
 if( ${CMAKE_BUILD_TYPE} EQUAL "DEBUG" )
     add_definitions("-rdynamic")
@@ -23,6 +23,7 @@ find_package(OpenCV REQUIRED)
 find_package(Boost COMPONENTS system filesystem thread date_time program_options chrono python REQUIRED)
 find_package(Qt4 COMPONENTS QtCore QtGui QtNetwork REQUIRED)
 find_package(PythonLibs 2.7.4 REQUIRED)
+find_package(OMPL REQUIRED)
 #TODO: For my system there is a bug which causes cmake to include python 2.7 include filesystem
 #      but link to 3.2 libraries. Should be tested for each system and the following lines should be
 #      removed and the above find_package should be un-commented.
@@ -44,7 +45,7 @@ include(${VTK_USE_FILE})
 include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} 
                     ${Boost_INCLUDE_DIR}
                     ${EIGEN_INCLUDE_DIRS} ${OpenNI_INCLUDE_DIRS}
-                    ${PCL_INCLUDE_DIRS}
+                    ${PCL_INCLUDE_DIRS} ${OMPL_INCLUDE_DIRS}
                     ${OpenCV_INCLUDE_DIR})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})

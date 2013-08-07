@@ -34,6 +34,7 @@ public:
     
 ICPInterface::ICPInterface(): common::VisualOdometryInterface(), mImpl(new Impl)
 {
+    SetInterfaceName("ICPInterface");
     SetWithNormals(false);
 }
 

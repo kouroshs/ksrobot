@@ -1,7 +1,8 @@
 include_directories(../)
 
-set(COMMON_SRC LoopDetector.cpp KinectImage.cpp Timer.cpp Interface.cpp VisualOdometryInterface.cpp EngineInterface.cpp 
-              SLAMInterface.cpp MappingInterface.cpp PlannerInterface.cpp 
+set(COMMON_SRC RobotInfo.cpp OccupancyMap.cpp LoopDetector.cpp KinectImage.cpp Timer.cpp Interface.cpp VisualOdometryInterface.cpp 
+EngineInterface.cpp 
+              SLAMInterface.cpp MappingInterface.cpp MotionPlanner.cpp 
               ExecCtrlData.cpp SettingsBinder.cpp Worker.cpp ProgramOptions.cpp
               KinectInterface.cpp Defenitions.cpp)
 
