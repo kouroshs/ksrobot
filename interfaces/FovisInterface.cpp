@@ -146,11 +146,12 @@ bool FovisInterface::CheckForKeyframe()
         //NOTE: I should set this variable to false, but since this should also change the mPrevFovisReferenceFrame
         //      to the current cycle, but PublishKeyframeFeatures needs that var to represent the previous reference frame,
         //      I've moved this portion of the code to PublishKeyframeFeatures.
+//         Debug("(FovisInterface::CheckForKeyframe) next cycle keyframe.\n");
         return true;
     }
     
     if( VisualOdometryInterface::CheckForKeyframe() )
-        return true;    
+        return true;
     if( mFovis->getChangeReferenceFrames() )
         mNextCycleKeyframe = true; //NOTE: This cycle is not keyframe, but the next cycle will be.
 
@@ -159,6 +160,7 @@ bool FovisInterface::CheckForKeyframe()
 
 void FovisInterface::PublishKeyframeFeatures(common::VisualKeyframe::Ptr kf)
 {
+//     Debug("(FovisInterface::PublishKeyframeFeatures)\n");
     // This function extracts feature data from fovis.
     const fovis::OdometryFrame* curr_frame = mFovis->getTargetFrame();
     //NOTE: Extract features only for the first pyramid.
@@ -181,23 +183,26 @@ void FovisInterface::PublishKeyframeFeatures(common::VisualKeyframe::Ptr kf)
         f.U = data->kp.u;
         f.V = data->kp.v;
         f.RelativePosition = data->xyz.cast<float>();
+        
+        kf->Features.push_back(f);
         //Now copy feature data.
         if( KeyframeDescriptorPublishingEnabled() )
             memcpy(kf->DataPool.data() + num_saved_keypoints * pyr->getDescriptorStride(), pyr->getDescriptor(i), pyr->getDescriptorLength());
         num_saved_keypoints++;
     }
+//     Debug("\tKeypointPublishing: %s, Num saved keypoints:%d\n", KeyframeDescriptorPublishingEnabled() ? "true" : "false", num_saved_keypoints);
     
     if( KeyframeDescriptorPublishingEnabled() )
         kf->DataPool.resize(num_saved_keypoints * pyr->getDescriptorStride());
     
-    // now publish feature matches
+    // Now it's time to publish feature matches.
+    
     const fovis::MotionEstimator* est = mFovis->getMotionEstimator();
     const fovis::FeatureMatch* matches_base = est->getMatches();
     common::VisualKeyframe::MatchedPair pair;
     
     kf->MatchedPairs.reserve(est->getNumInliers()); // only inliers will be considered.
     kf->CurrentCycle = GetCycle();
-    
     
     if( mFovis->estimateUsingReferenceFrame() )
         kf->ReferenceCycle = mPrevFovisReferenceFrame;
@@ -212,6 +217,7 @@ void FovisInterface::PublishKeyframeFeatures(common::VisualKeyframe::Ptr kf)
         
         pair.CurrentRelPosition = currMatch->target_keypoint->xyz.cast<float>();
         pair.ReferenceRelPosition = currMatch->ref_keypoint->xyz.cast<float>();
+        pair.ReferenceIndex = currMatch->ref_keypoint->keypoint_index;
         kf->MatchedPairs.push_back(pair);
     }
     
