@@ -49,6 +49,18 @@
 
 #define FOVIS_KEYPOINT_SIZE            80   //TODO: Move this definition to FovisInterface
 
+static inline size_t diff(size_t a, size_t b)
+{
+    return a > b ? a - b : b - a;
+}
+
+static inline float GetAngle(const Eigen::Isometry3f& iso)
+{
+    Eigen::Matrix<float,3,1> euler = iso.rotation().eulerAngles(2, 1, 0);
+    float pitch = euler(1, 0) * 180.0 / M_PI;
+    return pitch;
+}
+
 namespace KSRobot
 {
 namespace common
@@ -60,7 +72,8 @@ LoopDetector::LoopDetector(): Interface(), mNumCandidateImages(DEFAULT_NUM_CANDI
     mMinimumFeatureMatches(DEFAULT_MINIMUM_FEATURE_MATCHES),
     mRansacMinSetSize(DEFAULT_RANSAC_MIN_SET_SIZE), mRansacMaxSteps(DEFAULT_RANSAC_MAX_STEPS),
     mRansacGoodModelPercentage(DEFAULT_RANSAC_GOOD_MODEL_PERCENTAGE), mRansacMinInliers(DEFAULT_RANSAC_MIN_INLIERS),
-    mRansacMaxAcceptableError(DEFAULT_RANSAC_MAX_ACCEPTABLE_ERROR), mRansacInlierMaxSquaredDist(DEFAULT_RANSAC_INLIER_MAX_SQUARED_DIST)
+    mRansacMaxAcceptableError(DEFAULT_RANSAC_MAX_ACCEPTABLE_ERROR), mRansacInlierMaxSquaredDist(DEFAULT_RANSAC_INLIER_MAX_SQUARED_DIST),
+    mDelayLoopDetections(0), mLoopCandidatesMaxRange(10000.0f), mLoopCandidatesMaxYawDifference(1000000.0f)
 {
     mRansacRNG.seed(DEFAULT_RANSAC_RNG_INITIALIZER);
 }
@@ -73,18 +86,22 @@ LoopDetector::~LoopDetector()
 
 void LoopDetector::ReadSettings(ProgramOptions::Ptr po)
 {
-    mNumCandidateImages         = po->GetInt    ("NumCandidateImages",          DEFAULT_NUM_CANDIDATE_IMAGES        );
-    mUseFovisDescriptor         = po->GetBool   ("UseFovisDescriptor",          DEFAULT_USE_FOVIS_DESCRIPTOR        );
-    mNormalizeFovisDescriptor   = po->GetBool   ("NormalizeFovisDescriptor",    DEFAULT_NORMALIZE_FOVIS_DESCRIPTOR  );
-    mFeatureDetectorName        = po->GetString ("FeatureDetector",             DEFAULT_FEATURE_DETECTOR_NAME       );
-    mDescriptorExtractorName    = po->GetString ("DescriptorExtractor",         DEFAULT_DESCRIPTOR_EXTRACTOR_NAME   );
-    mMinimumFeatureMatches      = po->GetInt    ("MinimumFeatureMatches",       DEFAULT_MINIMUM_FEATURE_MATCHES     );
+    common::Interface::ReadSettings(po);
     mRansacMinSetSize           = po->GetInt    ("RANSAC.MinSetSize",           DEFAULT_RANSAC_MIN_SET_SIZE         );
     mRansacMaxSteps             = po->GetInt    ("RANSAC.MaxSteps",             DEFAULT_RANSAC_MAX_STEPS            );
     mRansacGoodModelPercentage  = po->GetDouble ("RANSAC.GoodModelPercentage",  DEFAULT_RANSAC_GOOD_MODEL_PERCENTAGE);
     mRansacMinInliers           = po->GetInt    ("RANSAC.MinInliers",           DEFAULT_RANSAC_MIN_INLIERS          );
     mRansacMaxAcceptableError   = po->GetDouble ("RANSAC.MaxAcceptableError",   DEFAULT_RANSAC_MAX_ACCEPTABLE_ERROR );
     mRansacInlierMaxSquaredDist = po->GetDouble ("RANSAC.InlierMaxSquaredDist", DEFAULT_RANSAC_INLIER_MAX_SQUARED_DIST);
+    mNumCandidateImages         = po->GetInt    ("NumCandidateImages",          DEFAULT_NUM_CANDIDATE_IMAGES        );
+    mUseFovisDescriptor         = po->GetBool   ("UseFovisDescriptor",          DEFAULT_USE_FOVIS_DESCRIPTOR        );
+    mNormalizeFovisDescriptor   = po->GetBool   ("NormalizeFovisDescriptor",    DEFAULT_NORMALIZE_FOVIS_DESCRIPTOR  );
+    mFeatureDetectorName        = po->GetString ("FeatureDetector",             DEFAULT_FEATURE_DETECTOR_NAME       );
+    mDescriptorExtractorName    = po->GetString ("DescriptorExtractor",         DEFAULT_DESCRIPTOR_EXTRACTOR_NAME   );
+    mMinimumFeatureMatches      = po->GetInt    ("MinimumFeatureMatches",       DEFAULT_MINIMUM_FEATURE_MATCHES     );
+    mDelayLoopDetections        = po->GetInt    ("DelayLoopDetections",         0                                   );
+    mLoopCandidatesMaxYawDifference = po->GetDouble("LoopCandidatesMaxYawDifference", 1000000.0                     ) * M_PI / 180.0;
+    mLoopCandidatesMaxRange     = po->GetDouble ("LoopCandidatesMaxRange",      1000000.0                           ) * M_PI / 180.0;
 }
 
 void LoopDetector::RegisterToVO(VisualOdometryInterface::Ptr vo)
@@ -116,26 +133,37 @@ bool LoopDetector::RunSingleCycle()
     std::vector<int> candidates;
     Eigen::Isometry3f transform;
     int count = 0;
+    std::vector<double> out_scores;
     while( mKeyframesQueue.try_pop(kd) )
     {
+        Debug("Entering\n");
+        
+        InternalKeyframeInfo internal_info;
+        internal_info.Cycle = kd.Keyframe->CurrentCycle;
+        internal_info.Pose = kd.Keyframe->GlobalPose;
+        mInternalKeyframesBookkeeping.push_back(internal_info);
+        
         count++;
         ExtractImageKeypointDescriptors(kd);
         ExtractSceneDescriptors();
-        candidates.clear();
-        //For now, I dont care about score.
-        incremental_vtree::VocabularyTreeRetriever::Retrieve(mVTree, *mCurrSceneDescriptor, mNumCandidateImages, &candidates, NULL);
-        //For each candidate, check for loop closure. For the first one found terminate search
-        for(size_t i = 0; i < candidates.size(); i++)
-            if( CheckForLoopClosure(candidates[i], transform) )
-            {
-                LoopClosure lc;
-                lc.Transform = transform;
-                lc.Cycle1 = candidates[i];
-                lc.Cycle2 = mVTree.GetNumImages() + 1; // TODO: What is this cycle???
-                mOnLoopDetected(lc);
-                break;
-            }
         
+        if( GetCycle() > 0 )
+        {
+            candidates.clear();
+            //For now, I dont care about score.
+            incremental_vtree::VocabularyTreeRetriever::Retrieve(mVTree, *mCurrSceneDescriptor, mNumCandidateImages, &candidates, &out_scores);
+            //For each candidate, check for loop closure. For the first one found terminate search
+            for(size_t i = 0; i < candidates.size(); i++)
+                if( CheckForLoopClosure(candidates[i], transform) )
+                {
+                    LoopClosure lc;
+                    lc.Transform = transform;
+                    lc.Cycle1 = candidates[i];
+                    lc.Cycle2 = mVTree.GetNumImages() + 1; // TODO: What is this cycle???
+                    mOnLoopDetected(lc);
+                    break;
+                }
+        }
         mVTree.InsertImage(*mCurrSceneDescriptor);
         FinishCycle();
     }
@@ -152,7 +180,6 @@ void LoopDetector::ExtractImageKeypointDescriptors(const LoopDetector::KeyframeD
         const int stride = kd.Keyframe->DataPool.FeatureStride;
         
         desc = cv::Mat(kd.Keyframe->Features.size(), kd.Keyframe->DataPool.FeatureLength, CV_32F);
-        
         for(int i = 0; i < desc.rows; i++)
         {
             float* matPtr = desc.ptr<float>(i);
@@ -235,6 +262,17 @@ void LoopDetector::ExtractSceneDescriptors()
 
 bool LoopDetector::CheckForLoopClosure(int candidate, Eigen::Isometry3f& transform)
 {
+    //NOTE: First impose some restrictions on what candidates can be checked for the actual loop closure test.
+    if( (int)diff(mInternalKeyframesBookkeeping.back().Cycle, candidate) < mDelayLoopDetections )
+        return false; // if it is too soon for loop closure test
+    if( (mInternalKeyframesBookkeeping.back().Pose.translation() - 
+        mInternalKeyframesBookkeeping[candidate].Pose.translation()).squaredNorm() > mLoopCandidatesMaxRange )
+        return false; // if two candidates are very far to one another
+    //now calculate yaw (in kinect framework pitch angle)
+    if( fabs(GetAngle(mInternalKeyframesBookkeeping.back().Pose) - GetAngle(mInternalKeyframesBookkeeping[candidate].Pose)) >
+        mLoopCandidatesMaxYawDifference )
+        return false; // if the angle difference makes no sense to test for loop closure.
+    
     std::vector<cv::DMatch> all_matches, good_matches;
 
     MatchFeatures(candidate, all_matches);
