@@ -5,6 +5,7 @@
 #include <interfaces/KinectDatasetReader.h>
 #include <interfaces/KinectDeviceReader.h>
 #include <interfaces/OctomapInterface.h>
+#include <interfaces/iSAM2Interface.h>
 
 #include <boost/signals2.hpp>
 
@@ -75,5 +76,11 @@ void ExportInterfaces()
         .def("GetGroundPoints", &OctomapInterface::GetGroundPoints)
         .def("GetNonGroundPoints", &OctomapInterface::GetNonGroundPoints)
         .def("ConvertToOccupancyGrid", &OctomapInterface::ConvertToOccupancyGrid)
+    ;
+    
+    class_<iSAM2Interface, iSAM2Interface::Ptr, bases<SLAMInterface>, boost::noncopyable >("iSAM2Interface", init<>())
+        .def("Initialize", &iSAM2Interface::Initialize)
+        .def("ReadSettings", &iSAM2Interface::ReadSettings)
+        .def("Print", &iSAM2Interface::Print)
     ;
 }
