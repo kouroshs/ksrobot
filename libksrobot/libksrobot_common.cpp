@@ -64,7 +64,13 @@ struct STRUCT
 
 void OccupancyConvertToNumpy(KSRobot::common::OccupancyMap::Ptr ocmap)
 {
+    (void)ocmap;
     //TODO: IMPLEMENT THIS
+}
+
+void Interface_WriteRunningTimes(KSRobot::common::Interface::Ptr iface)
+{
+    iface->WriteRunningTimes(std::cout);
 }
 
 void ExportCommon()
@@ -106,6 +112,7 @@ void ExportCommon()
         .def("RunSingleCycle", pure_virtual(&Interface::RunSingleCycle))
         .def("ReadSettings", &Interface::ReadSettings)
         .def("WriteSettings", &Interface::WriteSettings)
+        .def("WriteRunningTimes", make_function(Interface_WriteRunningTimes))
     ;
     
     DEF_KINECT_IMAGE_TYPE(KinectRgbImage);
@@ -220,6 +227,13 @@ void ExportCommon()
         .def("SetRobotInfo", &VisualOdometryInterface::SetRobotInfo)
     ;
     
+    class_<SLAMInterface, SLAMInterface::Ptr, bases<Interface>, boost::noncopyable>("SLAMInterface", no_init)
+        .def("ReadFromFile", &SLAMInterface::ReadFromFile)
+        .def("RegisterToVO", &SLAMInterface::RegisterToVO)
+        .def("RegisterToLoopDetector", &SLAMInterface::RegisterToLoopDetector)
+        .def("RunSingleCycle", &SLAMInterface::RunSingleCycle)
+    ;
+    
     class_<MappingInterface, boost::shared_ptr<MappingInterface>, 
         bases<Interface>, boost::noncopyable>("MappingInterface", no_init)
         .def("SaveToFile", pure_virtual(&MappingInterface::SaveToFile))
@@ -295,4 +309,19 @@ void ExportCommon()
         .def("ConstantHeight", &RobotInfo::GetConstantHeight)
         .def("Radius", &RobotInfo::GetRadius)
     ;
+    
+    {
+        scope loop_detector_scope = 
+        class_<LoopDetector, LoopDetector::Ptr, bases<Interface>, boost::noncopyable>("LoopDetector", init<>())
+            .def("RegisterToVO", &LoopDetector::RegisterToVO)
+            .def("RunSingleCycle", &LoopDetector::RunSingleCycle)
+            .def("ReadSettings", &LoopDetector::ReadSettings)
+        ;
+        
+        class_<LoopDetector::LoopClosure>("LoopClosure", init<>())
+            .def_readwrite("Transform", &LoopDetector::LoopClosure::Transform)
+            .def_readwrite("Cycle1", &LoopDetector::LoopClosure::Cycle1)
+            .def_readwrite("Cycle2", &LoopDetector::LoopClosure::Cycle2)
+            ;
+    }
 }
