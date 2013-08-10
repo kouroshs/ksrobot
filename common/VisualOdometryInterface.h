@@ -69,6 +69,7 @@ public:
     {
         Eigen::Vector3f                                     CurrentRelPosition;
         Eigen::Vector3f                                     ReferenceRelPosition;
+        int                                                 ReferenceIndex;
     };
     
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -183,6 +184,7 @@ protected:
     
     boost::signals2::signal<void(const VisualKeyframe::Ptr)>             mKeyframeReceivers;
     Timer::Ptr                                  mOdomTimer;
+    Timer::Ptr                                  mFinishCycleTime;
     
     bool                                        mSetHeight;
     float                                       mRobotHeight;

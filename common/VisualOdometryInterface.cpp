@@ -33,6 +33,7 @@ VisualOdometryInterface::VisualOdometryInterface(): Interface(),
     mIsCycleKeyframe(true), // first cycle is always keyframe
     mPublishKeyframeDescriptors(true),
     mLastKinectCycle(-1), mOdomTimer(new Timer("Odometry time")),
+    mFinishCycleTime(new Timer("FinishCycle time")),
     mSetHeight(false), mRobotHeight(0), mIsEveryCycleKeyframe(false),
     mUseMovementThresholdsForKeyframes(false), mMovementThr(0), mYawThr(0)
 {
@@ -40,6 +41,7 @@ VisualOdometryInterface::VisualOdometryInterface(): Interface(),
     mLatestKeyframe.reset(new VisualKeyframe);
     
     RegisterTimer(mOdomTimer);
+    RegisterTimer(mFinishCycleTime);
 }
 
 VisualOdometryInterface::~VisualOdometryInterface()
@@ -77,6 +79,8 @@ void VisualOdometryInterface::NotifyKeyframeReceivers()
 
 void VisualOdometryInterface::FinishCycle()
 {
+    mFinishCycleTime->Start();
+    
     Interface::FinishCycle();
     
     mMotion->GlobalPose = mMotion->GlobalPose * mMotion->MotionEstimate;
@@ -99,29 +103,37 @@ void VisualOdometryInterface::FinishCycle()
         
         mMotion->CurrRelativeMotion.setIdentity();
         mMotion->LastKeyframePose = mMotion->GlobalPose;
+
+        NotifyKeyframeReceivers();
     }
     else
     {
         mMotion->CurrRelativeMotion = mMotion->LastKeyframePose.inverse() * mMotion->GlobalPose;
     }
-    NotifyKeyframeReceivers();
+    
+    mFinishCycleTime->Stop();
 }
 
 bool VisualOdometryInterface::CheckForKeyframe()
 {
     if( mIsEveryCycleKeyframe )
+    {
+//         Debug("(VisualOdometryInterface::CheckForKeyframe) Every cycle is keyframe.\n");
         return true;
+    }
     
     if( GetCycle() == 0 )
+    {
+//         Debug("(VisualOdometryInterface::CheckForKeyframe) cycle is 0.\n");
         return true;
-
+    }
+    
     if( mUseMovementThresholdsForKeyframes )
     {
         
         // first check for movement threshold
         if( mMotion->CurrRelativeMotion.translation().squaredNorm() >= mMovementThr * mMovementThr )
             return true;
-        
         //now check for yaw angle.
         //NOTE: SINCE IN FOVIS OR OTHER VO Algorithms, the coordinate is usually in the way that z is front, yaw might not be the actual yaw
         //          calculated here.
@@ -129,24 +141,30 @@ bool VisualOdometryInterface::CheckForKeyframe()
         //for now just debug
         
         Eigen::Matrix<float,3,1> euler = mMotion->CurrRelativeMotion.rotation().eulerAngles(2, 1, 0);
-        float yaw = euler(0,0);
-        float pitch = euler(1,0);
-        float roll = euler(2,0);
-        Debug("yaw = %f pitch = %f roll = %f\n", yaw, pitch, roll);
+        //float yaw = euler(0, 0) * 180.0 / M_PI;
+        float pitch = euler(1, 0) * 180.0 / M_PI;
+        //float roll = euler(2, 0) * 180.0 / M_PI;
         
+        //It is correct that in normal world condition we should check the yaw angle, but because of kinect data aquizition, 
+        // the yaw angle in robot frame is pitch angle in kinect frame, which we will use here.
+        //NOTE: For now I don't really use robot frame, and always use kinect frame.
+        
+        if( pitch >= mYawThr )
+            return true;
     }
     
-    return mIsCycleKeyframe;
+    return false;
 }
 
 void VisualOdometryInterface::ReadSettings(ProgramOptions::Ptr po)
 {
     Interface::ReadSettings(po);
     
-    mIsCycleKeyframe = po->GetBool("IsEveryCycleKeyframe", false);
+    mIsEveryCycleKeyframe = po->GetBool("IsEveryCycleKeyframe", false);
     mUseMovementThresholdsForKeyframes = po->GetBool("UseMovementThresholdsForKeyframes", false);
-    mMovementThr = po->GetDouble("MovementThr", 0.0);
-    mYawThr = po->GetDouble("YawThr", 0.0);
+    mMovementThr = po->GetDouble("MovementThr", 0.1);
+    mYawThr = po->GetDouble("YawThr", 20.0);
+    mPublishKeyframeDescriptors = po->GetBool("PublishKeyframeDescriptors", true);
 }
 
 void VisualOdometryInterface::SetRobotInfo(RobotInfo::Ptr roboinfo)
