@@ -2,9 +2,6 @@
 ==========================================================================
 
 IMPLEMENT:
-(HIGH)  TEST FOR YAW PITCH ROLL
-(HIGH)  Implement code for moving robot while turning
-(HIGH)  Import GTMAP
 (HIGH)  Implement final robot algorithm
 
 (MID)   Add robot trajectory and features class.
@@ -13,5 +10,5 @@ TEST:
 
 (HIGH)  Test LoopClosure
 (HIGH)  Test motion planner.
-
+(HIGH)  Test iSAM2Interface
 

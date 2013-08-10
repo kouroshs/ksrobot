@@ -43,6 +43,7 @@ void SLAMInterface::RegisterToVO(VisualOdometryInterface::Ptr vo)
 void SLAMInterface::ReadFromFile(const std::string& filename)
 {
     //TODO: Implement
+    (void)filename;
 }
 
 void SLAMInterface::OnLoopDetected(const LoopDetector::LoopClosure& lc)
@@ -64,6 +65,7 @@ void SLAMInterface::OnKeyframeDetected(const VisualKeyframe::Ptr kf)
     da.IsLoopClosure = false;
     da.Keyframe = kf;
     mUnprocessedData.push(da);
+//     Debug("SLAMInterface::OnKeyframeDetected\n");
 }
 
 bool SLAMInterface::RunSingleCycle()

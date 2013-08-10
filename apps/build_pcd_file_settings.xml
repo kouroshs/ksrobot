@@ -2,10 +2,6 @@
 <DatasetDir>/windows/E/Datasets/rgbd_dataset_freiburg2_pioneer_slam/</DatasetDir>
 <SaveDir>~/test/pointclouds/</SaveDir>
 <Fovis>
-    <MaxKeyframesDistance>0.1</MaxKeyframesDistance>
-    <MaxKeyframesAngle>20</MaxKeyframesAngle>
-    <ProjectOnGround>true</ProjectOnGround>
-    <RobotSensorHeight>0.57</RobotSensorHeight>
     <Logger>
         <Enabled>true</Enabled>
         <Output>cout</Output>
@@ -13,10 +9,11 @@
         <ErrorEnabled>true</ErrorEnabled>
         <MessageEnabled>true</MessageEnabled>
     </Logger>
-    <IsEveryCycleKeyframe>false</IsEveryCycleKeyframe>
-    <UseMovementThresholdsForKeyframes>false</UseMovementThresholdsForKeyframes>
-    <MovementThr>0</MovementThr>
-    <YawThr>0</YawThr>
+    <IsEveryCycleKeyframe>true</IsEveryCycleKeyframe>
+    <UseMovementThresholdsForKeyframes>true</UseMovementThresholdsForKeyframes>
+    <MovementThr>0.1</MovementThr>
+    <YawThr>10</YawThr>
+    <PublishKeyframeDescriptors>true</PublishKeyframeDescriptors>
 </Fovis>
 <VoxelGrid>
     <Resolution>0.05</Resolution>
@@ -30,10 +27,6 @@
 </PassThrough>
 <MaxCycles>10</MaxCycles>
 <Octomap>
-    <UseColor>false</UseColor>
-    <MapResolution>0.05</MapResolution>
-    <MaxRange>4</MaxRange>
-    <LazyEval>false</LazyEval>
     <Logger>
         <Enabled>true</Enabled>
         <Output>cout</Output>
@@ -73,9 +66,63 @@
         <LimitMin>0.5</LimitMin>
         <LimitMax>4</LimitMax>
     </PassThroughFilter>
+    <UseColor>false</UseColor>
+    <MapResolution>0.05</MapResolution>
+    <MaxRange>4</MaxRange>
+    <LazyEval>false</LazyEval>
 </Octomap>
 <RobotInfo>
     <AddHeightToOdometry>true</AddHeightToOdometry>
     <ConstantHeight>0</ConstantHeight>
     <Radius>0</Radius>
 </RobotInfo>
+<iSAM2>
+    <Logger>
+        <Enabled>true</Enabled>
+        <Output>cout</Output>
+        <DebugEnabled>true</DebugEnabled>
+        <ErrorEnabled>true</ErrorEnabled>
+        <MessageEnabled>true</MessageEnabled>
+    </Logger>
+    <PriorNoise>
+        <X>0.1</X>
+        <Y>0.1</Y>
+        <Z>0.1</Z>
+        <Roll>0.1</Roll>
+        <Pitch>0.1</Pitch>
+        <Yaw>0.1</Yaw>
+    </PriorNoise>
+    <OdometryNoise>
+        <X>0.1</X>
+        <Y>0.1</Y>
+        <Z>0.1</Z>
+        <Roll>0.1</Roll>
+        <Pitch>0.1</Pitch>
+        <Yaw>0.1</Yaw>
+    </OdometryNoise>
+    <LoopClosureNoise>
+        <X>0.1</X>
+        <Y>0.1</Y>
+        <Z>0.1</Z>
+        <Roll>0.1</Roll>
+        <Pitch>0.1</Pitch>
+        <Yaw>0.1</Yaw>
+    </LoopClosureNoise>
+    <UseFeatures>true</UseFeatures>
+</iSAM2>
+<LoopDetector>
+    <NumCandidateImages>10</NumCandidateImages>
+    <UseFovisDescriptor>true</UseFovisDescriptor>
+    <NormalizeFovisDescriptor>false</NormalizeFovisDescriptor>
+    <FeatureDetector>SIFT</FeatureDetector>
+    <DescriptorExtractor>SIFT</DescriptorExtractor>
+    <MinimumFeatureMatches>50</MinimumFeatureMatches>
+    <RANSAC>
+        <MinSetSize>3</MinSetSize>
+        <MaxSteps>100</MaxSteps>
+        <GoodModelPercentage>0.699999988079071</GoodModelPercentage>
+        <MinInliers>10</MinInliers>
+        <MaxAcceptableError>0.1</MaxAcceptableError>
+        <InlierMaxSquaredDist>0.05</InlierMaxSquaredDist>
+    </RANSAC>
+</LoopDetector>

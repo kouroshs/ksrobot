@@ -46,16 +46,16 @@ public:
     //THIS IS FOR TEST ONLY!
     virtual void                                ReadFromFile(const std::string& filename);
     
-    virtual void                                RegisterToVO(VisualOdometryInterface::Ptr vo);
-    virtual void                                RegisterToLoopDetector(LoopDetector::Ptr ld);
+    void                                        RegisterToVO(VisualOdometryInterface::Ptr vo);
+    void                                        RegisterToLoopDetector(LoopDetector::Ptr ld);
     virtual bool                                RunSingleCycle();
 private:
     void                                        OnKeyframeDetected(const VisualKeyframe::Ptr kf);
     void                                        OnLoopDetected(const LoopDetector::LoopClosure& lc);// called from visual odometry
 protected:
-    virtual void                                AddKeyframe(const VisualKeyframe::Ptr kf) = 0;
-    virtual void                                AddLoopClosure(const LoopDetector::LoopClosure& lc) = 0;
-    virtual void                                Update() = 0; // called if AddKeyframe and AddLoopClosure need finilization code to perform.
+    virtual void                                AddKeyframe(const VisualKeyframe::Ptr kf) { (void)kf;}
+    virtual void                                AddLoopClosure(const LoopDetector::LoopClosure& lc) { (void)lc;}
+    virtual void                                Update() {;} // called if AddKeyframe and AddLoopClosure need finilization code to perform.
     virtual void                                FinishCycle();
 protected:
     struct SLAMDataArrival

@@ -51,8 +51,11 @@ if __name__ == "__main__":
     xmlConfigFile = 'build_pcd_file_settings.xml'
     datasetDir = ''
     #defaultDatasetDir = '/windows/E/Datasets/rgbd_dataset_freiburg2_pioneer_slam/'
-    defaultDatasetDir = '/home/kourosh/test/pointclouds/corridors1_ground_palne_extraction_test/'
-    defaultSaveDir = '/home/kourosh/test/pointclouds/corridors1_ground_palne_extraction_test/'
+    #defaultDatasetDir = '/home/kourosh/test/pointclouds/corridors1_ground_palne_extraction_test/'
+    #defaultSaveDir = '/home/kourosh/test/pointclouds/corridors1_ground_palne_extraction_test/'
+    
+    defaultDatasetDir = '/home/kourosh/datasets/yaw-pitch-roll-test'
+    defaultSaveDir = '/home/kourosh/pointclouds/yaw-pitch-roll-test'
     
     po = common.ProgramOptions()
     
@@ -82,7 +85,7 @@ if __name__ == "__main__":
     
     kinect.Initialize(datasetDir)
     fovis.RegisterToKinect(kinect)
-    octomap.RegisterToVO(fovis)
+    #octomap.RegisterToVO(fovis)
     fovis.SetRobotInfo(robot_info)
     octomap.SetRobotInfo(robot_info)
        
