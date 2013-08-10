@@ -37,7 +37,6 @@ namespace common
 {
 
 // Loop detection using vocabulary trees
-//TODO: Move parts to a new interface at interfaces
 class LoopDetector : public Interface
 {
 public:
@@ -97,6 +96,12 @@ protected:
                                                                          const std::vector<cv::DMatch>& matches,
                                                                          const std::vector<int>& consensus_set, const Eigen::Isometry3f& trans);
 protected:
+    struct InternalKeyframeInfo
+    {
+        size_t                          Cycle;
+        Eigen::Isometry3f               Pose;
+    };
+    
     tbb::concurrent_queue<KeyframeData>                     mKeyframesQueue;
     VisualOdometryInterface::Ptr                            mVO;
     boost::signals2::signal<void(const LoopClosure& lc)>    mOnLoopDetected;
@@ -118,6 +123,12 @@ protected:
     float                                                   mRansacMaxAcceptableError;
     float                                                   mRansacInlierMaxSquaredDist;
     boost::random::mt19937                                  mRansacRNG;
+    
+    int                                                     mDelayLoopDetections;
+    float                                                   mLoopCandidatesMaxRange;
+    float                                                   mLoopCandidatesMaxYawDifference;
+    
+    std::vector<InternalKeyframeInfo>                       mInternalKeyframesBookkeeping;
     
     std::vector<cv::Mat>                                    mKeyframeImageKeypointDescriptors;
     std::vector<PointArray>                                 mPointArrayList;
