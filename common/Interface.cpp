@@ -123,7 +123,7 @@ void Interface::ReadSettings(ProgramOptions::Ptr po)
 {
     ProgramOptions::Ptr logpo = po->StartNode("Logger");
     mLoggingEnabled = logpo->GetBool("Enabled", true);
-    mLoggerOutputFile = logpo->GetString("Output", std::string("__interface_name__"));
+    mLoggerOutputFile = logpo->GetString("Output", std::string("cout"));
     
     if( mLoggingEnabled )
     {
