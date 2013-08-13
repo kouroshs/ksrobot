@@ -8,7 +8,7 @@ IMPLEMENT:
 
 TEST:
 
-(HIGH)  Test LoopClosure
+(HIGH)  Test LoopClosure. Specially RANSAC code (should have it's own test case).
 (HIGH)  Test motion planner.
 (HIGH)  Test iSAM2Interface
 

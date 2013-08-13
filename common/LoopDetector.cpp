@@ -136,8 +136,6 @@ bool LoopDetector::RunSingleCycle()
     std::vector<double> out_scores;
     while( mKeyframesQueue.try_pop(kd) )
     {
-        Debug("Entering\n");
-        
         InternalKeyframeInfo internal_info;
         internal_info.Cycle = kd.Keyframe->CurrentCycle;
         internal_info.Pose = kd.Keyframe->GlobalPose;
