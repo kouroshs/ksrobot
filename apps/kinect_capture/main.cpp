@@ -10,6 +10,12 @@
 #include <tbb/concurrent_queue.h>
 
 
+//TODO: MAKE THESE OPTIONS, PROBABLY USING ProgramOptions
+
+std::string g_FileExtention = ".png";
+int g_SkipCycles = 10;
+
+
 KSRobot::interfaces::KinectDeviceReader::Ptr device;
 boost::filesystem::path rgbPath, depthPath;
 std::fstream rgbListFile, depthListFile;
@@ -33,9 +39,14 @@ void SaverThread()
         while( kinect_data_queue.try_pop(id) )
         {
             cycle++;
-            double time = cycle ;
+            
+            if( g_SkipCycles != 0 && cycle % g_SkipCycles != 0 )
+                continue;
+            
+            double time = cycle;
             std::stringstream ss;
-            ss << time << ".png";
+            
+            ss << time << g_FileExtention;
 
             KSRobot::common::KinectImageDiskIO::SaveToFileRgb((rgbPath / ss.str()).string(), id.rgb);
             KSRobot::common::KinectImageDiskIO::SaveToFileDepth((depthPath / ss.str()).string(), id.depth);
@@ -57,11 +68,13 @@ void KinectSaveFn()
     kinect_data_queue.push(id);
     
     static int cycle = 0;
-    std::cout << cycle++ << std::endl << std::flush;
+    if( cycle++ % 100 == 0 )
+        std::cout << cycle << std::endl << std::flush;
 }
 
 void SigHandler(int signal)
 {
+    (void)signal;
     bContinue = false;
     std::cout << "SIGINT RECIEVED\n" << std::flush;
 }
@@ -116,7 +129,7 @@ int main(int argc, char** argv)
         device->Start();
         
         while( bContinue )
-            boost::this_thread::sleep_for(boost::chrono::seconds(1));
+            boost::this_thread::sleep_for(boost::chrono::milliseconds(300));
         
         device->Stop();
         

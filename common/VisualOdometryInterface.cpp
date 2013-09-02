@@ -62,6 +62,11 @@ bool VisualOdometryInterface::RunSingleCycle()
     if( mKinect->GetCycle() <= mLastKinectCycle )
         return false;
     
+    mPrevPointCloud = mCurrPointCloud;
+    mPrevRgb = mCurrRgb;
+    mPrevRawDepth = mCurrRawDepth;
+    mPrevFloatDepth = mCurrFloatDepth;
+    
     mCurrFloatDepth = mKinect->GetFloatDepthImage();
     mCurrRawDepth = mKinect->GetRawDepthImage();
     mCurrRgb = mKinect->GetRgbImage();
@@ -83,10 +88,43 @@ void VisualOdometryInterface::FinishCycle()
     
     Interface::FinishCycle();
     
+    //mMotion->MotionEstimate.translation()[1] = 0;
     mMotion->GlobalPose = mMotion->GlobalPose * mMotion->MotionEstimate;
-    if( mSetHeight )
-        mMotion->GlobalPose.translation()[2] = mRobotHeight;
+    //if( mSetHeight )
     
+    bool option = true;
+    if( option )
+    {
+        mMotion->GlobalPose.translation()[1] = 0;//mRobotHeight;
+        Eigen::Matrix<float,3,1> euler = mMotion->GlobalPose.rotation().eulerAngles(2, 1, 0);
+        
+        float yaw = 0;//euler(0, 0);
+        float pitch = euler(1, 0);
+        float roll = 0;//euler(2, 0);
+        
+        Eigen::Matrix3f Rx,Ry,Rz;
+        float s1 = sin(roll);
+        float c1 = cos(roll);
+        Rx <<   1,  0,  0,
+        0, c1,-s1,
+        0, s1, c1;
+        
+        float s2 = sin(pitch);
+        float c2 = cos(pitch);
+        Ry <<  c2,  0, s2,
+        0,  1,  0,
+        -s2,  0, c2;
+        
+        float s3 = sin(yaw);
+        float c3 = cos(yaw);
+        Rz <<  c3,-s3,  0,
+        s3, c3,  0,
+        0,  0,  1;
+        
+        mMotion->GlobalPose.linear() = Rx * Ry * Rz;
+        
+    }
+        
     mIsCycleKeyframe = CheckForKeyframe();
     if( IsThisCycleKeyframe() )
     {

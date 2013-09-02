@@ -7,47 +7,47 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 if __name__ == "__main__":
-    #octomap = interfaces.OctomapInterface()
-    #octomap.LoadFromFile('/home/kourosh/test1_map.ot')
-    #ocgrid = common.OccupancyMap(1000, 1000)
+    octomap = interfaces.OctomapInterface()
+    octomap.LoadFromFile('/home/kourosh/mymap.ot')
+    ocgrid = common.OccupancyMap(1000, 1000)
     
-    #octomap.ConvertToOccupancyGrid(ocgrid, 200, 700, False)
+    octomap.ConvertToOccupancyGrid(ocgrid, 200, 700, False)
 
-    #ocgrid.SaveToFile('/home/kourosh/ocgrid.ocg')
+    ocgrid.SaveToFile('/home/kourosh/ocgrid.ocg')
 
-    #grid = np.zeros((ocgrid.Width, ocgrid.Height), dtype=np.uint8)
-    #frontier = grid.copy()
+    grid = np.zeros((ocgrid.Width, ocgrid.Height), dtype=np.uint8)
+    frontier = grid.copy()
     
-    #for i in xrange(0, ocgrid.Height):
-        #for j in xrange(0, ocgrid.Width):
-            ##idx = ocgrid.Index(i, j)
-            #grid[i][j] = ocgrid.Data[ocgrid.Index(i, j)]
+    for i in xrange(0, ocgrid.Height):
+        for j in xrange(0, ocgrid.Width):
+            #idx = ocgrid.Index(i, j)
+            grid[i][j] = ocgrid.Data[ocgrid.Index(i, j)]
 
-    #fa = common.OccupancyMap.FrontierArray()
-    #ocgrid.ExtractFrontiers(fa, 0.40)
+    fa = common.OccupancyMap.FrontierArray()
+    ocgrid.ExtractFrontiers(fa, 0.40)
     
-    #for i in xrange(0, ocgrid.Height):
-        #for j in xrange(0, ocgrid.Width):
-            ##idx = ocgrid.Index(i, j)
-            #frontier[i][j] = ocgrid.Data[ocgrid.Index(i, j)]
+    for i in xrange(0, ocgrid.Height):
+        for j in xrange(0, ocgrid.Width):
+            #idx = ocgrid.Index(i, j)
+            frontier[i][j] = ocgrid.Data[ocgrid.Index(i, j)]
             
-    ##cp1 = (frontier > common.OccupancyMap.CellValue.FrontierStartID)
+    #cp1 = (frontier > common.OccupancyMap.CellValue.FrontierStartID)
 
-    ##plt.figure()
-    ##plt.imshow(grid)
-    
-    #print 'Number of frontiers:', len(fa)
-    
     #plt.figure()
-    #plt.imshow(frontier)
-    #plt.colorbar()
+    #plt.imshow(grid)
+    
+    print 'Number of frontiers:', len(fa)
+    
+    plt.figure()
+    plt.imshow(frontier)
+    plt.colorbar()
     
     
-    #plt.show()
+    plt.show()
     
     
-    ##raw_input('Press enter to continue...')
-#else:
+    #raw_input('Press enter to continue...')
+else:
     xmlConfigFile = 'build_pcd_file_settings.xml'
     datasetDir = ''
     #defaultDatasetDir = '/windows/E/Datasets/rgbd_dataset_freiburg2_pioneer_slam/'

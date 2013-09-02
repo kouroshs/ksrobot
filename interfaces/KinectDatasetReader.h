@@ -55,6 +55,8 @@ public:
     
     inline std::vector<std::string>     GetRgbFileList() const;
     inline std::vector<std::string>     GetDepthFileList() const;
+    
+    void                                StartFromCycle(int cycle);
 private:
     struct FileList
     {

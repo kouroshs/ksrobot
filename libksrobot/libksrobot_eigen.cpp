@@ -319,6 +319,8 @@ void ExportEigen()
     ExportMatrix3f("Matrix3f");
     
     class_<Isometry3f>("Isometry3f", init<>())
+        .def(init<const Isometry3f&>())
+        .def(init<Isometry3f>())
         .def_readonly("IsDouble", false)
         .def("rotation", &Isometry3f::rotation)
         .def("translation", make_function(Isometry3f_translation3))

@@ -8,7 +8,7 @@ if __name__ == "__main__":
     datasetDir = ''
     #defaultDatasetDir = '/windows/E/Datasets/rgbd_dataset_freiburg2_pioneer_slam/'
     defaultDatasetDir = '/home/kourosh/projects/ksrobot/build/bin/'
-    defaultSaveDir = '/home/kourosh/test/pointclouds/lab/'
+    defaultSaveDir = '/home/kourosh/test/pointclouds/corridor_lab_to_dr_jamzad/'
     
     po = common.ProgramOptions()
     
@@ -56,10 +56,10 @@ if __name__ == "__main__":
         if kinect.RunSingleCycle() == False:
             print 'Kinect dataset finished.'
             break
-        
-        #fovis.RunSingleCycle()
+        #print 'after kinect'
+        fovis.RunSingleCycle()
         pc = kinect.GetPointCloud()
-        #pcl.removeNaNFromPointCloud(pc, pc)
+        pcl.removeNaNFromPointCloud(pc, pc)
         
         filteredCloud = common.KinectPointCloud()
         if voxelEnabled:
@@ -74,8 +74,10 @@ if __name__ == "__main__":
             passFilter.setInputCloud(filteredCloud)
             passFilter.filter(filteredCloud)
         
-        
+        #print 'after filter'
         saveFile = os.path.join(saveDir, str(i) + '.pcd')
         pcl.io.savePCDFileBinaryCompressed(saveFile, filteredCloud)
+        #print 'after save'
         
     po.SaveToFile(xmlConfigFile)
+

@@ -32,6 +32,8 @@
 #include <boost/signals2.hpp>
 #include <vector>
 
+#include <iostream>
+
 namespace KSRobot
 {
 namespace common
@@ -181,6 +183,11 @@ protected:
     KinectRgbImage::ConstPtr                    mCurrRgb;
     KinectRawDepthImage::ConstPtr               mCurrRawDepth;
     KinectFloatDepthImage::ConstPtr             mCurrFloatDepth;
+    
+    KinectPointCloud::ConstPtr                  mPrevPointCloud;
+    KinectRgbImage::ConstPtr                    mPrevRgb;
+    KinectRawDepthImage::ConstPtr               mPrevRawDepth;
+    KinectFloatDepthImage::ConstPtr             mPrevFloatDepth;    
     
     boost::signals2::signal<void(const VisualKeyframe::Ptr)>             mKeyframeReceivers;
     Timer::Ptr                                  mOdomTimer;

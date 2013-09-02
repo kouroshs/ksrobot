@@ -6,3 +6,5 @@ add_subdirectory(kinect_capture)
 
 file(GLOB PYTHON_FILES *.py)
 file(COPY ${PYTHON_FILES} DESTINATION ../bin)
+
+add_subdirectory(tests)

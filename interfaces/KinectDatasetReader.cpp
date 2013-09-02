@@ -330,16 +330,21 @@ void KinectDatasetReader::CorrespondGroundTruths()
 
 bool KinectDatasetReader::RunSingleCycle()
 {
+//     std::cout << "(KinectDatasetReader::RunSingleCycle) before lock\n" << std::flush;
+//     
     common::Interface::ScopedLock lock(this);
     
+//     std::cout << "(KinectDatasetReader::RunSingleCycle) begin\n" << std::flush;
     if( GetCycle() >= (int)mRGBFiles.FileNames.size() )
     {
         mContinueExec = false; // finish execution of kinect.
         return false;
     }
     
+//     std::cout << "(KinectDatasetReader::RunSingleCycle) read files = " << mReadFiles << "\n" << std::flush;    
     if( mReadFiles )
         LoadNextFiles();
+//     std::cout << "(KinectDatasetReader::RunSingleCycle) before finish \n" << std::flush;        
     FinishCycle();
     return true;
 }
@@ -387,6 +392,12 @@ bool KinectDatasetReader::ProvidesGroundTruth()
 {
     return mProvidesGroundTruth;
 }
+
+void KinectDatasetReader::StartFromCycle(int cycle)
+{
+    mCycles = cycle;
+}
+
 
 
 } // end namespace utils

@@ -9,8 +9,8 @@ if __name__ == "__main__":
     xmlConfigFile = 'build_pcd_file_settings.xml'
     datasetDir = ''
     #defaultDatasetDir = '/windows/E/Datasets/rgbd_dataset_freiburg2_pioneer_slam/'
-    defaultDatasetDir = '/home/kourosh/test/pointclouds/corridors1_ground_palne_extraction_test/'
-    defaultSaveDir = '/home/kourosh/test/pointclouds/corridors1_ground_palne_extraction_test/'
+    defaultDatasetDir = '/home/kourosh/test/pointclouds/lab_corridor_full_1/'
+    defaultSaveDir = '/home/kourosh/test/pointclouds/lab_corridor_full_1/'
     
     po = common.ProgramOptions()
     
@@ -50,16 +50,16 @@ if __name__ == "__main__":
     maxCycles = po.GetInt('MaxCycles', 10)
     
     final_pc = common.KinectPointCloud()
+    tmp_pc = common.KinectPointCloud()
     
-    for i in xrange(0, maxCycles):
+    for i in xrange(0, 100):
         print 'Cycle ', i
         if kinect.RunSingleCycle() == False:
             print 'Kinect dataset finished.'
             break
-        
+            
         fovis.RunSingleCycle()
         pc = kinect.GetPointCloud()
-        #pcl.removeNaNFromPointCloud(pc, pc)
         
         filteredCloud = common.KinectPointCloud()
         if voxelEnabled:
@@ -71,11 +71,19 @@ if __name__ == "__main__":
             filteredCloud = pc
             
         if passEnabled:
+            filteredCloud2 = common.KinectPointCloud()
             passFilter.setInputCloud(filteredCloud)
-            passFilter.filter(filteredCloud)
-        
-        pcl.transformPointCloud(filteredCloud, filteredCloud, fovis.GetGlobalPose())
+            passFilter.filter(filteredCloud2)
+            filteredCloud.clear()
+            pcl.MergePointClouds(filteredCloud, filteredCloud2)
+
+        print 'aaaaa'
+        pose = fovis.GetGlobalPose()
+        print 'bbbb'
+        pcl.transformPointCloud(filteredCloud, filteredCloud, pose)
+        print 'after transformPointCloud'
         pcl.MergePointClouds(final_pc, filteredCloud)
+        print 'after merge'
         #saveFile = os.path.join(saveDir, str(i) + '.pcd')
         #pcl.io.savePCDFileBinaryCompressed(saveFile, filteredCloud)
         

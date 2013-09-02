@@ -216,9 +216,9 @@ void RobXControl::Stop()
 
 void RobXControl::Forward(int cm, float speed_index)
 {
-    int encoder_amount = (int)(cm * 24.8);
-    int speed_amount = (int)(128 - speed_index * 10);
-    //int speed_amount2 = (int)(128 - speed_index * 10);
+    int encoder_amount = (-1) * (int)(cm * 24.8);
+    int speed_amount = (int)(128 + speed_index * 10);
+    //int speed_amoufnt2 = (int)(128 + speed_index * 10);
     
     SET_CURR_FN;
     
@@ -239,9 +239,9 @@ void RobXControl::Forward(int cm, float speed_index)
 
 void RobXControl::Backward(int cm, float speed_index)
 {
-    int encoder_amount = (-1) * (int)(cm * 24.8);
-    int speed_amount = (int)(128 + speed_index * 10);
-    //int speed_amoufnt2 = (int)(128 + speed_index * 10);
+    int encoder_amount = (int)(cm * 24.8);
+    int speed_amount = (int)(128 - speed_index * 10);
+    //int speed_amount2 = (int)(128 - speed_index * 10);
 
     SET_CURR_FN;
     
@@ -261,9 +261,9 @@ void RobXControl::Backward(int cm, float speed_index)
 
 void RobXControl::TurnLeft(int degree, float speed_index)
 {
-    int encoder_amount = degree * 11;
-    int speed_amount1 = (int)(speed_index * 10 + 128);
-    int speed_amount2 = (int)(128 - speed_index * 10);
+    int encoder_amount = -1 * degree * 11;
+    int speed_amount1 = (int)(128 - speed_index * 10);
+    int speed_amount2 = (int)(speed_index * 10 + 128);
     
     SET_CURR_FN;
     
@@ -288,9 +288,9 @@ void RobXControl::TestTurn(int si1, int si2)
 
 void RobXControl::TurnRight(int degree, float speed_index)
 {
-    int encoder_amount = -1 * degree * 11;
-    int speed_amount1 = (int)(128 - speed_index * 10);
-    int speed_amount2 = (int)(speed_index * 10 + 128);
+    int encoder_amount = degree * 11;
+    int speed_amount1 = (int)(speed_index * 10 + 128);
+    int speed_amount2 = (int)(128 - speed_index * 10);
     
     SET_CURR_FN;
     

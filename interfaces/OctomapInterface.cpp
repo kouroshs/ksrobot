@@ -30,6 +30,9 @@
 #include <pcl/filters/voxel_grid.h>
 
 
+#include <sstream>
+#include <pcl/io/pcd_io.h>
+
 #define DEFAULT_USE_COLOR                           false
 #define DEFAULT_MAP_RESOLUTION                      0.1
 #define DEFAULT_MAX_RANGE                           4.0
@@ -220,6 +223,17 @@ bool OctomapInterface::RunSingleCycle()
         }
         if( mGroundFilter.Enabled && ExtractGroundPlane(*mFilteredCloud, *mGroundPC, *mNonGroundPC) )
         {
+//             try
+//             {
+//                 std::stringstream ss1,ss2;
+//                 ss1 << "ground_" << GetCycle() << ".pcd";
+//                 pcl::io::savePCDFileBinary(ss1.str(), *mGroundPC);
+//                 ss2 << "nonground_" << GetCycle() << ".pcd";
+//                 pcl::io::savePCDFileBinary(ss2.str(), *mNonGroundPC);
+//             }
+//             catch(...)
+//             {
+//             }
             //TODO: Should I Add ground plane points as non occupied? this could help with OccupancyGrid explorations.
             ConvertInternal(mNonGroundPC, mGroundPC, mi.Transform);
             UpdateMap(mNonGroundPC, mi.Transform.translation());
@@ -241,6 +255,7 @@ void OctomapInterface::ConvertInternal(common::KinectPointCloud::ConstPtr nongro
     mOctoNonGroundPoints.clear();
     if( mGroundFilter.AddGroundPointsAsFreeSpace && ground.get() != 0 )
     {
+        mOctoGroundPoints.clear();
         for(size_t i = 0; i < ground->size(); i++)
         {
             const common::KinectPointCloud::PointType& p = ground->at(i);
@@ -276,7 +291,9 @@ void OctomapInterface::ConvertInternal(common::KinectPointCloud::ConstPtr nongro
     const Eigen::Quaternionf eigen_rot(transform.linear());
     const Eigen::Vector3f translate = transform.translation();
     octomath::Quaternion rot(eigen_rot.w(), eigen_rot.x(), eigen_rot.y(), eigen_rot.z());
-    mOctoNonGroundPoints.transform(octomath::Pose6D(octomath::Vector3(translate[0], translate[1], translate[2]), rot));
+    octomath::Pose6D pose(octomath::Vector3(translate[0], translate[1], translate[2]), rot);
+    mOctoNonGroundPoints.transform(pose);
+    mOctoGroundPoints.transform(pose);
 }
 
 //TODO: What should I pass as compute update? 
@@ -344,6 +361,8 @@ void OctomapInterface::ConvertToOccupancyGrid(common::OccupancyMap::Ptr map, int
     map->ROI.Width = 0;
     map->ROI.Height = 0;
     
+    int axis1 = 0, axis2 = 2;
+    
     for(octomap::ColorOcTree::leaf_iterator iter = mOctree->begin_leafs(); iter != mOctree->end_leafs(); iter++)
     {
         if( !CheckHeight(iter) )
@@ -356,8 +375,8 @@ void OctomapInterface::ConvertToOccupancyGrid(common::OccupancyMap::Ptr map, int
         {
             numCellsMarked = 1;
             const octomap::OcTreeKey key = iter.getKey();
-            int i = key[0] - origin_key[0] + center_i;
-            int j = key[1] - origin_key[1] + center_j;
+            int i = key[axis1] - origin_key[axis1] + center_i;
+            int j = key[axis2] - origin_key[axis2] + center_j;
             
             assert(i >= 0 && j >= 0);
             if( map->IsValidPosition(i, j) )
@@ -371,10 +390,10 @@ void OctomapInterface::ConvertToOccupancyGrid(common::OccupancyMap::Ptr map, int
             numCellsMarked = intSize * intSize; // number of cells affected
             for(int dx = 0; dx < intSize; dx++)
             {
-                int i = minKey[0] + dx - origin_key[0] + center_i;
+                int i = minKey[axis1] + dx - origin_key[axis1] + center_i;
                 for(int dy = 0; dy < intSize; dy++)
                 {
-                    int j = minKey[1] + dy - origin_key[1] + center_j;
+                    int j = minKey[axis2] + dy - origin_key[axis2] + center_j;
                     assert(i >= 0 && j >= 0);
                     if( map->IsValidPosition(i, j) )
                         PutValueToMap(map, i, j, occVal);
@@ -443,10 +462,10 @@ bool OctomapInterface::ExtractGroundPlane(const common::KinectPointCloud& pc, co
         extract.setInputCloud(filtered_cloud.makeShared());
         extract.setIndices(inliers);
         
-//         Debug("Plane found with coefs: (%f, %f, %f, %f)\n", coefficients->values[0], coefficients->values[1], coefficients->values[2],
-//               coefficients->values[3]);
+        Debug("Plane found with coefs: (%f, %f, %f, %f)\n", coefficients->values[0], coefficients->values[1], coefficients->values[2],
+               coefficients->values[3]);
         
-        if( std::abs(coefficients->values.at(3)) < mGroundFilter.PlaneDistance )
+        if( std::abs(coefficients->values.at(3)) > mGroundFilter.PlaneDistance )
         {
             extract.setNegative(false);
             extract.filter(ground);

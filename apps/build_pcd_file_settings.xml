@@ -25,7 +25,7 @@
     <Enabled>true</Enabled>
     <FieldName>z</FieldName>
 </PassThrough>
-<MaxCycles>10</MaxCycles>
+<MaxCycles>1000</MaxCycles>
 <Octomap>
     <Logger>
         <Enabled>true</Enabled>

@@ -24,6 +24,9 @@
 #include <fovis/visual_odometry.hpp>
 #include <fovis/depth_image.hpp>
 
+// #include <pcl/registration/gicp.h>
+#include <pcl/registration/icp.h>
+
 #define SAFE_DELETE(x) if(x) delete (x);
 
 namespace KSRobot
@@ -46,7 +49,7 @@ FovisInterface::~FovisInterface()
     SAFE_DELETE(mFovis);
     SAFE_DELETE(mRectification);
     SAFE_DELETE(mGrayImage);
-    SAFE_DELETE(mRectification);
+    SAFE_DELETE(mDepthImage);
 }
 
 void FovisInterface::InitInternal(const common::KinectInterface::CameraParameters& kinectParams, const fovis::VisualOdometryOptions& options)
@@ -86,6 +89,8 @@ void FovisInterface::RegisterToKinect(common::KinectInterface::Ptr ki)
     InitInternal(mKinect->GetCameraParams(), fovis::VisualOdometry::getDefaultOptions());
 }
 
+pcl::IterativeClosestPoint<common::KinectPointCloud::PointType, common::KinectPointCloud::PointType> icp;
+
 bool FovisInterface::RunSingleCycle()
 {
     if( VisualOdometryInterface::RunSingleCycle() == false )
@@ -122,10 +127,37 @@ bool FovisInterface::RunSingleCycle()
 
     mOdomTimer->Start();
         mFovis->processFrame(mGrayImage, mDepthImage);
-        mMotion->MotionEstimate = mFovis->getMotionEstimate().cast<float>();
+        //NOTE:
+        if( Converged() )
+            mMotion->MotionEstimate = mFovis->getMotionEstimate().cast<float>();
+//         else if( GetCycle() > 1 )
+//         {
+// //             std::cout << "FAILED WITH: " << fovis::MotionEstimateStatusCodeStrings[mFovis->getMotionEstimateStatus()] << "     "
+// //             << "prev " << mFovis->getReferenceFrame()->getNumKeypoints() << "   " << mFovis->getReferenceFrame()->getNumDetectedKeypoints() <<
+// //             " curr " << mFovis->getTargetFrame()->getNumKeypoints() << "   " << mFovis->getTargetFrame()->getNumDetectedKeypoints() << "\n\t"
+// //             << mFovis->getMotionEstimator()->getNumMatches() << "  " << mFovis->getMotionEstimator()->getNumInliers() <<
+// //             std::endl << std::flush;
+// //             //pcl::GeneralizedIterativeClosestPoint<common::KinectPointCloud::PointType, common::KinectPointCloud::PointType> icp;
+// //             pcl::IterativeClosestPoint<common::KinectPointCloud::PointType, common::KinectPointCloud::PointType> icp;
+//             icp.setInputSource(mPrevPointCloud);
+//             icp.setInputTarget(mCurrPointCloud);
+//             common::KinectPointCloud final_pc;
+//             icp.align(final_pc);
+//             if( icp.hasConverged() )
+//             {
+//                 std::cout << "true\n" << std::flush;
+//                 mMotion->MotionEstimate = icp.getFinalTransformation();
+//             }
+//             else
+//             {
+//                 std::cout << "false\n" << std::flush;
+//             }
+//         }
     mOdomTimer->Stop();
 
     FinishCycle();
+    
+    //mMotion->GlobalPose = mFovis->getPose().cast<float>();
     return true;
 }
 
