@@ -22,75 +22,74 @@ public:
     
     static const int Channels = NumChannels;
 public:
-    KinectBaseImage(int w, int h) : mWidth(w), mHeight(h) { Create(mWidth, mHeight); }
+    KinectBaseImage(int w, int h) : mWidth(0), mHeight(0) { Create(w, h); }
     KinectBaseImage() : mWidth(0), mHeight(0) {;}
     KinectBaseImage(const KinectBaseImage<X, NumChannels>& o) : mWidth(o.GetWidth()), mHeight(o.GetHeight()),
                                                                 mData(GetArray()) {;}
     ~KinectBaseImage(){;}
 
-    void Create(int w, int h)
+    inline void Create(int w, int h)
     {
-        if( mWidth * mHeight != w * h /*mWidth != w || mHeight != h*/ )
+        if( mWidth != w || mHeight != h )
         {
             //recreate the array
             mWidth = w;
             mHeight = h;
-            //mData.reset(new X[w * h * NumChannels]);
             mData.resize(w * h * NumChannels);
         }
     }
 
-    const ArrayType& GetArray() const
+    inline const ArrayType& GetArray() const
     {
         return mData;
     }
     
-    ArrayType& GetArray()
+    inline ArrayType& GetArray()
     {
         return mData;
     }
 
-    const X& At(int index) const
+    inline const X& At(int index) const
     {
         return mData[index];
     }
     
-    X& At(int index)
+    inline X& At(int index)
     {
         return mData[index];
     }
     
-    int GetWidth() const
+    inline int GetWidth() const
     {
         return mWidth;
     }
     
-    int GetStride() const
+    inline int GetStride() const
     {
         return mWidth * sizeof(X) * NumChannels;
     }
     
-    int GetHeight() const
+    inline int GetHeight() const
     {
         return mHeight;
     }
 
-    int GetNumElements() const
+    inline int GetNumElements() const
     {
         return mHeight * mWidth * Channels;
     }
     
-    size_t ScanLineIndex(int y) const
+    inline size_t ScanLineIndex(int y) const
     {
         return y * mWidth * NumChannels;
     }
     
-    static size_t NextIndexUnsafe(size_t idx)
+    inline static size_t NextIndexUnsafe(size_t idx)
     {
         return idx + NumChannels;
     }
     
-    size_t GetElementStartIndex(int x, int y) const
+    inline size_t GetElementStartIndex(int x, int y) const
     {
         return ScanLineIndex(y) + x * NumChannels;
     }
@@ -102,6 +101,7 @@ private:
 };
 
 typedef KinectBaseImage<unsigned char, 3>               KinectRgbImage;
+typedef KinectBaseImage<unsigned char, 1>               KinectGrayImage;
 typedef KinectBaseImage<unsigned short, 1>              KinectRawDepthImage;
 typedef KinectBaseImage<float, 1>                       KinectFloatDepthImage;
 

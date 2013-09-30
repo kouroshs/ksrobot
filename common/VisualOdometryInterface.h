@@ -132,9 +132,17 @@ public:
     // methods useful for when we are inside OnCycleFinished event.
     inline KinectPointCloud::ConstPtr           GetCurrentPointCloud() const;
     inline KinectRgbImage::ConstPtr             GetCurrentRgbImage() const;
+    inline KinectGrayImage::ConstPtr            GetCurrentGrayImage() const;
     inline KinectRawDepthImage::ConstPtr        GetCurrentRawDepthImage() const;
     inline KinectFloatDepthImage::ConstPtr      GetCurrentFloatDepthImage() const;
     
+    inline KinectPointCloud::ConstPtr           GetPreviousPointCloud() const;
+    inline KinectRgbImage::ConstPtr             GetPreviousRgbImage() const;
+    inline KinectGrayImage::ConstPtr            GetPreviousGrayImage() const;
+    inline KinectRawDepthImage::ConstPtr        GetPreviousRawDepthImage() const;
+    inline KinectFloatDepthImage::ConstPtr      GetPreviousFloatDepthImage() const;
+
+
     inline bool                                 KeyframeDescriptorPublishingEnabled() const;
     inline void                                 EnableKeyframeDescriptorPublishing(bool enable);
 
@@ -181,11 +189,13 @@ protected:
     
     KinectPointCloud::ConstPtr                  mCurrPointCloud;
     KinectRgbImage::ConstPtr                    mCurrRgb;
+    KinectGrayImage::ConstPtr                   mCurrGray;
     KinectRawDepthImage::ConstPtr               mCurrRawDepth;
     KinectFloatDepthImage::ConstPtr             mCurrFloatDepth;
     
     KinectPointCloud::ConstPtr                  mPrevPointCloud;
     KinectRgbImage::ConstPtr                    mPrevRgb;
+    KinectGrayImage::ConstPtr                   mPrevGray;
     KinectRawDepthImage::ConstPtr               mPrevRawDepth;
     KinectFloatDepthImage::ConstPtr             mPrevFloatDepth;    
     
@@ -257,6 +267,36 @@ inline KinectRawDepthImage::ConstPtr VisualOdometryInterface::GetCurrentRawDepth
 inline KinectRgbImage::ConstPtr VisualOdometryInterface::GetCurrentRgbImage() const
 {
     return mCurrRgb;
+}
+
+inline KinectGrayImage::ConstPtr VisualOdometryInterface::GetCurrentGrayImage() const
+{
+    return mCurrGray;
+}
+
+inline KinectFloatDepthImage::ConstPtr VisualOdometryInterface::GetPreviousFloatDepthImage() const
+{
+    return mPrevFloatDepth;
+}
+
+inline KinectPointCloud::ConstPtr VisualOdometryInterface::GetPreviousPointCloud() const
+{
+    return mPrevPointCloud;
+}
+
+inline KinectRawDepthImage::ConstPtr VisualOdometryInterface::GetPreviousRawDepthImage() const
+{
+    return mPrevRawDepth;
+}
+
+inline KinectRgbImage::ConstPtr VisualOdometryInterface::GetPreviousRgbImage() const
+{
+    return mPrevRgb;
+}
+
+inline KinectGrayImage::ConstPtr VisualOdometryInterface::GetPreviousGrayImage() const
+{
+    return mCurrGray;
 }
 
 inline boost::signals2::connection VisualOdometryInterface::RegisterKeyframeReceiver(boost::function<void(const VisualKeyframe::Ptr)> fn)

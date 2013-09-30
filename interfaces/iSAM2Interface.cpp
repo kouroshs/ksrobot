@@ -141,7 +141,7 @@ void iSAM2Interface::AddKeyframe(const common::VisualKeyframe::Ptr kf)
     }
 }
 
-void iSAM2Interface::AddLoopClosure(const common::LoopDetector::LoopClosure& lc)
+void iSAM2Interface::AddLoopClosure(const common::LoopDetectorInterface::LoopClosure& lc)
 {
     //NOTE: For loop closure, both frames should have been visited and exist inside the graph.
     if( mSeenCycles.find(lc.Cycle1) == mSeenCycles.end() || mSeenCycles.find(lc.Cycle2) == mSeenCycles.end() )

@@ -50,12 +50,14 @@ public:
     KinectInterface();
     virtual ~KinectInterface();
 
+    virtual void                                ReadSettings(ProgramOptions::Ptr po);
     virtual void                                Initialize(const std::string& device) = 0;
     
     //NOTE: Before calling any of these functions, you have to call LockData()
     // Also you should make a copy of the data.
     inline KinectPointCloud::ConstPtr           GetPointCloud() const;
     inline KinectRgbImage::ConstPtr             GetRgbImage() const;
+    inline KinectGrayImage::ConstPtr            GetGrayImage() const;
     inline KinectRawDepthImage::ConstPtr        GetRawDepthImage() const;
     inline KinectFloatDepthImage::ConstPtr      GetFloatDepthImage() const;
     
@@ -82,14 +84,22 @@ public:
                                                                    KinectRawDepthImage::Ptr depth, 
                                                                    const CameraParameters& camParams);
 protected:
+    void                                        GenerateGrayImage();
+    
+protected:
     KinectPointCloud::Ptr                       mPC;
     KinectRgbImage::Ptr                         mRgb;
+    KinectGrayImage::Ptr                        mGray;
     KinectRawDepthImage::Ptr                    mRawDepth;
     KinectFloatDepthImage::Ptr                  mFloatDepth;
     
     bool                                        mGeneratePointCloud;
     bool                                        mGenerateFloatDepth;
     
+    
+    float                                       mRedCoef;
+    float                                       mGreenCoef;
+    float                                       mBlueCoef;
     CameraParameters                            mParams;
 };
 
@@ -101,6 +111,11 @@ inline KinectPointCloud::ConstPtr KinectInterface::GetPointCloud() const
 inline KinectRgbImage::ConstPtr KinectInterface::GetRgbImage() const
 {
     return mRgb;
+}
+
+inline KinectGrayImage::ConstPtr KinectInterface::GetGrayImage() const
+{
+    return mGray;
 }
 
 inline KinectRawDepthImage::ConstPtr KinectInterface::GetRawDepthImage() const

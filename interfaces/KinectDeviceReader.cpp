@@ -91,6 +91,8 @@ void KinectDeviceReader::RGBDCallback(const boost::shared_ptr<openni_wrapper::Im
     rgb->fillRGB(rgb->getWidth(), rgb->getHeight(), mRgb->GetArray().data());
     depth->fillDepthImageRaw(depth->getWidth(), depth->getHeight(), mRawDepth->GetArray().data());
     
+    GenerateGrayImage();
+
     if( mGenerateFloatDepth )
     {
         mFloatDepth.reset(new common::KinectFloatDepthImage());

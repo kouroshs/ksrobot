@@ -21,16 +21,16 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(EIGEN REQUIRED eigen3)
 find_package(OpenCV REQUIRED)
 find_package(Boost COMPONENTS system filesystem thread date_time program_options chrono python REQUIRED)
-set(QT_QMAKE_EXECUTABLE "/usr/bin/qmake-qt4")
+#set(QT_QMAKE_EXECUTABLE "/usr/bin/qmake-qt4")
 find_package(Qt4 COMPONENTS QtCore QtGui QtNetwork REQUIRED)
 
-find_package(PythonLibs 2.7.4 REQUIRED)
+find_package(PythonLibs 2.7.3 REQUIRED)
 find_package(OMPL REQUIRED)
 #TODO: For my system there is a bug which causes cmake to include python 2.7 include filesystem
 #      but link to 3.2 libraries. Should be tested for each system and the following lines should be
 #      removed and the above find_package should be un-commented.
-set(PYTHON_LIBRARIES "/usr/lib/python2.7/config-x86_64-linux-gnu/libpython2.7.so")
-set(PYTHON_INCLUDE_DIRS "/usr/include/python2.7/")
+#set(PYTHON_LIBRARIES "/usr/lib/python2.7/config-x86_64-linux-gnu/libpython2.7.so")
+#set(PYTHON_INCLUDE_DIRS "/usr/include/python2.7/")
 
 
 find_package(OpenNI REQUIRED)
@@ -68,10 +68,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
 
 #TODO: ADD LIBPMK OPTIONS
-set(LIBPMK_PATH "/home/kourosh/soft/libpmk")
-include_directories(/home/kourosh/soft/libpmk/libpmk2 /home/kourosh/soft/libpmk/avt /home/kourosh/soft/libpmk/)
-
-message(STATUS ${OpenCV_LIBS})
+#set(LIBPMK_PATH "/home/kourosh/soft/libpmk")
+#include_directories(/home/kourosh/soft/libpmk/libpmk2 /home/kourosh/soft/libpmk/avt /home/kourosh/soft/libpmk/)
 
 add_subdirectory(common)
 add_subdirectory(interfaces)

@@ -46,7 +46,7 @@ void SLAMInterface::ReadFromFile(const std::string& filename)
     (void)filename;
 }
 
-void SLAMInterface::OnLoopDetected(const LoopDetector::LoopClosure& lc)
+void SLAMInterface::OnLoopDetected(const LoopDetectorInterface::LoopClosure& lc)
 {
     SLAMDataArrival da;
     da.IsLoopClosure = true;
@@ -54,7 +54,7 @@ void SLAMInterface::OnLoopDetected(const LoopDetector::LoopClosure& lc)
     mUnprocessedData.push(da);
 }
 
-void SLAMInterface::RegisterToLoopDetector(LoopDetector::Ptr ld)
+void SLAMInterface::RegisterToLoopDetector(LoopDetectorInterface::Ptr ld)
 {
     ld->RegisterLoopReceiver(boost::bind(&SLAMInterface::OnLoopDetected, this, _1));
 }

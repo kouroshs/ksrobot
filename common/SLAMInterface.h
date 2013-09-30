@@ -23,7 +23,7 @@
 
 #include <common/Interface.h>
 #include <common/VisualOdometryInterface.h>
-#include <common/LoopDetector.h>
+#include <common/LoopDetectorInterface.h>
 #include <tbb/concurrent_queue.h>
 #include <Eigen/Geometry>
 //NOTE: For now this is implemented using gtsam. maybe later extend the interface inside interfaces?
@@ -47,23 +47,23 @@ public:
     virtual void                                ReadFromFile(const std::string& filename);
     
     void                                        RegisterToVO(VisualOdometryInterface::Ptr vo);
-    void                                        RegisterToLoopDetector(LoopDetector::Ptr ld);
+    void                                        RegisterToLoopDetector(LoopDetectorInterface::Ptr ld);
     virtual bool                                RunSingleCycle();
 private:
     void                                        OnKeyframeDetected(const VisualKeyframe::Ptr kf);
-    void                                        OnLoopDetected(const LoopDetector::LoopClosure& lc);// called from visual odometry
+    void                                        OnLoopDetected(const LoopDetectorInterface::LoopClosure& lc);// called from visual odometry
 protected:
     virtual void                                AddKeyframe(const VisualKeyframe::Ptr kf) { (void)kf;}
-    virtual void                                AddLoopClosure(const LoopDetector::LoopClosure& lc) { (void)lc;}
+    virtual void                                AddLoopClosure(const LoopDetectorInterface::LoopClosure& lc) { (void)lc;}
     virtual void                                Update() {;} // called if AddKeyframe and AddLoopClosure need finilization code to perform.
     virtual void                                FinishCycle();
 protected:
     struct SLAMDataArrival
     {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-        LoopDetector::LoopClosure       Loop;
-        VisualKeyframe::Ptr             Keyframe;
-        bool                            IsLoopClosure;
+        LoopDetectorInterface::LoopClosure          Loop;
+        VisualKeyframe::Ptr                         Keyframe;
+        bool                                        IsLoopClosure;
     };
     
     VisualOdometryInterface::Ptr                                        mVO;

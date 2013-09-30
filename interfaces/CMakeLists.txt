@@ -1,6 +1,6 @@
 include_directories(../)
 
-set(INTERFACES_SRCS RRTPlanner.cpp OctomapInterface.cpp ICPInterface.cpp iSAM2Interface.cpp FovisInterface.cpp KinectDatasetReader.cpp 
+set(INTERFACES_SRCS LoopDetectorAVT.cpp RRTPlanner.cpp OctomapInterface.cpp ICPInterface.cpp iSAM2Interface.cpp FovisInterface.cpp KinectDatasetReader.cpp 
 KinectDeviceReader.cpp MTEngine.cpp SerialEngine.cpp)
 
 link_directories("${LIBPMK_PATH}/libpmk2/build ${LIBPMK_PATH}/avt/build")

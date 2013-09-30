@@ -64,12 +64,14 @@ bool VisualOdometryInterface::RunSingleCycle()
     
     mPrevPointCloud = mCurrPointCloud;
     mPrevRgb = mCurrRgb;
+    mPrevGray = mCurrGray;
     mPrevRawDepth = mCurrRawDepth;
     mPrevFloatDepth = mCurrFloatDepth;
     
     mCurrFloatDepth = mKinect->GetFloatDepthImage();
     mCurrRawDepth = mKinect->GetRawDepthImage();
     mCurrRgb = mKinect->GetRgbImage();
+    mCurrGray = mKinect->GetGrayImage();
     mCurrPointCloud = mKinect->GetPointCloud();
     
     mLastKinectCycle = mKinect->GetCycle();

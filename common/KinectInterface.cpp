@@ -9,13 +9,39 @@ namespace common
 
 KinectInterface::KinectInterface() : Interface(), mPC(new KinectPointCloud()),
     mRgb(new KinectRgbImage()), mRawDepth(new KinectRawDepthImage()), mFloatDepth(new KinectFloatDepthImage()),
-    mGeneratePointCloud(true), mGenerateFloatDepth(true)
+    mGeneratePointCloud(true), mGenerateFloatDepth(true), mRedCoef(0.2125), mGreenCoef(0.7154), mBlueCoef(0.0721)
 {
     memset(&mParams, 0, sizeof(mParams));
 }
 
 KinectInterface::~KinectInterface()
 {
+}
+
+void KinectInterface::ReadSettings(ProgramOptions::Ptr po)
+{
+    Interface::ReadSettings(po);
+    
+    mRedCoef    = po->GetDouble("RGB2Gray.RedCoef", 0.2125);
+    mGreenCoef  = po->GetDouble("RGB2Gray.GreenCoef", 0.7154);
+    mBlueCoef   = po->GetDouble("RGB2Gray.BlueCoef", 0.0721);
+}
+
+void KinectInterface::GenerateGrayImage()
+{
+    // Generates the gray image after rgb image has been captured.
+    mGray.reset(new KinectGrayImage(mRgb->GetWidth(), mRgb->GetHeight()));
+    const KinectRgbImage::ArrayType& src = mRgb->GetArray();
+    KinectGrayImage::ArrayType& dst = mGray->GetArray();
+    const size_t count = mGray->GetWidth() * mGray->GetHeight();
+    
+    for(size_t i = 0; i < count; i++)
+    {
+        const size_t startIndex = i * 3;
+        dst[i] = (int)roundf(mRedCoef * src[startIndex] + 
+                                mGreenCoef * src[startIndex + 1] + 
+                                mBlueCoef * src[startIndex + 2]);
+    }
 }
 
 KinectPointCloud::Ptr KinectInterface::GeneratePointCloudFromImages(KinectRgbImage::Ptr rgb, 

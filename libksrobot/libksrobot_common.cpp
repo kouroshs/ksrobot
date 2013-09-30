@@ -6,7 +6,7 @@
 #include <common/EngineInterface.h>
 #include <common/KinectImage.h>
 #include <common/KinectInterface.h>
-#include <common/LoopDetector.h>
+#include <common/LoopDetectorInterface.h>
 #include <common/MappingInterface.h>
 #include <common/ProgramOptions.h>
 #include <common/SLAMInterface.h>
@@ -312,16 +312,16 @@ void ExportCommon()
     
     {
         scope loop_detector_scope = 
-        class_<LoopDetector, LoopDetector::Ptr, bases<Interface>, boost::noncopyable>("LoopDetector", init<>())
-            .def("RegisterToVO", &LoopDetector::RegisterToVO)
-            .def("RunSingleCycle", &LoopDetector::RunSingleCycle)
-            .def("ReadSettings", &LoopDetector::ReadSettings)
+        class_<LoopDetectorInterface, LoopDetectorInterface::Ptr, bases<Interface>, boost::noncopyable>("LoopDetectorInterface", no_init)
+            .def("RegisterToVO", &LoopDetectorInterface::RegisterToVO)
+            .def("RunSingleCycle", &LoopDetectorInterface::RunSingleCycle)
+            .def("ReadSettings", &LoopDetectorInterface::ReadSettings)
         ;
         
-        class_<LoopDetector::LoopClosure>("LoopClosure", init<>())
-            .def_readwrite("Transform", &LoopDetector::LoopClosure::Transform)
-            .def_readwrite("Cycle1", &LoopDetector::LoopClosure::Cycle1)
-            .def_readwrite("Cycle2", &LoopDetector::LoopClosure::Cycle2)
+        class_<LoopDetectorInterface::LoopClosure>("LoopClosure", init<>())
+            .def_readwrite("Transform", &LoopDetectorInterface::LoopClosure::Transform)
+            .def_readwrite("Cycle1", &LoopDetectorInterface::LoopClosure::Cycle1)
+            .def_readwrite("Cycle2", &LoopDetectorInterface::LoopClosure::Cycle2)
             ;
     }
 }

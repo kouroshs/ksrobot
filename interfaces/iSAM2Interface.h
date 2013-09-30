@@ -49,7 +49,7 @@ public:
     
 protected:
     virtual void                AddKeyframe(const common::VisualKeyframe::Ptr kf);
-    virtual void                AddLoopClosure(const common::LoopDetector::LoopClosure& lc);
+    virtual void                AddLoopClosure(const common::LoopDetectorInterface::LoopClosure& lc);
     virtual void                Update();
     
     static gtsam::Vector        ReadSigmas(common::ProgramOptions::Ptr po);

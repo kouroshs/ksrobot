@@ -355,6 +355,8 @@ void KinectDatasetReader::LoadNextFiles()
     
     mRgb = common::KinectImageDiskIO::LoadRgbFromFile(mRGBFiles.FileNames[GetCycle()]);
     mRawDepth = common::KinectImageDiskIO::LoadDepthFromFile(mDepthFiles.FileNames[GetCycle()]);
+
+    GenerateGrayImage();
     
     if( mGenerateFloatDepth )
     {
