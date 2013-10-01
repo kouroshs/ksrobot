@@ -67,6 +67,8 @@ protected:
     bool                                        mHeightSet;
     float                                       mRobotHeight;
     float                                       mRobotRadius;
+    
+    CLASS_DEF_PYEXPORT;
 };
 
 } // end namespace common

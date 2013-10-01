@@ -2,6 +2,7 @@
 #define KSROBOT_COMMON_KINECT_KINECTIMAGE_H
 
 #include <boost/shared_ptr.hpp>
+#include <common/Defenitions.h>
 #include <vector>
 
 namespace KSRobot
@@ -113,6 +114,8 @@ public:
     
     static KinectRgbImage::Ptr          LoadRgbFromFile(const std::string& file);
     static KinectRawDepthImage::Ptr     LoadDepthFromFile(const std::string& file);
+    
+    CLASS_DEF_PYEXPORT;
 };
 
 } // end of namespace utils

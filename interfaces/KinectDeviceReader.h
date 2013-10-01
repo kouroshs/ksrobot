@@ -41,6 +41,8 @@ private:
 private:
     class GrabberHelper;
     boost::shared_ptr<GrabberHelper>       mGrabber;
+    
+    CLASS_DEF_PYEXPORT;
 };
 
 } // end namespace utils

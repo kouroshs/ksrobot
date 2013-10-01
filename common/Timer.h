@@ -66,6 +66,8 @@ private:
             boost::accumulators::tag::max, boost::accumulators::tag::mean, boost::accumulators::tag::moment<2> > > AccType;
     
     AccType                     mAccumulator;
+    
+    CLASS_DEF_PYEXPORT;
 };
 
 inline double Timer::GetAverageTime() const

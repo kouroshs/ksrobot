@@ -5,25 +5,24 @@
 #include <stdio.h>
 
 using namespace Eigen;
-
+using namespace boost::python;
 
 class DummyScopeClass_Eigen
 {
 };
 
+// static Quaternionf CastQToFloat(const Quaterniond& q)
+// {
+//     return q.cast<float>();
+// }
 
-Quaternionf CastQToFloat(const Quaterniond& q)
-{
-    return q.cast<float>();
-}
-
-Quaterniond CastQToDouble(const Quaternionf& q)
-{
-    return q.cast<double>();
-}
+// static Quaterniond CastQToDouble(const Quaternionf& q)
+// {
+//     return q.cast<double>();
+// }
 
 template<class X>
-std::string QToString(const Quaternion<X>& q)
+static std::string QToString(const Quaternion<X>& q)
 {
     std::stringstream ss;
     ss << "(" << q.w() << ", " << q.x() << ", " << q.y() << ", "<< q.z() << ")";
@@ -31,15 +30,14 @@ std::string QToString(const Quaternion<X>& q)
 }
 
 template<class MatrixType>
-std::string MatrixToString(const MatrixType& m)
+static std::string MatrixToString(const MatrixType& m)
 {
     std::stringstream ss;
     ss << m;
     return ss.str();
 }
 
-
-void ExportMatrix3f(const char* name)
+static void ExportMatrix3f(const char* name)
 {
     using namespace boost::python;
     using namespace Eigen;
@@ -61,25 +59,25 @@ void ExportMatrix3f(const char* name)
 
 
 template<class X>
-void ExportVector3(const char* name)
+static void ExportVector3(const char* name)
 {
     Eigen::Vector3d a;
 }
 
 template <class X, class Y, int D>
-X GetV(const Y& v)
+static X GetV(const Y& v)
 {
     return v[D];
 }
 
 template<class X, class Y, int D>
-void SetV(Y& v, const X& x)
+static void SetV(Y& v, const X& x)
 {
     v[D] = x;
 }
 
 template<class X, int D>
-std::string VectorToString(const X& v)
+static std::string VectorToString(const X& v)
 {
     std::stringstream ss;
     ss << "(";
@@ -98,40 +96,40 @@ std::string VectorToString(const X& v)
 // }
 
 
-std::string IsometrydToString(const Isometry3d& x)
+// static std::string IsometrydToString(const Isometry3d& x)
+// {
+//     std::stringstream ss;
+//     ss << x.matrix();
+//     return ss.str();
+// }
+
+static std::string IsometryfToString(const Isometry3f& x)
 {
     std::stringstream ss;
     ss << x.matrix();
     return ss.str();
 }
 
-std::string IsometryfToString(const Isometry3f& x)
-{
-    std::stringstream ss;
-    ss << x.matrix();
-    return ss.str();
-}
-
-Isometry3d IsometryCastToDouble(const Isometry3f& iso)
+static Isometry3d IsometryCastToDouble(const Isometry3f& iso)
 {
     return iso.cast<double>();
 }
 
-Isometry3f IsometryCastToFloat(const Isometry3d& iso)
-{
-    return iso.cast<float>();
-}
+// static Isometry3f IsometryCastToFloat(const Isometry3d& iso)
+// {
+//     return iso.cast<float>();
+// }
 
-Vector3f Isometry3f_translation3(const Isometry3f& iso)
+static Vector3f Isometry3f_translation3(const Isometry3f& iso)
 {
     return iso.translation();
 }
 
-Vector4d Isometry3d_translation4(const Isometry3d& iso)
-{
-    Vector3d v = iso.translation();
-    return Vector4d(v[0], v[1], v[2], 1);
-}
+// static Vector4d Isometry3d_translation4(const Isometry3d& iso)
+// {
+//     Vector3d v = iso.translation();
+//     return Vector4d(v[0], v[1], v[2], 1);
+// }
 
 struct PyAngleAxisf
 {
@@ -271,15 +269,8 @@ static PyQuaternionf quaternion;
 
 static Vector3f unit_x = Vector3f::UnitX(), unit_y = Vector3f::UnitY(), unit_z = Vector3f::UnitZ();
 
-void ExportEigen()
+static void Define_Vector3f()
 {
-    using namespace boost::python;
-    using namespace Eigen;
-    scope namespace_scope = class_<DummyScopeClass_Eigen>("eigen");
-
-    angle_axis.Register();
-    quaternion.Register();
-    
     class_<Vector3f>("Vector3f", init<>())
         .def(init<float, float, float>())
         .add_property("x", make_function(GetV<float, Vector3d, 0>), make_function(SetV<float, Vector3d, 0>))
@@ -297,7 +288,10 @@ void ExportEigen()
         
         .def("__str__", make_function(VectorToString<Vector3f, 3>))
     ;
-    
+}
+
+static void Define_Vector4f()
+{
     class_<Vector4f>("Vector4f", init<>())
         .def(init<float, float, float, float>())
         .add_property("x", make_function(GetV<float, Vector3f, 0>), make_function(SetV<float, Vector3f, 0>))
@@ -312,12 +306,10 @@ void ExportEigen()
         
         .def("__str__", make_function(VectorToString<Vector4f, 4>))
     ;
+}
 
-
-    
-    
-    ExportMatrix3f("Matrix3f");
-    
+static void Define_Isometry3f()
+{
     class_<Isometry3f>("Isometry3f", init<>())
         .def(init<const Isometry3f&>())
         .def(init<Isometry3f>())
@@ -328,4 +320,19 @@ void ExportEigen()
         .def_readonly("Identity", iso_identity_f)
         .def("__str__", make_function(IsometryfToString))
     ;
+}
+
+void ExportEigen()
+{
+    scope namespace_scope = class_<DummyScopeClass_Eigen>("eigen");
+
+    angle_axis.Register();
+    quaternion.Register();
+
+    Define_Vector3f();
+    Define_Vector4f();
+    Define_Isometry3f();
+
+    ExportMatrix3f("Matrix3f");
+    
 }

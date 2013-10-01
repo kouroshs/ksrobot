@@ -63,6 +63,8 @@ protected:
     bool                                        mNextCycleKeyframe;
     
     size_t                                      mPrevFovisReferenceFrame;
+    
+    CLASS_DEF_PYEXPORT;
 };
 
 #endif // FOVISINTERFACE_H

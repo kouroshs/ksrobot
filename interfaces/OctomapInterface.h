@@ -157,6 +157,8 @@ protected:
     GroundFilter                                                    mGroundFilter;
     RobotLocalTransform                                             mLocalTransformInfo;
     Eigen::Affine3f                                                 mCameraTransformCached;
+    
+    CLASS_DEF_PYEXPORT;
 };
 
 inline boost::shared_ptr<const OctomapInterface::OcTreeType> OctomapInterface::GetOctree() const

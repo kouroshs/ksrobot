@@ -114,6 +114,8 @@ private:
     
     common::Timer::Ptr                          mTimerLoadTimes;
     common::Timer::Ptr                          mTimerPCGenerator;
+    
+    CLASS_DEF_PYEXPORT;
 };
 
 inline int KinectDatasetReader::GetNumCycles() const

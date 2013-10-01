@@ -50,6 +50,8 @@ protected:
     bool                                                mAddHeightToOdometry;
     float                                               mConstantHeight;
     float                                               mRadius;
+    
+    CLASS_DEF_PYEXPORT;
 };
 
 } // end namespace common

@@ -22,6 +22,7 @@
 #define EXECUTIONCONTROL_H
 
 #include <string>
+#include <common/Defenitions.h>
 
 namespace KSRobot
 {
@@ -81,6 +82,8 @@ public:
     void                EnableOctoMap(bool enable);
     void                EnableOMPL(bool enable);
     void                EnableComm(bool enable);
+    
+    CLASS_DEF_PYEXPORT;
 };
 
 } // end namespace utils

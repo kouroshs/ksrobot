@@ -210,6 +210,8 @@ protected:
     bool                                        mUseMovementThresholdsForKeyframes;
     float                                       mMovementThr;
     float                                       mYawThr;
+    
+    CLASS_DEF_PYEXPORT;
 };
 
 inline Eigen::Isometry3f VisualOdometryInterface::GetMotionEstimate() const

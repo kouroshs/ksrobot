@@ -52,6 +52,8 @@ private:
     ompl::base::SpaceInformationPtr         mSI;
     ompl::base::ProblemDefinitionPtr        mProbDef;
     ompl::base::PlannerPtr                  mPlanner;
+    
+    CLASS_DEF_PYEXPORT;
 };
 
 } // end namespace interfaces

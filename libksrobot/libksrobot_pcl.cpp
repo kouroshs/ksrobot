@@ -10,6 +10,7 @@
 
 
 using namespace KSRobot::common;
+using namespace boost::python;
 
 class DummyScopeClass_PCL
 {
@@ -50,36 +51,17 @@ void MergePointClouds(KinectPointCloud& inout, const KinectPointCloud& in)
     inout.insert(inout.end(), in.begin(), in.end());
 }
 
-void ExportPCL()
+static void Define_VoxelGrid()
 {
-    using namespace boost::python;
-    using namespace KSRobot::common;
-    scope namespace_scope = class_<DummyScopeClass_PCL, boost::noncopyable>("pcl", no_init)
-        .def("transformPointCloud", make_function(TransformPointCloud))
-        .staticmethod("transformPointCloud")
-        .def("removeNaNFromPointCloud", make_function(RemoveNaNFromPointCloud))
-        .staticmethod("removeNaNFromPointCloud")
-        .def("MergePointClouds", make_function(MergePointClouds))
-        .staticmethod("MergePointClouds")
-    ;
-
-    class_<DummyScopeClass_IO, boost::noncopyable>("io", no_init)
-        .def("savePCDFileBinary", make_function(pcl::io::savePCDFileBinary<KinectPointCloud::PointType>))
-        .staticmethod("savePCDFileBinary")
-        .def("savePCDFileBinaryCompressed", make_function(pcl::io::savePCDFileBinaryCompressed<KinectPointCloud::PointType>))
-        .staticmethod("savePCDFileBinaryCompressed")
-        .def("savePCDFileASCII", make_function(pcl::io::savePCDFileASCII<KinectPointCloud::PointType>))
-        .staticmethod("savePCDFileASCII")
-        .def("loadPCDFile", make_function(pcl::io::loadPCDFile<KinectPointCloud::PointType>))
-        .staticmethod("loadPCDFile")
-    ;
-    
     class_<VoxelGrid>("VoxelGrid", init<>())
         .def("setInputCloud", &VoxelGrid::setInputCloud)
         .def("filter", &VoxelGrid::filter)
         .def("setLeafSize", (void (VoxelGrid::*)(float,float,float))&VoxelGrid::setLeafSize);
     ;
-    
+}
+
+static void Define_PassThrough()
+{
     class_<PassThrough>("PassThrough", init<>())
         .def("setFilterFieldName", &PassThrough::setFilterFieldName)
         .def("getFilterFieldName", &PassThrough::getFilterFieldName)
@@ -90,5 +72,35 @@ void ExportPCL()
         .def("setFilterLimitsNegative", &PassThrough::setFilterLimitsNegative)
         .def("getFilterLimitsNegative", make_function(PassThrough_GetFilterLimitsNegativeHelper))
     ;
+}
+
+static void Define_IONamespace()
+{
+    class_<DummyScopeClass_IO, boost::noncopyable>("io", no_init)
+        .def("savePCDFileBinary", make_function(pcl::io::savePCDFileBinary<KinectPointCloud::PointType>))
+        .staticmethod("savePCDFileBinary")
+        .def("savePCDFileBinaryCompressed", make_function(pcl::io::savePCDFileBinaryCompressed<KinectPointCloud::PointType>))
+        .staticmethod("savePCDFileBinaryCompressed")
+        .def("savePCDFileASCII", make_function(pcl::io::savePCDFileASCII<KinectPointCloud::PointType>))
+        .staticmethod("savePCDFileASCII")
+        .def("loadPCDFile", make_function(pcl::io::loadPCDFile<KinectPointCloud::PointType>))
+        .staticmethod("loadPCDFile")
+    ;
+}
+
+void ExportPCL()
+{
+    scope namespace_scope = class_<DummyScopeClass_PCL, boost::noncopyable>("pcl", no_init)
+        .def("transformPointCloud", make_function(TransformPointCloud))
+        .staticmethod("transformPointCloud")
+        .def("removeNaNFromPointCloud", make_function(RemoveNaNFromPointCloud))
+        .staticmethod("removeNaNFromPointCloud")
+        .def("MergePointClouds", make_function(MergePointClouds))
+        .staticmethod("MergePointClouds")
+    ;
+
+    Define_IONamespace();
+    Define_PassThrough();
+    Define_VoxelGrid();
     
 }

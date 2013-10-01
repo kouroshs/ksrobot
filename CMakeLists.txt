@@ -12,10 +12,14 @@ cmake_minimum_required(VERSION 2.8)
 if( ${CMAKE_BUILD_TYPE} EQUAL "DEBUG" )
     add_definitions("-rdynamic")
 endif()
+add_definitions("-Wno-unused-local-typedefs")
 
-
+#list( APPEND CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} -g -ftest-coverage -fprofile-arcs")
 #NOTE: This configuration should be set for each computer:
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules")
+
+include(cotire)
+
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(EIGEN REQUIRED eigen3)

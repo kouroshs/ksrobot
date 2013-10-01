@@ -59,6 +59,8 @@ protected:
     VisualOdometryInterface::Ptr        mVO;
     SLAMInterface::Ptr                  mSLAM;
     MappingInterface::Ptr               mMapper;
+
+    CLASS_DEF_PYEXPORT;
 };
 
 inline void EngineInterface::SetExecutionParams(const ExecCtrlData& data)

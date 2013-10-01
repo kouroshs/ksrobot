@@ -20,6 +20,7 @@
 #ifndef OCCUPANCYMAP_H
 #define OCCUPANCYMAP_H
 
+#include <common/Defenitions.h>
 #include <Eigen/Geometry>
 #include <vector>
 #include <boost/shared_ptr.hpp>
@@ -138,6 +139,8 @@ public:
     float                               Resolution;
     
     Rect                                ROI;
+    
+    CLASS_DEF_PYEXPORT;
 };
 
 } // end namespace common

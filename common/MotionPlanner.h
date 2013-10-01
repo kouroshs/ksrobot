@@ -21,6 +21,7 @@
 #ifndef MOTIONPLANNER_H
 #define MOTIONPLANNER_H
 
+#include <common/Defenitions.h>
 #include <common/OccupancyMap.h>
 #include <common/ProgramOptions.h>
 #include <Eigen/Dense>
@@ -43,6 +44,8 @@ public:
     {
         Eigen::Vector2f                 Position;
         float                           Yaw;
+        //dummy operator == for python exportation
+        inline bool operator == (const RobotState& other) { return Position == other.Position && Yaw == other.Yaw; }
     };
     
     typedef std::vector<RobotState>     StateVector;
@@ -72,7 +75,7 @@ public:
     inline void                                 SetRobotRadius(float radius);
     inline float                                GetRobotRadius() const;
     
-    inline const StateVector&                   GetPlan() const;
+    inline StateVector                          GetPlan() const;
     
     inline void                                 SetOccupancyMap(OccupancyMap::Ptr ptr);
     inline OccupancyMap::Ptr                    GetOccupancyMap() const;
@@ -90,6 +93,7 @@ protected:
     
     StateVector                                 mPlan;
     OccupancyMap::Ptr                           mOccupancyMap;
+    CLASS_DEF_PYEXPORT;
 };
 
 inline MotionPlanner::RobotState MotionPlanner::GetGoalState() const
@@ -134,7 +138,7 @@ inline void MotionPlanner::SetTimeout(float timeInSeconds)
     mTimeout = timeInSeconds;
 }
 
-inline const MotionPlanner::StateVector& MotionPlanner::GetPlan() const
+inline MotionPlanner::StateVector MotionPlanner::GetPlan() const
 {
     return mPlan;
 }

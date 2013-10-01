@@ -81,6 +81,8 @@ private:
     size_t                                      mNumNodes; // this is actually number of keyframes received.
     
     bool                                        mAddFeatures;
+    
+    CLASS_DEF_PYEXPORT;
 };
 
 };

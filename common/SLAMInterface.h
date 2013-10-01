@@ -69,6 +69,8 @@ protected:
     VisualOdometryInterface::Ptr                                        mVO;
     int                                                                 mLastKeyframe;
     tbb::concurrent_queue<SLAMDataArrival>                              mUnprocessedData;
+    
+    CLASS_DEF_PYEXPORT;
 };
 
 } // end namespace common

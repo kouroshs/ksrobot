@@ -133,6 +133,8 @@ protected:
     bool                        mMessageEnabled;
     static std::ostream         s_NullOutput;
     char                        mLogBuffer[3 * 1024];
+    
+CLASS_DEF_PYEXPORT;
 };
 
 inline std::ostream& Interface::Debug()

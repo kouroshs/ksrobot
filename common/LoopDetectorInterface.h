@@ -77,6 +77,8 @@ private:
     tbb::concurrent_queue<KeyframeData>                     mQueue;
     boost::signals2::signal<void(const LoopClosure& lc)>    mOnLoopDetected;
     boost::signals2::connection                             mConnection; // connection to VO
+    
+    CLASS_DEF_PYEXPORT;
 };
 
 };

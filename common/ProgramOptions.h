@@ -1,10 +1,11 @@
 #ifndef PROGRAMOPTIONS_H
 #define PROGRAMOPTIONS_H
 
+#include <common/Defenitions.h>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/any.hpp>
 #include <boost/optional.hpp>
-#include <boost/foreach.hpp>
+//#include <boost/foreach.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
 #include <boost/type_traits.hpp>
@@ -152,6 +153,8 @@ private:
     typedef std::map<std::string, UserTypeInterface*>   UserTypesMap;
     static UserTypesMap                 mUserTypesMap;
     static MutexType                    mUserTypesGaurd;
+    
+    CLASS_DEF_PYEXPORT;
 };
 
 #undef DEFAULT_VAL

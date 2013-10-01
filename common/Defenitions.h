@@ -5,6 +5,11 @@
 #include <boost/chrono/time_point.hpp>
 #include <boost/chrono/system_clocks.hpp>
 
+// This is to define a function which exports the class
+#define CLASS_DEF_PYEXPORT              public: static void ExportPython();
+#define CLASS_PYEXPORT_FN(iface)        void iface::ExportPython()
+#define REGISTER_CLASS(cls)             cls::ExportPython();
+
 namespace KSRobot
 {
     namespace common

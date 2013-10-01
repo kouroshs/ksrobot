@@ -39,6 +39,8 @@ public:
     virtual void                Start();
     virtual void                Stop();
     virtual bool                RunSingleCycle();
+    
+    CLASS_DEF_PYEXPORT;
 };
 
 } // end namespace common

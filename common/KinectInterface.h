@@ -101,6 +101,7 @@ protected:
     float                                       mGreenCoef;
     float                                       mBlueCoef;
     CameraParameters                            mParams;
+    CLASS_DEF_PYEXPORT;
 };
 
 inline KinectPointCloud::ConstPtr KinectInterface::GetPointCloud() const
