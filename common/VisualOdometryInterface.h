@@ -110,7 +110,7 @@ public:
     virtual ~VisualOdometryInterface();
     
     virtual void                                RegisterToKinect(KinectInterface::Ptr ki);
-    virtual bool                                Converged() = 0;
+    inline  bool                                Converged() const;
     virtual float                               GetConvergenceError() = 0;
 
     virtual void                                ReadSettings(ProgramOptions::Ptr po);
@@ -186,6 +186,7 @@ protected:
     int                                         mLastKinectCycle;
     bool                                        mIsCycleKeyframe;
     bool                                        mPublishKeyframeDescriptors;
+    bool                                        mConverged;
     
     KinectPointCloud::ConstPtr                  mCurrPointCloud;
     KinectRgbImage::ConstPtr                    mCurrRgb;
@@ -228,7 +229,6 @@ inline VisualKeyframe::Ptr VisualOdometryInterface::GetLatestKeyframe()
 {
     return mLatestKeyframe;
 }
-
 
 inline KinectInterface::Ptr VisualOdometryInterface::GetKinect() const
 {
@@ -321,6 +321,10 @@ inline bool VisualOdometryInterface::KeyframeDescriptorPublishingEnabled() const
     return mPublishKeyframeDescriptors;
 }
 
+inline bool VisualOdometryInterface::Converged() const
+{
+    return mConverged;
+}
 
 } // end namespace common
 } // end namespace KSRobot

@@ -32,6 +32,7 @@ namespace common
 VisualOdometryInterface::VisualOdometryInterface(): Interface(),
     mIsCycleKeyframe(true), // first cycle is always keyframe
     mPublishKeyframeDescriptors(true),
+    mConverged(false),
     mLastKinectCycle(-1), mOdomTimer(new Timer("Odometry time")),
     mFinishCycleTime(new Timer("FinishCycle time")),
     mSetHeight(false), mRobotHeight(0), mIsEveryCycleKeyframe(false),
