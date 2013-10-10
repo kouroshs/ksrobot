@@ -23,6 +23,7 @@
 
 #include <common/VisualOdometryInterface.h>
 #include <common/Timer.h>
+#include <common/PCLUtils.h>
 #include <boost/shared_array.hpp>
 #include <Eigen/Geometry>
 
@@ -42,11 +43,11 @@ public:
     virtual ~FovisInterface();
     
     virtual void        RegisterToKinect(common::KinectInterface::Ptr ki);
-
-    virtual bool        Converged();
     virtual float       GetConvergenceError();
-    
     virtual bool        RunSingleCycle();
+    
+    virtual void        ReadSettings(common::ProgramOptions::Ptr po);
+    
 protected:
     virtual bool        CheckForKeyframe();
     virtual void        PublishKeyframeFeatures(common::VisualKeyframe::Ptr kf);
@@ -54,15 +55,16 @@ protected:
 protected:
     fovis::VisualOdometry*                      mFovis;
     fovis::DepthImage*                          mDepthImage;
-    unsigned char*                              mGrayImage;
     
     fovis::VisualOdometryOptions                mOptions;
     fovis::Rectification*                       mRectification;
     
-    common::Timer::Ptr                          mDataCopyTimer;
     bool                                        mNextCycleKeyframe;
+    bool                                        mUseIcpOnFail;
     
     size_t                                      mPrevFovisReferenceFrame;
+    
+    common::GICP                                mGICP;
     
     CLASS_DEF_PYEXPORT;
 };
