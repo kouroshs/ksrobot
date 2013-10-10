@@ -59,7 +59,7 @@ void PCLUtils::DownsampleOrganized(KinectPointCloud::ConstPtr in, KinectPointClo
     {
         size_t out_line_index = (i / ds_rate) * in->width;
         
-        for(size_t j = 0; j < in->width; j+= ds_rate)
+        for(size_t j = 0; j < in->width; j += ds_rate)
         {
             // now take average of all 
             size_t count = 0;
