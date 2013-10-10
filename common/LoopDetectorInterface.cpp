@@ -25,8 +25,9 @@ namespace KSRobot
 namespace common
 {
 
-LoopDetectorInterface::LoopDetectorInterface()
+LoopDetectorInterface::LoopDetectorInterface() : mPointCloudDownsampleRate(4)
 {
+    mGICP.SetDownsampleRate(1);
 }
 
 LoopDetectorInterface::~LoopDetectorInterface()
@@ -109,14 +110,38 @@ bool LoopDetectorInterface::RunSingleCycle()
 
 void LoopDetectorInterface::PreprocessFrame(const LoopDetectorInterface::KeyframeData& kd)
 {
-
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pc(new pcl::PointCloud<pcl::PointXYZ>);
+    PCLUtils::DownsampleOrganized(kd.PointCloud, pc, mPointCloudDownsampleRate);
+    
+    if( mPointCloudMap.find(kd.Keyframe->CurrentCycle) != mPointCloudMap.end() )
+    {
+        //NOTE: THIS IS A SERIOUS ERROR
+        throw std::runtime_error("(LoopDetectorInterface::PreprocessFrame) the current cycle has already been seen. This might be caused by a bug at VisualOdometryInterface or its derived classes.");
+    }
+    
+    mPointCloudMap[kd.Keyframe->CurrentCycle] = pc;
 }
 
 bool LoopDetectorInterface::CheckTransform(size_t prev_cycle, size_t curr_cycle, Eigen::Isometry3f& trans)
 {
-    return false;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr prev, curr;
+    PointCloudMap::iterator iter_prev = mPointCloudMap.find(prev_cycle), iter_curr = mPointCloudMap.find(curr_cycle);
+    
+    if( iter_prev == mPointCloudMap.end() )
+        throw std::runtime_error("(LoopDetectorInterface::CheckTransform) BUG: Previous cycle has not been seen.");
+    if( iter_curr == mPointCloudMap.end() )
+        throw std::runtime_error("(LoopDetectorInterface::CheckTransform) BUG: Current cycle has not been seen.");
+    
+    prev = iter_prev->second;
+    curr = iter_curr->second;
+    
+    mGICP.SetInputSource(prev);
+    mGICP.SetInputTraget(curr);
+    
+    mGICP.ComputeTransform();
+    trans = mGICP.GetFinalComputedTransform();    
+    return mGICP.Converged();
 }
-
 
 };
 };

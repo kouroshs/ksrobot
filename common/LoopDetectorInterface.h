@@ -23,7 +23,9 @@
 
 #include <common/Interface.h>
 #include <common/VisualOdometryInterface.h>
+#include <common/PCLUtils.h>
 #include <tbb/concurrent_queue.h>
+#include <boost/unordered_map.hpp>
 
 namespace KSRobot
 {
@@ -77,7 +79,11 @@ private:
     tbb::concurrent_queue<KeyframeData>                     mQueue;
     boost::signals2::signal<void(const LoopClosure& lc)>    mOnLoopDetected;
     boost::signals2::connection                             mConnection; // connection to VO
+    GICP                                                    mGICP;
     
+    typedef boost::unordered_map<size_t, pcl::PointCloud<pcl::PointXYZ>::Ptr >  PointCloudMap;
+    PointCloudMap                                           mPointCloudMap;
+    int                                                     mPointCloudDownsampleRate;
     CLASS_DEF_PYEXPORT;
 };
 
