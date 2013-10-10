@@ -83,6 +83,8 @@ public:
     static KinectPointCloud::Ptr                GeneratePointCloudFromImages(KinectRgbImage::Ptr rgb, 
                                                                    KinectRawDepthImage::Ptr depth, 
                                                                    const CameraParameters& camParams);
+    
+    static pcl::PointCloud<pcl::PointXYZ>::Ptr  GeneratePointCloudFromDepth(KinectRawDepthImage::Ptr depth, const CameraParameters& camParams);
 protected:
     void                                        GenerateGrayImage();
     
