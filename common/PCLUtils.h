@@ -35,6 +35,8 @@ public:
     static void                     ConvertPointCloud(KinectPointCloud::ConstPtr in, pcl::PointCloud<pcl::PointXYZ>::Ptr out);
     static void                     DownsampleOrganized(KinectPointCloud::ConstPtr in, KinectPointCloud::Ptr out, size_t ds_rate);
     static void                     DownsampleOrganized(KinectPointCloud::ConstPtr in, pcl::PointCloud<pcl::PointXYZ>::Ptr out, size_t ds_rate);
+    static void                     DownsampleOrganized(pcl::PointCloud<pcl::PointXYZ>::ConstPtr in, pcl::PointCloud<pcl::PointXYZ>::Ptr out, 
+                                                        size_t ds_rate);
     
     static void                     ComputeNormals(KinectPointCloud::ConstPtr in, pcl::PointCloud<pcl::Normal>::Ptr normals);
     static void                     ComputeNormals(pcl::PointCloud<pcl::PointXYZ>::ConstPtr in, pcl::PointCloud<pcl::Normal>::Ptr normals);
@@ -55,18 +57,21 @@ public:
     GICP();
     ~GICP();
     
-    void SetInputSource(KinectPointCloud::ConstPtr source);
-    void SetInputTraget(KinectPointCloud::ConstPtr target);
+    void                                        SetInputSource(KinectPointCloud::ConstPtr source);
+    void                                        SetInputTraget(KinectPointCloud::ConstPtr target);
     
-    void SetDownsampleRate(int rate) { mDownsampleRate = rate; }
+    void                                        SetInputSource(pcl::PointCloud<pcl::PointXYZ>::ConstPtr source);
+    void                                        SetInputTraget(pcl::PointCloud<pcl::PointXYZ>::ConstPtr target);
     
-    void ComputeTransform();
+    inline void                                 SetDownsampleRate(int rate) { mDownsampleRate = rate; }
     
-    void SetTransformationEpsilon(float eps) { mICP.setTransformationEpsilon(eps); }
-    void SetMaxInterations(int max) { mICP.setMaximumIterations(max); }
+    void                                        ComputeTransform();
     
-    Eigen::Matrix4f             GetFinalComputedTransform() const { return mTransform; }
-    bool                        Converged() const { return mConverged; }
+    inline void                                 SetTransformationEpsilon(float eps) { mICP.setTransformationEpsilon(eps); }
+    inline void                                 SetMaxInterations(int max) { mICP.setMaximumIterations(max); }
+    
+    inline Eigen::Matrix4f                      GetFinalComputedTransform() const { return mTransform; }
+    inline bool                                 Converged() const { return mConverged; }
 private:
     pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ>  mICP;
     pcl::PointCloud<pcl::PointXYZ>::Ptr         mSource;

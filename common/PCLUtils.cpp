@@ -39,8 +39,16 @@ void PCLUtils::ConvertPointCloud(KinectPointCloud::ConstPtr in, pcl::PointCloud<
         out->at(i).getVector4fMap() = in->at(i).getVector4fMap();
 }
 
+// I know, this is bad. but I don't know enough of pcl internals to reduce the code size yet.
 void PCLUtils::DownsampleOrganized(KinectPointCloud::ConstPtr in, KinectPointCloud::Ptr out, size_t ds_rate)
 {
+    assert(ds_rate > 0 );
+    if( ds_rate == 1 )
+    {
+        *out = *in;
+        return;
+    }
+    
     out->clear();
     out->width = in->width / ds_rate;
     out->height = in->height / ds_rate;
@@ -103,6 +111,8 @@ void PCLUtils::DownsampleOrganized(KinectPointCloud::ConstPtr in, KinectPointClo
 
 void PCLUtils::DownsampleOrganized(KinectPointCloud::ConstPtr in, pcl::PointCloud<pcl::PointXYZ>::Ptr out, size_t ds_rate)
 {
+    assert(ds_rate > 0 );
+    
     out->clear();
     out->width = in->width / ds_rate;
     out->height = in->height / ds_rate;
@@ -130,6 +140,59 @@ void PCLUtils::DownsampleOrganized(KinectPointCloud::ConstPtr in, pcl::PointClou
                 {
                     const KinectPointCloud::PointType& pt = in->at(curr_j + in_start_index);
                     if( pcl::isFinite<KinectPointCloud::PointType>(pt) )
+                    {
+                        count++;
+                        pos += pt.getVector4fMap();
+                    }
+                }
+            }
+            
+            pcl::PointXYZ& dst = out->at(out_line_index + j / ds_rate);
+            
+            if( count == 0 )
+                dst.getVector4fMap() = bad_position;
+            else
+                dst.getVector4fMap() = pos / count;
+        }
+    }
+}
+
+void PCLUtils::DownsampleOrganized(pcl::PointCloud< pcl::PointXYZ >::ConstPtr in, pcl::PointCloud< pcl::PointXYZ >::Ptr out, size_t ds_rate)
+{
+    assert(ds_rate > 0 );
+    if( ds_rate == 1 )
+    {
+        *out = *in;
+        return;
+    }
+    
+    out->clear();
+    out->width = in->width / ds_rate;
+    out->height = in->height / ds_rate;
+    out->sensor_orientation_ = in->sensor_orientation_;
+    out->sensor_origin_ = in->sensor_origin_;
+    
+    out->resize(out->width * out->height);
+    const pcl::PointXYZ initial_point(0, 0, 0);
+    const float bad_point = std::numeric_limits<float>::quiet_NaN();
+    const Eigen::Vector4f bad_position(bad_point, bad_point, bad_point, bad_point);
+    
+    for(size_t i = 0; i < in->height; i += ds_rate)
+    {
+        size_t out_line_index = (i / ds_rate) * in->width;
+        
+        for(size_t j = 0; j < in->width; j+= ds_rate)
+        {
+            // now take average of all 
+            size_t count = 0;
+            Eigen::Vector4f pos(0, 0, 0, 0);
+            for(size_t curr_i = i; curr_i < std::min(i + ds_rate, (size_t)in->height); curr_i++)
+            {
+                size_t in_start_index = curr_i * in->width;
+                for(size_t curr_j = j; curr_j < std::min(j + ds_rate, (size_t)in->width); curr_j++)
+                {
+                    const pcl::PointXYZ& pt = in->at(curr_j + in_start_index);
+                    if( pcl::isFinite<pcl::PointXYZ>(pt) )
                     {
                         count++;
                         pos += pt.getVector4fMap();
@@ -215,6 +278,20 @@ void GICP::SetInputSource(KinectPointCloud::ConstPtr source)
 }
 
 void GICP::SetInputTraget(KinectPointCloud::ConstPtr target)
+{
+    PCLUtils::DownsampleOrganized(target, mTarget, mDownsampleRate);
+    PCLUtils::ComputeNormals(mTarget, mTargetNormals);
+    PCLUtils::NormalSpaceSampling(mTargetDownsampled, mTarget, mTargetNormals);
+}
+
+void GICP::SetInputSource(pcl::PointCloud< pcl::PointXYZ >::ConstPtr source)
+{
+    PCLUtils::DownsampleOrganized(source, mSource, mDownsampleRate);
+    PCLUtils::ComputeNormals(mSource, mSourceNormals);
+    PCLUtils::NormalSpaceSampling(mSourceDownsampled, mSource, mSourceNormals);
+}
+
+void GICP::SetInputTraget(pcl::PointCloud< pcl::PointXYZ >::ConstPtr target)
 {
     PCLUtils::DownsampleOrganized(target, mTarget, mDownsampleRate);
     PCLUtils::ComputeNormals(mTarget, mTargetNormals);
