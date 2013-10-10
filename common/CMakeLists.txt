@@ -17,6 +17,7 @@ set(COMMON_SRC  Defenitions.cpp
                 ExecCtrlData.cpp 
                 SettingsBinder.cpp 
                 Worker.cpp 
+                PCLUtils.cpp
                 )
 
 set(COMMON_PYTHON_SRCS  py/Interface_py.cpp py/ExecCtrlData_py.cpp
