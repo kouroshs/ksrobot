@@ -27,7 +27,7 @@
 // #include <pcl/registration/gicp.h>
 #include <pcl/registration/icp.h>
 
-#define SAFE_DELETE(x) if(x) delete (x);
+#define SAFE_DELETE(x) if(x) { delete (x); (x) = NULL; }
 
 namespace KSRobot
 {
@@ -36,19 +36,17 @@ namespace interfaces
 
 FovisInterface::FovisInterface() : 
             common::VisualOdometryInterface(), 
-            mDataCopyTimer(new common::Timer("Data copying")),
-            mFovis(NULL), mDepthImage(NULL), mGrayImage(NULL), mRectification(NULL), mNextCycleKeyframe(false),
-            mPrevFovisReferenceFrame()
+            mFovis(NULL), mDepthImage(NULL), mRectification(NULL), mNextCycleKeyframe(false),
+            mUseIcpOnFail(true),
+            mPrevFovisReferenceFrame(0)
 {
     SetInterfaceName("FovisInterface");
-    RegisterTimer(mDataCopyTimer);
 }
 
 FovisInterface::~FovisInterface()
 {
     SAFE_DELETE(mFovis);
     SAFE_DELETE(mRectification);
-    SAFE_DELETE(mGrayImage);
     SAFE_DELETE(mDepthImage);
 }
 
@@ -72,13 +70,17 @@ void FovisInterface::InitInternal(const common::KinectInterface::CameraParameter
 
     SAFE_DELETE(mFovis);
     SAFE_DELETE(mRectification);
-    SAFE_DELETE(mGrayImage);
     SAFE_DELETE(mRectification);
     
     mRectification  = new fovis::Rectification(camParams);
     mFovis          = new fovis::VisualOdometry(mRectification, mOptions);
     mDepthImage     = new fovis::DepthImage(camParams, camParams.width, camParams.height);
-    mGrayImage      = new unsigned char[camParams.width * camParams.height];
+}
+
+void FovisInterface::ReadSettings(common::ProgramOptions::Ptr po)
+{
+    common::VisualOdometryInterface::ReadSettings(po);
+    mUseIcpOnFail = po->GetBool("UseIcpOnFail", true);
 }
 
 void FovisInterface::RegisterToKinect(common::KinectInterface::Ptr ki)
@@ -89,8 +91,6 @@ void FovisInterface::RegisterToKinect(common::KinectInterface::Ptr ki)
     InitInternal(mKinect->GetCameraParams(), fovis::VisualOdometry::getDefaultOptions());
 }
 
-pcl::IterativeClosestPoint<common::KinectPointCloud::PointType, common::KinectPointCloud::PointType> icp;
-
 bool FovisInterface::RunSingleCycle()
 {
     if( VisualOdometryInterface::RunSingleCycle() == false )
@@ -98,9 +98,7 @@ bool FovisInterface::RunSingleCycle()
     // now we have the kinect data.
     Interface::ScopedLock fovisLock(this);
     
-    mDataCopyTimer->Start();
-    
-    assert(mDepthImage && mFovis && mGrayImage && mRectification);
+    assert(mDepthImage && mFovis && mRectification);
     assert(mCurrFloatDepth.get());
     assert(mCurrRgb.get());
     assert(mCurrFloatDepth->GetWidth() != 0 && mCurrFloatDepth->GetHeight() != 0);
@@ -110,60 +108,35 @@ bool FovisInterface::RunSingleCycle()
     
     mDepthImage->setDepthImage(mCurrFloatDepth->GetArray().data());
     
-    size_t size = mCurrRgb->GetHeight() * mCurrRgb->GetWidth();
-    const common::KinectRgbImage::ArrayType& array = mCurrRgb->GetArray();
-    
-    for(size_t i = 0; i < size; i++)
-    {
-        size_t startIndex = i * 3;
-        unsigned char r, g, b;
-        r = array[startIndex];
-        g = array[startIndex + 1];
-        b = array[startIndex + 2];
-        
-        mGrayImage[i] = (int)roundf(0.2125 * r + 0.7154 * g + 0.0721 * b);
-    }
-    mDataCopyTimer->Stop();
-
     mOdomTimer->Start();
-        mFovis->processFrame(mGrayImage, mDepthImage);
+        mFovis->processFrame(mCurrGray->GetArray().data(), mDepthImage);
         //NOTE:
-        if( Converged() )
+        mConverged = false;
+        if( mFovis->getMotionEstimateStatus() == fovis::SUCCESS )
+        {
             mMotion->MotionEstimate = mFovis->getMotionEstimate().cast<float>();
-//         else if( GetCycle() > 1 )
-//         {
-// //             std::cout << "FAILED WITH: " << fovis::MotionEstimateStatusCodeStrings[mFovis->getMotionEstimateStatus()] << "     "
-// //             << "prev " << mFovis->getReferenceFrame()->getNumKeypoints() << "   " << mFovis->getReferenceFrame()->getNumDetectedKeypoints() <<
-// //             " curr " << mFovis->getTargetFrame()->getNumKeypoints() << "   " << mFovis->getTargetFrame()->getNumDetectedKeypoints() << "\n\t"
-// //             << mFovis->getMotionEstimator()->getNumMatches() << "  " << mFovis->getMotionEstimator()->getNumInliers() <<
-// //             std::endl << std::flush;
-// //             //pcl::GeneralizedIterativeClosestPoint<common::KinectPointCloud::PointType, common::KinectPointCloud::PointType> icp;
-// //             pcl::IterativeClosestPoint<common::KinectPointCloud::PointType, common::KinectPointCloud::PointType> icp;
-//             icp.setInputSource(mPrevPointCloud);
-//             icp.setInputTarget(mCurrPointCloud);
-//             common::KinectPointCloud final_pc;
-//             icp.align(final_pc);
-//             if( icp.hasConverged() )
-//             {
-//                 std::cout << "true\n" << std::flush;
-//                 mMotion->MotionEstimate = icp.getFinalTransformation();
-//             }
-//             else
-//             {
-//                 std::cout << "false\n" << std::flush;
-//             }
-//         }
+            mConverged = true;
+        }
+        else
+        {
+            if( mUseIcpOnFail )
+            {
+                mGICP.SetInputSource(mPrevPointCloud);
+                mGICP.SetInputTraget(mCurrPointCloud);
+                mGICP.ComputeTransform();
+                
+                if( mGICP.Converged() )
+                {
+                    mMotion->MotionEstimate = mGICP.GetFinalComputedTransform();
+                    mConverged = true;
+                }
+            }
+        }
     mOdomTimer->Stop();
 
     FinishCycle();
     
-    //mMotion->GlobalPose = mFovis->getPose().cast<float>();
     return true;
-}
-
-bool FovisInterface::Converged()
-{
-    return mFovis->getMotionEstimateStatus() == fovis::SUCCESS;
 }
 
 float FovisInterface::GetConvergenceError()
