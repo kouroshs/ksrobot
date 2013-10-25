@@ -26,9 +26,7 @@
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/extract_indices.h>
-#include <pcl/filters/passthrough.h>
-#include <pcl/filters/voxel_grid.h>
-
+#include <common/PCLUtils.h>
 
 #include <sstream>
 #include <pcl/io/pcd_io.h>
@@ -155,16 +153,6 @@ bool OctomapInterface::RunSingleCycle()
     common::MappingInterface::MapInfo mi;
     int count = 0;
     // I moved these filter defenitions out of the loop as a small optimization, nothing more.
-    pcl::VoxelGrid<common::KinectPointCloud::PointType> voxelGrid;
-    if( mApplyVoxelGrid )
-        voxelGrid.setLeafSize(mVoxelGridResolution, mVoxelGridResolution, mVoxelGridResolution);
-
-    pcl::PassThrough<common::KinectPointCloud::PointType> pass;
-    if( mPassThrough.Enabled )
-    {
-        pass.setFilterFieldName("z");
-        pass.setFilterLimits(mPassThrough.LimitMin, mPassThrough.LimitMax);
-    }
 
     common::KinectPointCloud pc; // a useful temp var
     
@@ -178,10 +166,7 @@ bool OctomapInterface::RunSingleCycle()
         count++;
         
         if( mApplyVoxelGrid )
-        {
-            voxelGrid.setInputCloud(mi.PointCloud);
-            voxelGrid.filter(*mFilteredCloud);
-        }
+            common::PCLUtils::ApplyVoxelGrid(*mFilteredCloud, mi.PointCloud, mVoxelGridResolution);
         else
         {
             // copy this pointcloud! not the best performance, but causes better and cleaner program
@@ -191,8 +176,7 @@ bool OctomapInterface::RunSingleCycle()
 
         if( mPassThrough.Enabled )
         {
-            pass.setInputCloud(mFilteredCloud);
-            pass.filter(pc); // filtered cloud should not be the same as input cloud, so we have to do a copy
+            common::PCLUtils::ApplyPassThrough(pc, mFilteredCloud, "z", mPassThrough.LimitMin, mPassThrough.LimitMin);
             *mFilteredCloud = pc;
         }
 
@@ -486,15 +470,12 @@ bool OctomapInterface::ExtractGroundPlane(const common::KinectPointCloud& pc, co
     if( !bGroundPlaneFound )
     {
         Debug("Ground plane not found\n");
-        pcl::PassThrough<common::KinectPointCloud::PointType> second_pass;
-        second_pass.setFilterFieldName( mGroundFilter.Axis == 0 ? "x" : (mGroundFilter.Axis == 1 ? "y" : "z") );
-        
-        second_pass.setFilterLimits(-mGroundFilter.PlaneDistance, mGroundFilter.PlaneDistance);
-        second_pass.setInputCloud(pc.makeShared());
-        second_pass.filter(ground);
-        
-        second_pass.setFilterLimitsNegative(true);
-        second_pass.filter(nonground);
+        const std::string field_name(mGroundFilter.Axis == 0 ? "x" : (mGroundFilter.Axis == 1 ? "y" : "z"));
+        common::KinectPointCloud::Ptr pcshared = pc.makeShared();
+        common::PCLUtils::ApplyPassThrough(ground, pcshared, field_name, 
+                                           -mGroundFilter.PlaneDistance, mGroundFilter.PlaneDistance);
+        common::PCLUtils::ApplyPassThrough(nonground, pcshared, field_name,
+                                           -mGroundFilter.PlaneDistance, mGroundFilter.PlaneDistance, true);
     }
     return true;
 }
