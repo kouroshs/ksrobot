@@ -39,6 +39,10 @@ class FovisInterface : public common::VisualOdometryInterface
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    typedef FovisInterface                      this_type;
+    typedef boost::shared_ptr<this_type>        Ptr;
+    typedef boost::shared_ptr<const this_type>  ConstPtr;
+    
     FovisInterface();
     virtual ~FovisInterface();
     

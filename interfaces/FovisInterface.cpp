@@ -98,14 +98,6 @@ bool FovisInterface::RunSingleCycle()
     // now we have the kinect data.
     Interface::ScopedLock fovisLock(this);
     
-    assert(mDepthImage && mFovis && mRectification);
-    assert(mCurrFloatDepth.get());
-    assert(mCurrRgb.get());
-    assert(mCurrFloatDepth->GetWidth() != 0 && mCurrFloatDepth->GetHeight() != 0);
-    assert(mCurrRgb->GetWidth() != 0 && mCurrRgb->GetHeight() != 0);
-    assert(mCurrFloatDepth->GetArray().size() != 0);
-    assert(mCurrRgb->GetArray().size() != 0);
-    
     mDepthImage->setDepthImage(mCurrFloatDepth->GetArray().data());
     
     mOdomTimer->Start();
@@ -117,7 +109,7 @@ bool FovisInterface::RunSingleCycle()
             mMotion->MotionEstimate = mFovis->getMotionEstimate().cast<float>();
             mConverged = true;
         }
-        else
+        else if( GetCycle() > 2 )
         {
             if( mUseIcpOnFail )
             {
