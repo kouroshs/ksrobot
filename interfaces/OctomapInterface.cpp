@@ -105,21 +105,6 @@ void OctomapInterface::LoadFromFile(const std::string& filename)
     mOctree.reset(ptr);
 }
 
-static inline int GetAxisFromString(std::string& axis)
-{
-    boost::to_lower(axis);
-    if( axis == "x" )
-        return 0;
-    else if( axis == "y" )
-        return 1;
-    else if( axis == "z" )
-        return 2;
-    else if( axis == "none" )
-        return -1;
-    else
-        throw std::runtime_error("(OctomapInterface::ReadSettings) Invalid axis is provided.");
-}
-
 void OctomapInterface::ReadSettings(common::ProgramOptions::Ptr po)
 {
     common::Interface::ReadSettings(po);
@@ -132,8 +117,7 @@ void OctomapInterface::ReadSettings(common::ProgramOptions::Ptr po)
     mVoxelGridResolution = po->GetDouble("VoxelGrid.Resolution", DEFAULT_VOXEL_GRID_RESOLUTION);
     
     mHeightFilter.Enabled = po->GetBool("HeightFilter.Enabled", false);
-    std::string axis = po->GetString("HeightFilter.Axis", std::string("z"));
-    mHeightFilter.Axis = GetAxisFromString(axis);
+    mHeightFilter.Axis = po->GetAxis("HeightFilter.Axis", std::string("z"));
     assert(mHeightFilter.Axis != -1);
     
     mHeightFilter.MaxValue = po->GetDouble("HeightFilter.MaxValue", 0.0);
@@ -144,22 +128,18 @@ void OctomapInterface::ReadSettings(common::ProgramOptions::Ptr po)
     mGroundFilter.PlaneDistance = po->GetDouble("GroundFilter.PlaneDistance", 0.04);
     mGroundFilter.Angle = po->GetDouble("GroundFilter.Angle", 0.15);
     mGroundFilter.AddGroundPointsAsFreeSpace = po->GetBool("GroundFilter.AddGroundPointsAsFreeSpace", true);
-    axis = po->GetString("GroundFilter.Axis", std::string("z"));
-    mGroundFilter.Axis = GetAxisFromString(axis);
+    mGroundFilter.Axis = po->GetAxis("GroundFilter.Axis", std::string("z"));
     assert(mGroundFilter.Axis != -1);
     
     common::ProgramOptions::Ptr p = po->StartNode("LocalTransform");
     mLocalTransformInfo.Enabled = p->GetBool("Enabled", false);
     mLocalTransformInfo.RobotHeight = p->GetDouble("RobotHeight", 0.0);
-    axis = p->GetString("RobotHeightAxis", std::string("z"));
-    mLocalTransformInfo.RobotHeightAxis = GetAxisFromString(axis);
+    mLocalTransformInfo.RobotHeightAxis = p->GetAxis("RobotHeightAxis", std::string("z"));
     assert(mLocalTransformInfo.RobotHeightAxis != -1);
     
-    axis = p->GetString("FirstRotationAxis", std::string("none"));
-    mLocalTransformInfo.FirstRotationAxis = GetAxisFromString(axis);
+    mLocalTransformInfo.FirstRotationAxis = p->GetAxis("FirstRotationAxis", std::string("none"));
     mLocalTransformInfo.FirstRotationDegree = p->GetDouble("FirstRotationDegree", 0.0);
-    axis = p->GetString("SecondRotationAxis", std::string("none"));
-    mLocalTransformInfo.SecondRotationAxis = GetAxisFromString(axis);
+    mLocalTransformInfo.SecondRotationAxis = p->GetAxis("SecondRotationAxis", std::string("none"));
     mLocalTransformInfo.SecondRotationDegree = p->GetDouble("SecondRotationDegree", 0.0);
     
     p = po->StartNode("PassThroughFilter");
@@ -234,7 +214,6 @@ bool OctomapInterface::RunSingleCycle()
 //             catch(...)
 //             {
 //             }
-            //TODO: Should I Add ground plane points as non occupied? this could help with OccupancyGrid explorations.
             ConvertInternal(mNonGroundPC, mGroundPC, mi.Transform);
             UpdateMap(mNonGroundPC, mi.Transform.translation());
         }
