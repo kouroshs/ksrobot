@@ -21,6 +21,7 @@
 #include <common/PCLUtils.h>
 #include <pcl/features/integral_image_normal.h>
 #include <pcl/filters/normal_space.h>
+#include <pcl/io/pcd_io.h>
 #include <limits>
 
 using namespace KSRobot::common;
@@ -63,11 +64,12 @@ void PCLUtils::DownsampleOrganized(KinectPointCloud::ConstPtr in, KinectPointClo
     const float bad_point = std::numeric_limits<float>::quiet_NaN();
     const Eigen::Vector4f bad_position = Eigen::Vector4f(bad_point, bad_point, bad_point, bad_point);
     
-    for(size_t i = 0; i < in->height; i += ds_rate)
+    size_t out_index_i = 0;
+    for(size_t i = 0; i < in->height; i += ds_rate, out_index_i++)
     {
-        size_t out_line_index = (i / ds_rate) * in->width;
-        
-        for(size_t j = 0; j < in->width; j += ds_rate)
+        size_t out_line_index = out_index_i * out->width;
+        size_t out_index_j = 0;
+        for(size_t j = 0; j < in->width; j += ds_rate, out_index_j++)
         {
             // now take average of all 
             size_t count = 0;
@@ -90,7 +92,7 @@ void PCLUtils::DownsampleOrganized(KinectPointCloud::ConstPtr in, KinectPointClo
                 }
             }
             
-            KinectPointCloud::PointType& dst = out->at(out_line_index + j / ds_rate);
+            KinectPointCloud::PointType& dst = out->at(out_line_index + out_index_j);
             
             if( count == 0 )
             {
@@ -124,11 +126,12 @@ void PCLUtils::DownsampleOrganized(KinectPointCloud::ConstPtr in, pcl::PointClou
     const float bad_point = std::numeric_limits<float>::quiet_NaN();
     const Eigen::Vector4f bad_position(bad_point, bad_point, bad_point, bad_point);
     
-    for(size_t i = 0; i < in->height; i += ds_rate)
+    size_t out_index_i = 0;
+    for(size_t i = 0; i < in->height; i += ds_rate, out_index_i++)
     {
-        size_t out_line_index = (i / ds_rate) * in->width;
-        
-        for(size_t j = 0; j < in->width; j+= ds_rate)
+        size_t out_line_index = out_index_i * out->width;
+        size_t out_index_j = 0;
+        for(size_t j = 0; j < in->width; j+= ds_rate, out_index_j++)
         {
             // now take average of all 
             size_t count = 0;
@@ -147,7 +150,7 @@ void PCLUtils::DownsampleOrganized(KinectPointCloud::ConstPtr in, pcl::PointClou
                 }
             }
             
-            pcl::PointXYZ& dst = out->at(out_line_index + j / ds_rate);
+            pcl::PointXYZ& dst = out->at(out_line_index + out_index_j);
             
             if( count == 0 )
                 dst.getVector4fMap() = bad_position;
@@ -177,11 +180,12 @@ void PCLUtils::DownsampleOrganized(pcl::PointCloud< pcl::PointXYZ >::ConstPtr in
     const float bad_point = std::numeric_limits<float>::quiet_NaN();
     const Eigen::Vector4f bad_position(bad_point, bad_point, bad_point, bad_point);
     
-    for(size_t i = 0; i < in->height; i += ds_rate)
+    size_t out_index_i = 0;
+    for(size_t i = 0; i < in->height; i += ds_rate, out_index_i++)
     {
-        size_t out_line_index = (i / ds_rate) * in->width;
-        
-        for(size_t j = 0; j < in->width; j+= ds_rate)
+        size_t out_line_index = out_index_i * out->width;
+        size_t out_index_j = 0;
+        for(size_t j = 0; j < in->width; j += ds_rate, out_index_j++)
         {
             // now take average of all 
             size_t count = 0;
@@ -200,7 +204,7 @@ void PCLUtils::DownsampleOrganized(pcl::PointCloud< pcl::PointXYZ >::ConstPtr in
                 }
             }
             
-            pcl::PointXYZ& dst = out->at(out_line_index + j / ds_rate);
+            pcl::PointXYZ& dst = out->at(out_line_index + out_index_j);
             
             if( count == 0 )
                 dst.getVector4fMap() = bad_position;
@@ -270,11 +274,27 @@ GICP::~GICP()
 {
 }
 
+static void RemoveNans(pcl::PointCloud<pcl::PointXYZ>::Ptr p)
+{    
+    // I don't know why but this seems not to work, and does not remove nans compeletly, possibly a bug.
+//     std::vector<int> tmp;
+//     pcl::removeNaNFromPointCloud(*p, *p, tmp);
+    pcl::PointCloud<pcl::PointXYZ> tmp;
+    tmp.header = p->header;
+    tmp.reserve(p->size());
+    for(size_t i = 0; i < p->size(); i++)
+        if( pcl::isFinite(p->at(i)) )
+            tmp.push_back(p->at(i));
+    
+    *p = tmp;
+}
+
 void GICP::SetInputSource(KinectPointCloud::ConstPtr source)
 {
     PCLUtils::DownsampleOrganized(source, mSource, mDownsampleRate);
     PCLUtils::ComputeNormals(mSource, mSourceNormals);
     PCLUtils::NormalSpaceSampling(mSourceDownsampled, mSource, mSourceNormals);
+    RemoveNans(mSourceDownsampled);
 }
 
 void GICP::SetInputTraget(KinectPointCloud::ConstPtr target)
@@ -282,6 +302,7 @@ void GICP::SetInputTraget(KinectPointCloud::ConstPtr target)
     PCLUtils::DownsampleOrganized(target, mTarget, mDownsampleRate);
     PCLUtils::ComputeNormals(mTarget, mTargetNormals);
     PCLUtils::NormalSpaceSampling(mTargetDownsampled, mTarget, mTargetNormals);
+    RemoveNans(mTargetDownsampled);
 }
 
 void GICP::SetInputSource(pcl::PointCloud< pcl::PointXYZ >::ConstPtr source)
@@ -289,6 +310,7 @@ void GICP::SetInputSource(pcl::PointCloud< pcl::PointXYZ >::ConstPtr source)
     PCLUtils::DownsampleOrganized(source, mSource, mDownsampleRate);
     PCLUtils::ComputeNormals(mSource, mSourceNormals);
     PCLUtils::NormalSpaceSampling(mSourceDownsampled, mSource, mSourceNormals);
+    RemoveNans(mSourceDownsampled);
 }
 
 void GICP::SetInputTraget(pcl::PointCloud< pcl::PointXYZ >::ConstPtr target)
@@ -296,16 +318,18 @@ void GICP::SetInputTraget(pcl::PointCloud< pcl::PointXYZ >::ConstPtr target)
     PCLUtils::DownsampleOrganized(target, mTarget, mDownsampleRate);
     PCLUtils::ComputeNormals(mTarget, mTargetNormals);
     PCLUtils::NormalSpaceSampling(mTargetDownsampled, mTarget, mTargetNormals);
+    RemoveNans(mTargetDownsampled);
 }
 
 void GICP::ComputeTransform()
 {
     mICP.setInputSource(mSourceDownsampled);
     mICP.setInputTarget(mTargetDownsampled);
+    
     mFinalCloud.clear();
     mICP.align(mFinalCloud);
     mConverged = mICP.hasConverged();
     mTransform = mICP.getFinalTransformation();
-    mTransform = mTransform.inverse(); // TODO: Check this.
+    mTransform = mTransform.inverse().eval(); // TODO: Check this.
 }
 
