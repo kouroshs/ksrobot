@@ -64,6 +64,10 @@ public:
     bool                                GetBool(const std::string& name, const boost::optional<bool>& defVal = boost::none);
     void                                PutBool(const std::string& name, bool val);
     
+    int                                 GetAxis(const std::string& name, const boost::optional<std::string>& defVal = boost::none);
+    int                                 GetAxis(const std::string& name, const boost::optional<int>& defVal = boost::none);
+    void                                PutAxis(const std::string& name, int axis);
+    
     bool                                NodeExists(const std::string& name) const;
     ProgramOptions::Ptr                 StartNode(const std::string& name);
     void                                operator = (const ProgramOptions& other);

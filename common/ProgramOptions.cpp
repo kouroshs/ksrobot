@@ -1,7 +1,7 @@
 #include <common/ProgramOptions.h>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/graph/graph_concepts.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <fstream>
 #include <iostream>
@@ -108,6 +108,40 @@ bool ProgramOptions::GetBool(const std::string& name, const boost::optional<bool
 void ProgramOptions::PutBool(const std::string& name, bool val)
 {
     PutValue<bool>(name, val);
+}
+
+int ProgramOptions::GetAxis(const std::string& name, const boost::optional<std::string>& defVal)
+{
+    std::string axis = GetValue<std::string>(name, defVal);
+    boost::to_lower(axis);
+    if( axis == "x" )
+        return 0;
+    else if( axis == "y" )
+        return 1;
+    else if( axis == "z" )
+        return 2;
+    else
+        throw std::runtime_error("(ProgramOptions::GetAxis) Invalid axis was provided.");
+}
+
+static std::string axis_names[] = { std::string("x"), std::string("y"), std::string("z") };
+
+int ProgramOptions::GetAxis(const std::string& name, const boost::optional<int>& defVal)
+{
+    boost::optional<std::string> def_val = boost::none;
+    if( defVal )
+    {
+        int axis = *defVal;
+        assert(axis >= 0 && axis < 3);
+        def_val = axis_names[axis];
+    }
+    return GetAxis(name, def_val);
+}
+
+void ProgramOptions::PutAxis(const string& name, int axis)
+{
+    assert(axis >= 0 && axis < 3);
+    PutString(name, axis_names[axis]);
 }
 
 bool ProgramOptions::NodeExists(const std::string& name) const
