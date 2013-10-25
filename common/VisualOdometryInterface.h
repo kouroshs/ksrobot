@@ -207,6 +207,9 @@ protected:
     bool                                        mSetHeight;
     float                                       mRobotHeight;
     
+    bool                                        mProjectMovementOnGround;
+    int                                         mProjectToAxis;
+    
     bool                                        mIsEveryCycleKeyframe;
     bool                                        mUseMovementThresholdsForKeyframes;
     float                                       mMovementThr;

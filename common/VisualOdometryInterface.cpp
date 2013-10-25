@@ -95,37 +95,45 @@ void VisualOdometryInterface::FinishCycle()
     mMotion->GlobalPose = mMotion->GlobalPose * mMotion->MotionEstimate;
     //if( mSetHeight )
     
-    bool option = true;
-    if( option )
+    if( mProjectMovementOnGround )
     {
-        mMotion->GlobalPose.translation()[1] = 0;//mRobotHeight;
-        Eigen::Matrix<float,3,1> euler = mMotion->GlobalPose.rotation().eulerAngles(2, 1, 0);
+        mMotion->GlobalPose.translation()[mProjectToAxis] = mRobotHeight;
+        Eigen::Matrix<float, 3, 1> euler = mMotion->GlobalPose.rotation().eulerAngles(2, 1, 0);
         
-        float yaw = 0;//euler(0, 0);
+        float yaw = euler(0, 0);
         float pitch = euler(1, 0);
-        float roll = 0;//euler(2, 0);
+        float roll = euler(2, 0);
         
-        Eigen::Matrix3f Rx,Ry,Rz;
-        float s1 = sin(roll);
-        float c1 = cos(roll);
-        Rx <<   1,  0,  0,
-        0, c1,-s1,
-        0, s1, c1;
+        Eigen::Matrix3f Rx, Ry, Rz;
         
-        float s2 = sin(pitch);
-        float c2 = cos(pitch);
-        Ry <<  c2,  0, s2,
-        0,  1,  0,
-        -s2,  0, c2;
-        
-        float s3 = sin(yaw);
-        float c3 = cos(yaw);
-        Rz <<  c3,-s3,  0,
-        s3, c3,  0,
-        0,  0,  1;
-        
-        mMotion->GlobalPose.linear() = Rx * Ry * Rz;
-        
+        if( mProjectToAxis == 0 )
+        {
+            float s1 = sin(roll);
+            float c1 = cos(roll);
+            Rx <<   1,  0,  0,
+            0, c1,-s1,
+            0, s1, c1;
+            mMotion->GlobalPose.linear() = Rx;
+        }
+        else if( mProjectToAxis == 1 ) // default for kinect
+        {
+            float s2 = sin(pitch);
+            float c2 = cos(pitch);
+            Ry <<  c2,  0, s2,
+            0,  1,  0,
+            -s2,  0, c2;
+            mMotion->GlobalPose.linear() = Ry;
+        }
+        else
+        {
+            float s3 = sin(yaw);
+            float c3 = cos(yaw);
+            Rz <<  c3,-s3,  0,
+            s3, c3,  0,
+            0,  0,  1;
+            mMotion->GlobalPose.linear() = Rz;
+        }
+        //mMotion->GlobalPose.linear() = Rx * Ry * Rz;
     }
         
     mIsCycleKeyframe = CheckForKeyframe();
@@ -158,20 +166,13 @@ void VisualOdometryInterface::FinishCycle()
 bool VisualOdometryInterface::CheckForKeyframe()
 {
     if( mIsEveryCycleKeyframe )
-    {
-//         Debug("(VisualOdometryInterface::CheckForKeyframe) Every cycle is keyframe.\n");
         return true;
-    }
     
     if( GetCycle() == 0 )
-    {
-//         Debug("(VisualOdometryInterface::CheckForKeyframe) cycle is 0.\n");
         return true;
-    }
     
     if( mUseMovementThresholdsForKeyframes )
     {
-        
         // first check for movement threshold
         if( mMotion->CurrRelativeMotion.translation().squaredNorm() >= mMovementThr * mMovementThr )
             return true;
@@ -200,6 +201,9 @@ bool VisualOdometryInterface::CheckForKeyframe()
 void VisualOdometryInterface::ReadSettings(ProgramOptions::Ptr po)
 {
     Interface::ReadSettings(po);
+    
+    mProjectMovementOnGround = po->GetBool("ProjectMovementOnGround", false);
+    mProjectToAxis = po->GetAxis("ProjectToAxis", std::string("y"));
     
     mIsEveryCycleKeyframe = po->GetBool("IsEveryCycleKeyframe", false);
     mUseMovementThresholdsForKeyframes = po->GetBool("UseMovementThresholdsForKeyframes", false);
