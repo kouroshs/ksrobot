@@ -36,8 +36,8 @@ int main(int argc, char** argv)
     fovis->ReadSettings(po->StartNode("Fovis"));
     map->ReadSettings(po->StartNode("Octomap"));
     
-    std::string database_dir("/home/kourosh/test/pointclouds/lab_corridor_full_1/");
-    std::string output_dir("/home/kourosh/test/pointclouds/lab_corridor_full_1/");
+    std::string database_dir("/home/kourosh/projects/ksrobot/build/bin/");
+    std::string output_dir("/home/kourosh/projects/ksrobot/build/bin/pcs");
     
     kinect->Initialize(database_dir);
     

@@ -33,5 +33,5 @@ find_package(PNG REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS} ${PNG_INCLUDE_DIR})
 
 add_library(ksrobot_common SHARED ${COMMON_SRC} ${COMMON_PYTHON_SRCS})
-target_link_libraries(ksrobot_common ${PYTHON_LIBRARIES} ${GLOBAL_LIBRARIES} ${PNG_LIBRARY} octomap gtsam)
+target_link_libraries(ksrobot_common ${PYTHON_LIBRARIES} ${GLOBAL_LIBRARIES} octomap gtsam)
 cotire(ksrobot_common)

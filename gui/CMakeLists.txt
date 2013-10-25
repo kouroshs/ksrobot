@@ -13,5 +13,5 @@ qt4_automoc(${GUI_SRCS})
 add_library(ksrobot_gui SHARED ${GUI_SRCS} ${GUI_MOC_FILES})
 target_link_libraries(ksrobot_gui ksrobot_common ksrobot_interfaces ${GLOBAL_LIBRARIES} ${QT_QTCORE_LIBRARY} 
                        ${QT_QTGUI_LIBRARY} ${QT_QTNETWORK_LIBRARY} ${VTK_LIBRARIES} QVTK)
-cotire(ksrobot_gui)
+#cotire(ksrobot_gui)
  
