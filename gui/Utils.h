@@ -30,35 +30,35 @@ class Utils
 public:
     static void                 RegisterDefaultQtTypes();
     
-    static QSize                ReadSize(KSRobot::common::ProgramOptions::Ptr po,
+    static QSize                ReadSize(common::ProgramOptions::Ptr po,
                                          const std::string& name,
                                          const QSize& defaultVal);
     
-    static void                 WriteSize(KSRobot::common::ProgramOptions::Ptr po,
+    static void                 WriteSize(common::ProgramOptions::Ptr po,
                                           const std::string& name,
                                           const QSize& sz);
     
-    static QRect                ReadRect(KSRobot::common::ProgramOptions::Ptr po,
+    static QRect                ReadRect(common::ProgramOptions::Ptr po,
                                          const std::string& name,
                                          const QRect& defaultVal);
     
-    static void                 WriteRect(KSRobot::common::ProgramOptions::Ptr po,
+    static void                 WriteRect(common::ProgramOptions::Ptr po,
                                           const std::string& name,
                                           const QRect& rect);
     
-    static QMargins             ReadMargins(KSRobot::common::ProgramOptions::Ptr po,
+    static QMargins             ReadMargins(common::ProgramOptions::Ptr po,
                                          const std::string& name,
                                          const QMargins& defaultVal);
     
-    static void                 WriteMargins(KSRobot::common::ProgramOptions::Ptr po,
+    static void                 WriteMargins(common::ProgramOptions::Ptr po,
                                           const std::string& name,
                                           const QMargins& rect);
     
-    static QPoint               ReadPoint(KSRobot::common::ProgramOptions::Ptr po,
+    static QPoint               ReadPoint(common::ProgramOptions::Ptr po,
                                           const std::string& name,
                                           const QPoint& defVal);
     
-    static void                 WritePoint(KSRobot::common::ProgramOptions::Ptr po,
+    static void                 WritePoint(common::ProgramOptions::Ptr po,
                                            const std::string& name,
                                            const QPoint& point);
     

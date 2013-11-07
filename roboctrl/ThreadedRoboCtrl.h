@@ -21,17 +21,52 @@
 #ifndef THREADEDROBOCTRL_H
 #define THREADEDROBOCTRL_H
 
+#include <common/Event.h>
+#include <common/Geometry.h>
 #include <roboctrl/SerialPort.h>
 #include <boost/thread.hpp>
 #include <boost/chrono.hpp>
 #include <boost/atomic.hpp>
 #include <boost/function.hpp>
 #include <boost/signals2.hpp>
+#include <queue>
 
 namespace KSRobot
 {
 namespace roboctrl
 {
+class ThreadedRoboCtrl;
+class RobotCommand
+{
+public:
+    enum Command
+    {
+        CMD_MOVE,
+        CMD_TURN,
+        CMD_TURN_TO,
+        CMD_STOP,
+        CMD_EMPTY
+    };
+    
+    RobotCommand() : mCmd(CMD_EMPTY) {;}
+    RobotCommand(Command cmd, int ival, float fval) : mCmd(cmd), iVal(ival), fVal(fval) {;}
+    
+    Command GetCommand() const { return mCmd; }
+    float   GetSpeed() const { return fVal; }
+    int     GetAmount() const { return iVal; }
+    
+    static RobotCommand Move(int cm, float speed = 1.0f) { return RobotCommand(CMD_MOVE, cm, speed); }
+    static RobotCommand Turn(int degree, float speed = 1.0f) { return RobotCommand(CMD_TURN, degree, speed); }
+    static RobotCommand TurnTo(int degree, float speed = 1.0f) { return RobotCommand(CMD_TURN_TO, degree, speed); }
+    static RobotCommand Stop() { return RobotCommand(CMD_STOP, 0, 0); }
+private:
+    friend class ThreadedRoboCtrl;
+    
+    Command         mCmd;
+    int             iVal;
+    float           fVal;
+    
+};
 
 class ThreadedRoboCtrl
 {
@@ -61,8 +96,56 @@ public:
         CMD_DISABLE_TIMEOUT, 
         CMD_ENABLE_TIMEOUT
     };
+
+    typedef ThreadedRoboCtrl                            this_type;
+    typedef boost::shared_ptr<ThreadedRoboCtrl>         Ptr;
+    typedef boost::shared_ptr<const ThreadedRoboCtrl>   ConstPtr;
+    
+    ThreadedRoboCtrl();
+    ~ThreadedRoboCtrl();
+    
+    void                            SetDevice(const std::string& robx_motor_device, const std::string& compass_device = "");
+    
+    void                            StartCommThread();
+    void                            StopCommThread();
+    
+    boost::signals2::connection     RegisterSuddenMoveReceiver(boost::function<void()> fn);
+    boost::signals2::connection     RegisterTimoutReciever(boost::function<void()> fn);
+    boost::signals2::connection     RegisterIOErrorReciever(boost::function<void()> fn);
+    
+    // These accept positive values only.
+    
+    inline float                    GetCompassAngle() const { return mCompassAngle.load(); }
+    
+    void                            PutCommandToQueue(const RobotCommand& rc);
+    void                            ClearCommandQueue(bool bContinueExecutingCurrentCommand = true);
+    void                            WaitForAllCommands();
+    void                            TestCommand(int , float);
+private:
+    void                            ThreadEntry();
+    void                            ThreadTimedCheck();
+    bool                            InitMotor();
+    void                            ReadEncoders();
+    void                            NextCommand();
+    
+    void                            Write(MotorCommand cmd, unsigned char val1 = 0, unsigned char val2 = 0, unsigned char val3 = 0);
+    void                            Read(unsigned char* buffer, size_t num_bytes);
+    
+    void                            ResetOnTimeout();
+
+    void                            StopRobot();
+    void                            Turn(int degree, float speed);
+    void                            TurnTo(int degree, float speed);
+    void                            Move(int cm, float speed);
+
+    void                            TurnWithSignAndSpeed(int sign, float speed);
+    
+    void                            ExecCommand(const RobotCommand& rc);
+    bool                            ContinuousCommand(const RobotCommand::Command& rc) const;
     
     
+    void                            CompassUpdateThreadEntry();
+private:
     struct MotorStates
     {
         int                         Encoders[2];
@@ -71,72 +154,55 @@ public:
         int                         Version;
     };
     
-    ThreadedRoboCtrl();
-    ~ThreadedRoboCtrl();
-    
-    void                            SetDevice(const std::string& port);
-    
-    void                            StartCommThread();
-    void                            StopCommThread();
-    
-    void                            RegisterBeforeStopReciever(boost::function<bool ()> fn);
-    void                            RegisterBeforeMoveReciever(boost::function<void ()> fn);
-    void                            RegisterBeforeTurnReciever(boost::function<void ()> fn);
-    
-    boost::signals2::connection     RegisterTimoutReciever(boost::function<void()> fn);
-    boost::signals2::connection     RegisterIOErrorReciever(boost::function<void()> fn);
-    
-    // These accept positive values only.
-    void                            StopRobot();
-    void                            TurnLeft(int degree, float speed);
-    void                            TurnRight(int degree, float speed);
-    void                            Forward(int cm, float speed);
-    void                            Backward(int cm, float speed);
-    
-    void                            Turn(int degree, float speed);
-    void                            Move(int cm, float speed);
-    
-private:
-    void                            ThreadEntry();
-    void                            ThreadTimedCheck();
-    bool                            InitMotor();
-    void                            ReadEncoders();
-    
-    void                            StopRobotNoLock();
-    
-    bool                            CheckForStop();
-    
-    void                            Write(MotorCommand cmd, unsigned char val1 = 0, unsigned char val2 = 0, unsigned char val3 = 0);
-    void                            Read(unsigned char* buffer, size_t num_bytes);
-    
-    void                            ResetOnTimeout();
-    
-private:
     boost::mutex                    mCommandMutex;
     boost::thread                   mCommThread;
     boost::atomic<bool>             mContinueExecution;
     
-//     boost::atomic<int>              mEncoderGoal;
-//     boost::atomic<int>              mEncoderGoalForward;
-//     boost::atomic<int>              mCheckEncodersToStop; // 0 = no, 1 = check movement, 2 = check turn.
-
     // no need to be atomic if only accessed inside a mutex lock
     int                             mEncoderGoal;
     int                             mEncoderGoalForward;
     int                             mCheckEncodersToStop; // 0 = no, 1 = check movement, 2 = check turn.
     
+    bool                            mAnyCommandExecuting;
     
     std::string                     mDeviceName;
     SerialPort                      mPort;
     
-    boost::function<bool ()>        mBeforeStopRecievers;
-    boost::function<void ()>        mBeforeMoveRecievers;
-    boost::function<void ()>        mBeforeTurnRecievers;
+    boost::signals2::signal<void()> mSuddenMoveRecievers;
+    
+    boost::mutex                    mQueueLock;
+    std::queue<RobotCommand>        mCommandQueue;
+    common::Event                   mCommandsEvent;
     
     boost::signals2::signal<void()> mTimeoutRec;
     boost::signals2::signal<void()> mIOErrorRec;
     
     MotorStates                     mMotorState;
+    
+    std::string                     mCompassDeviceName;
+    SerialPort                      mCompass;
+    boost::thread                   mCompassThread;
+    bool                            mUseCompass;
+    boost::atomic<float>            mCompassAngle;
+    common::AngDeg                  mCompassStartAngle;
+    float                           mTurnStartAngle;
+    float                           mTurnGoalAngle;
+    float                           mMoveMaintainAngle;
+    
+public:
+    
+    
+    Eigen::Vector2f                 mPosMoveStart;
+    Eigen::Vector2f                 mCurrentPosition;
+    common::AngDeg                  mYaw;
+    
+    boost::mutex                    mVO_Lock;
+    bool                            mUseVO;
+    Eigen::Vector2f                 mVO_StartPosition;
+    float                           mVO_StartYaw;
+    Eigen::Vector2f                 mVO_CurrentPosition;
+    float                           mVO_CurrentYaw;
+    float                           mVO_MoveValueMeters;
 };
 
 }

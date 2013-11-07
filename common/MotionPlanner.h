@@ -81,13 +81,18 @@ public:
     inline OccupancyMap::Ptr                    GetOccupancyMap() const;
     
     virtual void                                ReadSettings(ProgramOptions::Ptr po);
-    virtual void                                Initialize();
+    virtual void                                Initialize(size_t max_map_size);
     virtual PlannerResult                       Plan() = 0;
+    virtual void                                Clear() = 0;
+    
+    static std::string                          GetPlannerResultString(PlannerResult res);
 protected:
     float                                       mRobotRadius;
     float                                       mSafeThr;
     float                                       mTimeout;
     float                                       mEffectiveRadius;
+    
+    size_t                                      mMaxMapSize;
     RobotState                                  mStartState;
     RobotState                                  mGloalState;
     

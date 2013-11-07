@@ -46,9 +46,27 @@ void MotionPlanner::ReadSettings(ProgramOptions::Ptr po)
     mTimeout = po->GetDouble("Timeout", 1.0f);
 }
 
-void MotionPlanner::Initialize()
+void MotionPlanner::Initialize(size_t max_map_size)
 {
     mEffectiveRadius = mRobotRadius + mSafeThr;
+    mMaxMapSize = max_map_size;
+}
+
+std::string MotionPlanner::GetPlannerResultString(MotionPlanner::PlannerResult res)
+{
+    switch(res)
+    {
+        case SUCCESS:
+            return "SUCCESS";
+            break;
+        case TIMEOUT:
+            return "TIMEOUT";
+            break;
+        case FAIL:
+            return "FAIL";
+            break;
+    }
+    return "ILLEGAL STATE (BUG)";
 }
 
 

@@ -99,6 +99,9 @@ public:
     MapPointDataType        At(size_t i, size_t j) const { return Data[Index(i, j)]; }
     MapPointDataType&       At(size_t i, size_t j) { return Data[Index(i, j)]; }
     
+    inline MapPointDataType         AtCentered(int i, int j) const;
+    inline MapPointDataType&        AtCentered(int i, int j);
+    
     void                    Reinitialize(); // This sets the ROI to UnknownCell
     
     bool                    IsValidIndex(size_t idx) const { return idx < Data.size(); }
@@ -142,6 +145,24 @@ public:
     
     CLASS_DEF_PYEXPORT;
 };
+
+inline OccupancyMap::MapPointDataType OccupancyMap::AtCentered(int i, int j) const
+{
+    //TODO: Remove centerx and centery
+    const int posI = (int)Height / 2 + i;
+    const int posJ = (int)Width / 2 + j;
+    assert(posI >= 0 && posI < (int)Height && posJ >= 0 && posJ < (int)Width);
+    return At((size_t)posI, (size_t)posJ);
+}
+
+inline OccupancyMap::MapPointDataType& OccupancyMap::AtCentered(int i, int j)
+{
+    //TODO: Remove centerx and centery
+    const int posI = (int)Height / 2 + i;
+    const int posJ = (int)Width / 2 + j;
+    assert(posI >= 0 && posI < (int)Height && posJ >= 0 && posJ < (int)Width);
+    return At((size_t)posI, (size_t)posJ);
+}
 
 } // end namespace common
 } // end namespace KSRobot

@@ -148,5 +148,22 @@ void KinectImageDiskIO::SaveToFileDepth(const std::string& file, KinectRawDepthI
     }
 }
 
+void KinectImageDiskIO::SaveToFileGray(const std::string& file, KinectGrayImage::ConstPtr gray)
+{
+    gil::gray8_image_t::point_t dims(gray->GetWidth(), gray->GetHeight());
+    gil::gray8_image_t image(dims);
+    gil::gray8_view_t view = gil::view(image);
+    const KinectGrayImage::ArrayType& array = gray->GetArray();
+    size_t index = 0;
+    for(int i = 0; i < image.height(); i++)
+    {
+        gil::gray8_view_t::x_iterator iter = view.row_begin(i);
+        for(int j = 0; j < image.width(); j++)
+            iter[j] = array[index++];
+    }
+    gil::png_write_view(file, view);
+}
+
+
 };
 };

@@ -10,14 +10,20 @@
 #define BACKTRACE_ARRAY_COUNT   100
 #define FUNCTION_MAX_SIZE  200
 
-
 namespace KSRobot
 {
 namespace common
 {
 
+
+size_t GetCurrentTimeMillisecs()
+{
+    return boost::chrono::duration_cast<boost::chrono::milliseconds>(Clock::now().time_since_epoch()).count();
+}
+
 void PrintStackTrace()
 {
+#if 0
     void *array[BACKTRACE_ARRAY_COUNT];
     size_t stack_depth;
     
@@ -76,8 +82,10 @@ void PrintStackTrace()
 
     free(function_name);
     free(strings);
+#endif
 }
 
+#if 0
 #ifndef NDEBUG
 
 static void SigSegvHandler(int sig)
@@ -95,6 +103,7 @@ void RegisterDebugModeStackTracePrinter()
 #endif
 }
 
+#endif
 
 }
 }

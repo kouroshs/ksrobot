@@ -56,7 +56,8 @@ protected:
     virtual bool        CheckForKeyframe();
     virtual void        PublishKeyframeFeatures(common::VisualKeyframe::Ptr kf);
     void                InitInternal(const common::KinectInterface::CameraParameters& kinectParams, const fovis::VisualOdometryOptions& options);
-protected:
+    virtual void        FinishCycle();
+public:
     fovis::VisualOdometry*                      mFovis;
     fovis::DepthImage*                          mDepthImage;
     

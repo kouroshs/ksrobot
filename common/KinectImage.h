@@ -80,7 +80,7 @@ public:
         return mHeight * mWidth * Channels;
     }
     
-    inline size_t ScanLineIndex(int y) const
+    inline size_t ScanLineIndex(size_t y) const
     {
         return y * mWidth * NumChannels;
     }
@@ -90,7 +90,7 @@ public:
         return idx + NumChannels;
     }
     
-    inline size_t GetElementStartIndex(int x, int y) const
+    inline size_t GetElementStartIndex(size_t x, size_t y) const
     {
         return ScanLineIndex(y) + x * NumChannels;
     }
@@ -111,6 +111,7 @@ class KinectImageDiskIO
 public:
     static void                         SaveToFileRgb(const std::string& file, KinectRgbImage::ConstPtr rgb);
     static void                         SaveToFileDepth(const std::string& file, KinectRawDepthImage::ConstPtr depth);
+    static void                         SaveToFileGray(const std::string& file, KinectGrayImage::ConstPtr gray);
     
     static KinectRgbImage::Ptr          LoadRgbFromFile(const std::string& file);
     static KinectRawDepthImage::Ptr     LoadDepthFromFile(const std::string& file);

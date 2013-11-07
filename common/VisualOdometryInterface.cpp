@@ -31,7 +31,7 @@ namespace common
 
 VisualOdometryInterface::VisualOdometryInterface(): Interface(),
     mIsCycleKeyframe(true), // first cycle is always keyframe
-    mPublishKeyframeDescriptors(true),
+    mPublishKeyframeDescriptors(false),
     mConverged(false),
     mLastKinectCycle(-1), mOdomTimer(new Timer("Odometry time")),
     mFinishCycleTime(new Timer("FinishCycle time")),
@@ -58,7 +58,9 @@ void VisualOdometryInterface::RegisterToKinect(KinectInterface::Ptr ki)
 bool VisualOdometryInterface::RunSingleCycle()
 {
     Interface::ScopedLock lock(this);
-    Interface::ScopedLock kinectLock(mKinect.get());
+    //FIXME: For the current tests, we don't run vo in parallel to kinect and call RunSingleCycle inside kinect's OnFinish
+    //          this causes the kinect to be already locked.
+    //Interface::ScopedLock kinectLock(mKinect.get()); 
     
     if( mKinect->GetCycle() <= mLastKinectCycle )
         return false;
@@ -100,9 +102,15 @@ void VisualOdometryInterface::FinishCycle()
         mMotion->GlobalPose.translation()[mProjectToAxis] = mRobotHeight;
         Eigen::Matrix<float, 3, 1> euler = mMotion->GlobalPose.rotation().eulerAngles(2, 1, 0);
         
-        float yaw = euler(0, 0);
-        float pitch = euler(1, 0);
-        float roll = euler(2, 0);
+        Eigen::Affine3f t = mMotion->GlobalPose;
+        
+        float roll = atan2f(t(2,1), t(2,2));
+        float pitch = asinf(-t(2,0));
+        float yaw = atan2f(t(1,0), t(0,0));
+        
+//         float yaw = euler(0, 0);
+//         float pitch = euler(1, 0);
+//         float roll = euler(2, 0);
         
         Eigen::Matrix3f Rx, Ry, Rz;
         
@@ -166,8 +174,10 @@ void VisualOdometryInterface::FinishCycle()
 bool VisualOdometryInterface::CheckForKeyframe()
 {
     if( mIsEveryCycleKeyframe )
+    {
+        std::cout << "ALL KEYFRAME\n" << std::flush;
         return true;
-    
+    }
     if( GetCycle() == 0 )
         return true;
     
@@ -175,7 +185,9 @@ bool VisualOdometryInterface::CheckForKeyframe()
     {
         // first check for movement threshold
         if( mMotion->CurrRelativeMotion.translation().squaredNorm() >= mMovementThr * mMovementThr )
+        {
             return true;
+        }
         //now check for yaw angle.
         //NOTE: SINCE IN FOVIS OR OTHER VO Algorithms, the coordinate is usually in the way that z is front, yaw might not be the actual yaw
         //          calculated here.
@@ -190,9 +202,11 @@ bool VisualOdometryInterface::CheckForKeyframe()
         //It is correct that in normal world condition we should check the yaw angle, but because of kinect data aquizition, 
         // the yaw angle in robot frame is pitch angle in kinect frame, which we will use here.
         //NOTE: For now I don't really use robot frame, and always use kinect frame.
-        
-        if( pitch >= mYawThr )
+        //NOTE: This also assumes small motions.
+        if( pitch >= mYawThr && 180 - pitch >= mYawThr ) // to prevent 179.9 degree pitch from trigerring keyframe change
+        {
             return true;
+        }
     }
     
     return false;
@@ -209,7 +223,7 @@ void VisualOdometryInterface::ReadSettings(ProgramOptions::Ptr po)
     mUseMovementThresholdsForKeyframes = po->GetBool("UseMovementThresholdsForKeyframes", false);
     mMovementThr = po->GetDouble("MovementThr", 0.1);
     mYawThr = po->GetDouble("YawThr", 20.0);
-    mPublishKeyframeDescriptors = po->GetBool("PublishKeyframeDescriptors", true);
+    mPublishKeyframeDescriptors = po->GetBool("PublishKeyframeDescriptors", false);
 }
 
 void VisualOdometryInterface::SetRobotInfo(RobotInfo::Ptr roboinfo)

@@ -57,8 +57,6 @@ Interface::~Interface()
 {
     if( mContinueExec )
         Stop();
-    for(ConnectionList::iterator iter = mConnections.begin(); iter != mConnections.end(); iter++)
-        iter->disconnect();
     
     if( mLogFile )
         *mLogFile << std::flush;
@@ -82,6 +80,10 @@ void Interface::Start()
 
 void Interface::Stop()
 {
+    for(ConnectionList::iterator iter = mConnections.begin(); iter != mConnections.end(); iter++)
+        iter->disconnect();
+    mConnections.clear();
+    
     mContinueExec = (false);
     if( mThread.joinable() )
         mThread.join();

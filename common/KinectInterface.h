@@ -68,11 +68,6 @@ public:
     virtual bool                                ProvidesGroundTruth() = 0;
     virtual Eigen::Isometry3f                   GetCurrentGroundTruth() = 0;
     
-    inline void                                 EnablePointCloudGeneration(bool enable);
-    inline void                                 EnableFloatDepthGeneration(bool enable);
-    inline bool                                 PointCloudGenerationEnabled() const;
-    inline bool                                 FloatDepthGenerationEnabled() const;
-    
     bool                                        Get3DPosition(int rgbX, int rgbY, pcl::PointXYZ& ret) const;
     bool                                        Get3DPosition(int rgbX, int rgbY, int depthInCM, pcl::PointXYZ& ret) const;
 
@@ -94,10 +89,6 @@ protected:
     KinectGrayImage::Ptr                        mGray;
     KinectRawDepthImage::Ptr                    mRawDepth;
     KinectFloatDepthImage::Ptr                  mFloatDepth;
-    
-    bool                                        mGeneratePointCloud;
-    bool                                        mGenerateFloatDepth;
-    
     
     float                                       mRedCoef;
     float                                       mGreenCoef;
@@ -135,27 +126,6 @@ inline KinectInterface::CameraParameters KinectInterface::GetCameraParams() cons
 {
     return mParams;
 }
-
-inline void KinectInterface::EnableFloatDepthGeneration(bool enable)
-{
-    mGenerateFloatDepth = enable;
-}
-
-inline void KinectInterface::EnablePointCloudGeneration(bool enable)
-{
-    mGeneratePointCloud = enable;
-}
-
-inline bool KinectInterface::FloatDepthGenerationEnabled() const
-{
-    return mGenerateFloatDepth;
-}
-
-inline bool KinectInterface::PointCloudGenerationEnabled() const
-{
-    return mGeneratePointCloud;
-}
-
 
 } // end namespace utils
 } // end namespace KSRobot

@@ -21,10 +21,31 @@
 #include <common/PCLUtils.h>
 #include <pcl/features/integral_image_normal.h>
 #include <pcl/filters/normal_space.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/passthrough.h>
 #include <pcl/io/pcd_io.h>
 #include <limits>
 
 using namespace KSRobot::common;
+
+void PCLUtils::ApplyPassThrough(KinectPointCloud& out, KinectPointCloud::ConstPtr in, const std::string& field_name,
+                                float range_min, float range_max, bool set_negative)
+{
+    pcl::PassThrough<KinectPointCloud::PointType> pt;
+    pt.setFilterFieldName(field_name);
+    pt.setFilterLimits(range_min, range_max);
+    pt.setFilterLimitsNegative(set_negative);
+    pt.setInputCloud(in);
+    pt.filter(out);
+}
+
+void PCLUtils::ApplyVoxelGrid(KinectPointCloud& out, KinectPointCloud::ConstPtr in, float leaf_size)
+{
+    pcl::VoxelGrid<KinectPointCloud::PointType> v;
+    v.setLeafSize(leaf_size, leaf_size, leaf_size);
+    v.setInputCloud(in);
+    v.filter(out);
+}
 
 void PCLUtils::ConvertPointCloud(KinectPointCloud::ConstPtr in, pcl::PointCloud<pcl::PointXYZ>::Ptr out)
 {

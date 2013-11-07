@@ -13,7 +13,7 @@
 //TODO: MAKE THESE OPTIONS, PROBABLY USING ProgramOptions
 
 std::string g_FileExtention = ".png";
-int g_SkipCycles = 10;
+int g_SkipCycles = 3;
 
 
 KSRobot::interfaces::KinectDeviceReader::Ptr device;
@@ -119,9 +119,6 @@ int main(int argc, char** argv)
         device->Initialize("");
 
         std::cout << "base path: " << boost::filesystem::absolute(basePath) << std::endl << std::flush;
-        
-        device->EnablePointCloudGeneration(false);
-        device->EnableFloatDepthGeneration(false);
         
         device->RegisterOnFinishReceiver(KinectSaveFn);
         

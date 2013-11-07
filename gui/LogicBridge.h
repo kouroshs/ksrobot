@@ -30,6 +30,8 @@
 #include <common/ExecCtrlData.h>
 
 
+#include <QPushButton>
+
 namespace KSRobot
 {
 namespace gui
@@ -42,85 +44,96 @@ public:
     explicit LogicBridge(QObject* parent = 0);
     ~LogicBridge();
 
-    void                                SaveKinectInputTo(const QString& path);
-    QString                             GetSavePath() const;
     
-    common::EngineInterface::Ptr        GetEngine() { return mEngine; }
-    
-    void                                SetRGBDSkip(int skip) { mSkipRGBD.Skip = skip; }
-    int                                 GetRGBDSkip() const { return mSkipRGBD.Skip; }
-    
-    void                                SetPointCloudSkip(int s) { mSkipPC.Skip = s; }
-    int                                 GetPointCloudSkip() const { return mSkipPC.Skip; }
-    
-    inline void                         EnableRGBD(bool enable);
-    inline void                         EnablePointCloud(bool enable);
-    
-signals:
-    void                                ExecutionFinished();
-    void                                OnRGBD(QImage rgb, QImage depth);
-    void                                OnPointCloud(common::KinectPointCloud::ConstPtr pc);
-    void                                OnVisualOdometry(QVector3D motionEstimate);
-    void                                OnError(const QString& err);
-public slots:
-    void                                OnStart(const common::ExecCtrlData& data);
-    void                                OnStop();
-    
-private slots:
+    QPushButton* buttons[5];
+
+public slots:    
+    void b0();
+    void b1();
+    void b2();
+    void b3();
+    void b4();
     
     
-protected:
-    virtual void                        connectNotify(const char* sig);
-    virtual void                        disconnectNotify(const char* sig);
-    
-    void                                OnKinectNewDataReceive();
-    void                                OnKinectFinish();
-    void                                OnFovisCycleComplete();
-protected:
-    class SkipParams
-    {
-    public:
-        int                             Skip;
-        int                             CurrCount;
-        
-        bool                            ShouldSkip()
-        {
-            if( Skip == 0 ) return false;
-            if( ++CurrCount == Skip )
-            {
-                CurrCount = 0;
-                return false;
-            }
-            return true;
-        }
-        
-        SkipParams() : Skip(0), CurrCount(0) {;}
-    };
-    
-    SkipParams                          mSkipRGBD;
-    SkipParams                          mSkipPC;
-    
-    int                                 mNumKinectReceiversConnected;
-    bool                                mRGBDEnabled;
-    bool                                mPointCloudEnabled;
-    common::SettingsBinder              mBinder;
-    QString                             mSavePath;
-    common::EngineInterface::Ptr        mEngine;
+//     void                                SaveKinectInputTo(const QString& path);
+//     QString                             GetSavePath() const;
+//     
+//     common::EngineInterface::Ptr        GetEngine() { return mEngine; }
+//     
+//     void                                SetRGBDSkip(int skip) { mSkipRGBD.Skip = skip; }
+//     int                                 GetRGBDSkip() const { return mSkipRGBD.Skip; }
+//     
+//     void                                SetPointCloudSkip(int s) { mSkipPC.Skip = s; }
+//     int                                 GetPointCloudSkip() const { return mSkipPC.Skip; }
+//     
+//     inline void                         EnableRGBD(bool enable);
+//     inline void                         EnablePointCloud(bool enable);
+//     
+// signals:
+//     void                                ExecutionFinished();
+//     void                                OnRGBD(QImage rgb, QImage depth);
+//     void                                OnPointCloud(common::KinectPointCloud::ConstPtr pc);
+//     void                                OnVisualOdometry(QVector3D motionEstimate);
+//     void                                OnError(const QString& err);
+// public slots:
+//     void                                OnStart(const common::ExecCtrlData& data);
+//     void                                OnStop();
+//     
+// private slots:
+//     
+//     
+// protected:
+//     virtual void                        connectNotify(const char* sig);
+//     virtual void                        disconnectNotify(const char* sig);
+//     
+//     void                                OnKinectNewDataReceive();
+//     void                                OnKinectFinish();
+//     void                                OnFovisCycleComplete();
+// protected:
+//     class SkipParams
+//     {
+//     public:
+//         int                             Skip;
+//         int                             CurrCount;
+//         
+//         bool                            ShouldSkip()
+//         {
+//             if( Skip == 0 ) return false;
+//             if( ++CurrCount == Skip )
+//             {
+//                 CurrCount = 0;
+//                 return false;
+//             }
+//             return true;
+//         }
+//         
+//         SkipParams() : Skip(0), CurrCount(0) {;}
+//     };
+//     
+//     SkipParams                          mSkipRGBD;
+//     SkipParams                          mSkipPC;
+//     
+//     int                                 mNumKinectReceiversConnected;
+//     bool                                mRGBDEnabled;
+//     bool                                mPointCloudEnabled;
+//     common::SettingsBinder              mBinder;
+//     QString                             mSavePath;
+//     common::EngineInterface::Ptr        mEngine;
+// };
+// 
+// inline void LogicBridge::EnablePointCloud(bool enable)
+// {
+//     mPointCloudEnabled = enable;
+// }
+// 
+// inline void LogicBridge::EnableRGBD(bool enable)
+// {
+//     mRGBDEnabled = enable;
+// }
+// 
+// 
+// } // end namespace gui
+// } // end namespace KSRobot
+// 
 };
-
-inline void LogicBridge::EnablePointCloud(bool enable)
-{
-    mPointCloudEnabled = enable;
-}
-
-inline void LogicBridge::EnableRGBD(bool enable)
-{
-    mRGBDEnabled = enable;
-}
-
-
-} // end namespace gui
-} // end namespace KSRobot
-
-
 #endif // LOGICBRIDGE_H

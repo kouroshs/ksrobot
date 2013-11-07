@@ -32,6 +32,14 @@ namespace common
 class PCLUtils
 {
 public:
+    static inline KinectPointCloud::Ptr    ApplyVoxelGrid(KinectPointCloud::ConstPtr in, float leaf_size);
+    static inline KinectPointCloud::Ptr    ApplyPassThrough(KinectPointCloud::ConstPtr in, const std::string& field_name, 
+                                                            float range_min, float range_max, bool set_negative = false);
+    
+    static void                     ApplyVoxelGrid(KinectPointCloud& out, KinectPointCloud::ConstPtr in, float leaf_size);
+    static void                     ApplyPassThrough(KinectPointCloud& out, KinectPointCloud::ConstPtr in, const std::string& field_name, 
+                                                     float range_min, float range_max, bool set_negative = false);
+    
     static void                     ConvertPointCloud(KinectPointCloud::ConstPtr in, pcl::PointCloud<pcl::PointXYZ>::Ptr out);
     static void                     DownsampleOrganized(KinectPointCloud::ConstPtr in, KinectPointCloud::Ptr out, size_t ds_rate);
     static void                     DownsampleOrganized(KinectPointCloud::ConstPtr in, pcl::PointCloud<pcl::PointXYZ>::Ptr out, size_t ds_rate);
@@ -50,6 +58,22 @@ public:
                                                         int bins = 50);
     
 };
+
+inline KinectPointCloud::Ptr PCLUtils::ApplyVoxelGrid(KinectPointCloud::ConstPtr in, float leaf_size)
+{
+    KinectPointCloud::Ptr out(new KinectPointCloud);
+    ApplyVoxelGrid(*out, in, leaf_size);
+    return out;
+}
+
+inline KinectPointCloud::Ptr PCLUtils::ApplyPassThrough(KinectPointCloud::ConstPtr in, const std::string& field_name, 
+                                                 float range_min, float range_max, bool set_negative)
+{
+    KinectPointCloud::Ptr out(new KinectPointCloud);
+    ApplyPassThrough(*out, in, field_name, range_min, range_max, set_negative);
+    return out;
+}
+
 
 class GICP
 {

@@ -5,9 +5,8 @@
 #include <interfaces/KinectDatasetReader.h>
 #include <interfaces/FovisInterface.h>
 #include <interfaces/OctomapInterface.h>
-
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/filters/passthrough.h>
+#include <interfaces/RRTPlanner.h>
+#include <common/PCLUtils.h>
 #include <pcl/common/transforms.h>
 
 #include <pcl/io/pcd_io.h>
@@ -21,10 +20,86 @@ using namespace common;
 using namespace interfaces;
 using namespace std;
 
+void SaveMapToImage(OccupancyMap::ConstPtr occ, const std::string& filename)
+{
+    QImage img(occ->Width, occ->Height, QImage::Format_RGB32);
+    
+    for(size_t i = 0; i < occ->Height; i++)
+        for(size_t j = 0; j < occ->Width; j++)
+        {
+            OccupancyMap::MapPointDataType val = occ->At(i, j);
+            QRgb color;
+            if( val == OccupancyMap::FreeCell )
+            {
+                color = qRgb(0, 255, 0);
+            }
+            else if( val == OccupancyMap::UnknownCell )
+            {
+                color = qRgb(0, 0, 0);
+            }
+            else if( val == OccupancyMap::OccupiedCell )
+            {
+                color = qRgb(0, 0, 255);
+            }
+            else
+            {
+                color = qRgb(255, 0, 0);
+            }
+            img.setPixel(j, i, color);
+        }
+        
+        img.save(filename.c_str());
+}
+
+void PlannerTest()
+{
+    OccupancyMap::Ptr map(new OccupancyMap(400, 400));
+    map->Resolution = 1.0f;
+    for(int i = -25; i <= 25; i++)
+        for(int j = -25; j <= 25; j++)
+            map->AtCentered(i, j) = OccupancyMap::OccupiedCell;
+    
+    for(int i = 25; i <= 75; i++)
+        for(int j = -25; j <= 125; j++)
+            map->AtCentered(i, j) = OccupancyMap::OccupiedCell;
+        
+    for(int i = -75; i <= -25; i++)
+        for(int j = -25; j <= 125; j++)
+            map->AtCentered(i, j) = OccupancyMap::OccupiedCell;
+        
+    RRTPlanner::Ptr planner(new RRTPlanner);
+    ProgramOptions::Ptr po(new ProgramOptions);
+    po->LoadFromFile("comptest_settings.xml");
+    
+    planner->ReadSettings(po->StartNode("PlannerRRT"));
+    planner->Initialize(400);
+    
+    planner->SetOccupancyMap(map);
+    planner->SetStartState(Eigen::Vector2f(100, 1), 0);
+    planner->SetGoalState(Eigen::Vector2f(-50, -50), 0);
+    planner->Plan();
+    MotionPlanner::PlannerResult res = planner->Plan();
+    std::cout << "Planner result = " << MotionPlanner::GetPlannerResultString(res) << "\n";
+    
+    if( res == MotionPlanner::SUCCESS )
+    {
+        MotionPlanner::StateVector vect = planner->GetPlan();
+        for(size_t i = 0; i < vect.size(); i++)
+        {
+            cout << "State " << i << " Pose = (" << vect[i].Position[0] << ", " << vect[i].Position[1] << ") YAW = " << vect[i].Yaw << "\n";
+            map->AtCentered((int)vect[i].Position[1], (int)vect[i].Position[0]) = OccupancyMap::FreeCell;
+        }
+    }
+
+    SaveMapToImage(map, "/home/kourosh/test.png");
+    po->SaveToFile("comptest_settings.xml");
+}
+
 int main(int argc, char** argv)
 {
     (void)argc; (void)argv;
-    
+//     PlannerTest();
+//     return 0;
     ProgramOptions::Ptr po(new ProgramOptions());
     po->LoadFromFile("comptest_settings.xml");
     
@@ -36,21 +111,14 @@ int main(int argc, char** argv)
     fovis->ReadSettings(po->StartNode("Fovis"));
     map->ReadSettings(po->StartNode("Octomap"));
     
-    std::string database_dir("/home/kourosh/projects/ksrobot/build/bin/");
-    std::string output_dir("/home/kourosh/projects/ksrobot/build/bin/pcs");
+    std::string database_dir("/home/kourosh/test/autcup/final/");
+    std::string output_dir("/home/kourosh/test/autcup/final/");
     
     kinect->Initialize(database_dir);
     
     fovis->RegisterToKinect(kinect);
     map->RegisterToVO(fovis);
 
-    pcl::VoxelGrid<KinectPointCloud::PointType> vg;
-    vg.setLeafSize(0.1, 0.1, 0.1);
-    
-    pcl::PassThrough<KinectPointCloud::PointType> pass;
-    pass.setFilterFieldName("z");
-    pass.setFilterLimits(0, 4);
-    
     KinectPointCloud::Ptr final_pc(new KinectPointCloud);
     KinectPointCloud::Ptr tmp_pc1(new KinectPointCloud), tmp_pc2(new KinectPointCloud);
 
@@ -63,17 +131,16 @@ int main(int argc, char** argv)
     
     while( kinect->RunSingleCycle() )
     {
-        
         fovis->RunSingleCycle();
         map->RunSingleCycle();
         
         if( cycle > maxCycles )
             break;
         
-        if( fovis->IsThisCycleKeyframe() )
-        {
-            std::cout << "KEYFRAME\n";
-        }
+//         if( fovis->IsThisCycleKeyframe() )
+//         {
+//             std::cout << "KEYFRAME\n";
+//         }
         
         if( !fovis->Converged() && cycle > 1000 )
         {
@@ -82,17 +149,16 @@ int main(int argc, char** argv)
             continue;
         }
         KinectPointCloud::ConstPtr curr_pc = kinect->GetPointCloud();
-        
-        vg.setInputCloud(curr_pc);
-        vg.filter(*tmp_pc1);
-        
-        pass.setInputCloud(tmp_pc1);
-        pass.filter(*tmp_pc2);
+        PCLUtils::ApplyVoxelGrid(*tmp_pc1, curr_pc, 0.02);
+        PCLUtils::ApplyPassThrough(*tmp_pc2, tmp_pc1, "z", 0.8f, 4.0f);
         
         pcl::transformPointCloud(*tmp_pc2, *tmp_pc2, fovis->GetGlobalPose());
         final_pc->insert(final_pc->end(), tmp_pc2->begin(), tmp_pc2->end());
         
-        std::cout << cycle++  << "\t" << fovis->GetGlobalPose().translation()[1] << std::endl;
+        Eigen::Isometry3f t = fovis->GetGlobalPose();
+        
+        std::cout << cycle++  << "\tx =" << t.translation()[0] << " z = " << t.translation()[2] << 
+                    " YAW  = " << asinf(-t(2,0)) * 180 / M_PI << " inliers = " << fovis->mFovis->getMotionEstimator()->getNumInliers() << std::endl;
         
         //std::cout << final_pc->size() << "   " << tmp_pc2->size() << std::endl;
         
@@ -121,39 +187,11 @@ int main(int argc, char** argv)
     po->SaveToFile("comptest_settings.xml");
     
     // now time for frontier
-    OccupancyMap::Ptr occ(new OccupancyMap(1000, 1000));
-    map->ConvertToOccupancyGrid(occ, 500, 500, false);
-    vector<OccupancyMap::Frontier> frs;
-    occ->ExtractFrontiers(frs);
-    std::cout << "NUM FRONTS: " << frs.size() << std::endl;
-    
-    QImage img(occ->Width, occ->Height, QImage::Format_RGB32);
-    
-    for(size_t i = 0; i < occ->Height; i++)
-        for(size_t j = 0; j < occ->Width; j++)
-        {
-            OccupancyMap::MapPointDataType val = occ->At(i, j);
-            QRgb color;
-            if( val == OccupancyMap::FreeCell )
-            {
-                color = qRgb(0, 255, 0);
-            }
-            else if( val == OccupancyMap::UnknownCell )
-            {
-                color = qRgb(0, 0, 0);
-            }
-            else if( val == OccupancyMap::OccupiedCell )
-            {
-                color = qRgb(0, 0, 255);
-            }
-            else
-            {
-                color = qRgb(255, 0, 0);
-            }
-            img.setPixel(i, j, color);
-        }
-    
-    img.save("/home/kourosh/image.png");
+    OccupancyMap::Ptr occ(new OccupancyMap(100, 100));
+    map->ConvertToOccupancyGrid(occ, 50, 50, false);
+    //vector<OccupancyMap::Frontier> frs;
+    //occ->ExtractFrontiers(frs);
+    SaveMapToImage(occ, "/home/kourosh/image.png");
     
     return 0;
 }

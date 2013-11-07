@@ -87,7 +87,6 @@ void FovisInterface::RegisterToKinect(common::KinectInterface::Ptr ki)
 {
     assert(ki.get());
     VisualOdometryInterface::RegisterToKinect(ki);
-    mKinect->EnableFloatDepthGeneration(true);
     InitInternal(mKinect->GetCameraParams(), fovis::VisualOdometry::getDefaultOptions());
 }
 
@@ -104,6 +103,7 @@ bool FovisInterface::RunSingleCycle()
         mFovis->processFrame(mCurrGray->GetArray().data(), mDepthImage);
         //NOTE:
         mConverged = false;
+        
         if( mFovis->getMotionEstimateStatus() == fovis::SUCCESS )
         {
             mMotion->MotionEstimate = mFovis->getMotionEstimate().cast<float>();
@@ -136,6 +136,21 @@ float FovisInterface::GetConvergenceError()
     return 0;
 }
 
+void FovisInterface::FinishCycle()
+{
+    if( mNextCycleKeyframe )
+    {
+        //NOTE: The code moved from CheckForKeyframe
+        //TODO: Since fovis sets the reference frame to PREVIOUS frame, check if we should
+        //      set it to GetCycle() - 1 or not.
+        //mNextCycleKeyframe = false;
+        //mIsCycleKeyframe = true;
+        mPrevFovisReferenceFrame = GetCycle(); // now future frames will reference to this frame
+    }
+    
+    common::VisualOdometryInterface::FinishCycle();
+}
+
 bool FovisInterface::CheckForKeyframe()
 {
     if( mNextCycleKeyframe )
@@ -144,14 +159,17 @@ bool FovisInterface::CheckForKeyframe()
         //      to the current cycle, but PublishKeyframeFeatures needs that var to represent the previous reference frame,
         //      I've moved this portion of the code to PublishKeyframeFeatures.
 //         Debug("(FovisInterface::CheckForKeyframe) next cycle keyframe.\n");
+        mNextCycleKeyframe = false;
+        mIsCycleKeyframe = true;
         return true;
     }
     
     if( VisualOdometryInterface::CheckForKeyframe() )
         return true;
     if( mFovis->getChangeReferenceFrames() )
+    {
         mNextCycleKeyframe = true; //NOTE: This cycle is not keyframe, but the next cycle will be.
-
+    }
     return false;
 }
 
@@ -216,16 +234,6 @@ void FovisInterface::PublishKeyframeFeatures(common::VisualKeyframe::Ptr kf)
         pair.ReferenceRelPosition = currMatch->ref_keypoint->xyz.cast<float>();
         pair.ReferenceIndex = currMatch->ref_keypoint->keypoint_index;
         kf->MatchedPairs.push_back(pair);
-    }
-    
-    if( mNextCycleKeyframe )
-    {
-        //NOTE: The code moved from CheckForKeyframe
-        //TODO: Since fovis sets the reference frame to PREVIOUS frame, check if we should
-        //      set it to GetCycle() - 1 or not.
-        mNextCycleKeyframe = false;
-        mIsCycleKeyframe = true;
-        mPrevFovisReferenceFrame = GetCycle(); // now future frames will reference to this frame
     }
 }
 

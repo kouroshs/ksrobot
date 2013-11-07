@@ -18,6 +18,8 @@ namespace KSRobot
         typedef Clock::time_point                       TimePoint;
         typedef Clock::duration                         Duration;
         
+        extern size_t GetCurrentTimeMillisecs();
+        
         inline long Milliseconds(const Duration& dur)
         {
             return boost::chrono::duration_cast<boost::chrono::milliseconds>(dur).count();

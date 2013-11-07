@@ -117,7 +117,7 @@ void KinectDatasetReader::ReadIndexFile(ifstream& file, const fs::path& fullPath
         std::getline(file, line);
         boost::trim(line);
         // Check to see if this line is a comment
-        if( line[0] == '#' || line.length() == 0 )
+        if( line.length() == 0 || line[0] == '#' )
             continue;
         // Now parse the line, it should be like this:  TimeStamp  PathToFile
         vector<string> strs;
@@ -330,22 +330,19 @@ void KinectDatasetReader::CorrespondGroundTruths()
 
 bool KinectDatasetReader::RunSingleCycle()
 {
-//     std::cout << "(KinectDatasetReader::RunSingleCycle) before lock\n" << std::flush;
-//     
     common::Interface::ScopedLock lock(this);
     
-//     std::cout << "(KinectDatasetReader::RunSingleCycle) begin\n" << std::flush;
     if( GetCycle() >= (int)mRGBFiles.FileNames.size() )
     {
         mContinueExec = false; // finish execution of kinect.
         return false;
     }
     
-//     std::cout << "(KinectDatasetReader::RunSingleCycle) read files = " << mReadFiles << "\n" << std::flush;    
     if( mReadFiles )
         LoadNextFiles();
-//     std::cout << "(KinectDatasetReader::RunSingleCycle) before finish \n" << std::flush;        
+
     FinishCycle();
+    mOnFinishSignal();
     return true;
 }
 
@@ -358,31 +355,26 @@ void KinectDatasetReader::LoadNextFiles()
 
     GenerateGrayImage();
     
-    if( mGenerateFloatDepth )
-    {
-        mFloatDepth.reset(new common::KinectFloatDepthImage);
-        mFloatDepth->Create(mRawDepth->GetWidth(), mRawDepth->GetHeight());
+    mFloatDepth.reset(new common::KinectFloatDepthImage);
+    mFloatDepth->Create(mRawDepth->GetWidth(), mRawDepth->GetHeight());
     
-        //Generating float depth requires more work.
-        const float bad_point = std::numeric_limits<float>::quiet_NaN();
-        const common::KinectRawDepthImage::ArrayType& raw_array = mRawDepth->GetArray();
-        common::KinectFloatDepthImage::ArrayType& float_array = mFloatDepth->GetArray();
-        for(size_t i = 0; i < float_array.size(); i++)
-        {
-            if( raw_array[i] == 0 )
-                float_array[i] = bad_point;
-            else
-                float_array[i] = raw_array[i] * 0.001f; // Convert to meters
-        }
+    //Generating float depth requires more work.
+    const float bad_point = std::numeric_limits<float>::quiet_NaN();
+    const common::KinectRawDepthImage::ArrayType& raw_array = mRawDepth->GetArray();
+    common::KinectFloatDepthImage::ArrayType& float_array = mFloatDepth->GetArray();
+    for(size_t i = 0; i < float_array.size(); i++)
+    {
+        if( raw_array[i] == 0 )
+            float_array[i] = bad_point;
+        else
+            float_array[i] = raw_array[i] * 0.001f; // Convert to meters
     }
+    
     mTimerLoadTimes->Stop();
     
-    if( mGeneratePointCloud )
-    {
-        mTimerPCGenerator->Start();
-        mPC = common::KinectInterface::GeneratePointCloudFromImages(mRgb, mRawDepth, mParams);
-        mTimerPCGenerator->Stop();
-    }
+    mTimerPCGenerator->Start();
+    mPC = common::KinectInterface::GeneratePointCloudFromImages(mRgb, mRawDepth, mParams);
+    mTimerPCGenerator->Stop();
 }
 
 Eigen::Isometry3f KinectDatasetReader::GetCurrentGroundTruth()

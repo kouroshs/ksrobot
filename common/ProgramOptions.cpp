@@ -120,6 +120,8 @@ int ProgramOptions::GetAxis(const std::string& name, const boost::optional<std::
         return 1;
     else if( axis == "z" )
         return 2;
+    else if( axis == "none" )
+        return -1;
     else
         throw std::runtime_error("(ProgramOptions::GetAxis) Invalid axis was provided.");
 }

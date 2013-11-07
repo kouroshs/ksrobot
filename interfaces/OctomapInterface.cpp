@@ -166,7 +166,9 @@ bool OctomapInterface::RunSingleCycle()
         count++;
         
         if( mApplyVoxelGrid )
+        {
             common::PCLUtils::ApplyVoxelGrid(*mFilteredCloud, mi.PointCloud, mVoxelGridResolution);
+        }
         else
         {
             // copy this pointcloud! not the best performance, but causes better and cleaner program
@@ -176,7 +178,7 @@ bool OctomapInterface::RunSingleCycle()
 
         if( mPassThrough.Enabled )
         {
-            common::PCLUtils::ApplyPassThrough(pc, mFilteredCloud, "z", mPassThrough.LimitMin, mPassThrough.LimitMin);
+            common::PCLUtils::ApplyPassThrough(pc, mFilteredCloud, "z", mPassThrough.LimitMin, mPassThrough.LimitMax);
             *mFilteredCloud = pc;
         }
 
@@ -324,8 +326,7 @@ void OctomapInterface::ConvertToOccupancyGrid(common::OccupancyMap::Ptr map, int
     map->ROI.Width = 0;
     map->ROI.Height = 0;
     
-    int axis1 = 0, axis2 = 2;
-    
+    int axis1 = 2, axis2 = 0;
     for(octomap::ColorOcTree::leaf_iterator iter = mOctree->begin_leafs(); iter != mOctree->end_leafs(); iter++)
     {
         if( !CheckHeight(iter) )
@@ -465,17 +466,16 @@ bool OctomapInterface::ExtractGroundPlane(const common::KinectPointCloud& pc, co
         }
     }
     
-    //TODO: SHOULD CHECK FOR STAIRS HERE
-    
     if( !bGroundPlaneFound )
     {
+        //FIXME: This code does not work.
         Debug("Ground plane not found\n");
-        const std::string field_name(mGroundFilter.Axis == 0 ? "x" : (mGroundFilter.Axis == 1 ? "y" : "z"));
-        common::KinectPointCloud::Ptr pcshared = pc.makeShared();
-        common::PCLUtils::ApplyPassThrough(ground, pcshared, field_name, 
-                                           -mGroundFilter.PlaneDistance, mGroundFilter.PlaneDistance);
-        common::PCLUtils::ApplyPassThrough(nonground, pcshared, field_name,
-                                           -mGroundFilter.PlaneDistance, mGroundFilter.PlaneDistance, true);
+//         const std::string field_name(mGroundFilter.Axis == 0 ? "x" : (mGroundFilter.Axis == 1 ? "y" : "z"));
+//         common::KinectPointCloud::Ptr pcshared = pc.makeShared();
+//         common::PCLUtils::ApplyPassThrough(ground, pcshared, field_name, 
+//                                            -mGroundFilter.PlaneDistance, mGroundFilter.PlaneDistance);
+//         common::PCLUtils::ApplyPassThrough(nonground, pcshared, field_name,
+//                                            -mGroundFilter.PlaneDistance, mGroundFilter.PlaneDistance, true);
     }
     return true;
 }

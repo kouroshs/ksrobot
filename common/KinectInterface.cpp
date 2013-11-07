@@ -6,10 +6,9 @@ namespace KSRobot
 namespace common
 {
 
-
 KinectInterface::KinectInterface() : Interface(), mPC(new KinectPointCloud()),
     mRgb(new KinectRgbImage()), mRawDepth(new KinectRawDepthImage()), mFloatDepth(new KinectFloatDepthImage()),
-    mGeneratePointCloud(true), mGenerateFloatDepth(true), mRedCoef(0.2125), mGreenCoef(0.7154), mBlueCoef(0.0721)
+    mRedCoef(0.2125), mGreenCoef(0.7154), mBlueCoef(0.0721)
 {
     memset(&mParams, 0, sizeof(mParams));
 }

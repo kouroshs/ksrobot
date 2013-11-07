@@ -27,6 +27,14 @@ public:
 KinectDeviceReader::KinectDeviceReader() : common::KinectInterface()
 {
     SetInterfaceName("KinectDeviceReader");
+    
+    memset(&mParams, 0, sizeof(mParams));
+    mParams.Width = 640;
+    mParams.Height = 480;
+    mParams.FocalX = 528.49404721f;
+    mParams.FocalY = 528.49404721f;
+    mParams.CenterX = mParams.Width / 2 - 0.5f;
+    mParams.CenterY = mParams.Height / 2 - 0.5f;
 }
 
 KinectDeviceReader::~KinectDeviceReader()
@@ -36,6 +44,7 @@ KinectDeviceReader::~KinectDeviceReader()
 void KinectDeviceReader::Initialize(const std::string& device)
 {
     mGrabber.reset(new GrabberHelper(device));
+    
     boost::function<void (const boost::shared_ptr<openni_wrapper::Image>&, 
                           const boost::shared_ptr<openni_wrapper::DepthImage>& , 
                           float)> fn;
@@ -44,17 +53,8 @@ void KinectDeviceReader::Initialize(const std::string& device)
     
     fn = boost::bind(&KinectDeviceReader::RGBDCallback, this, _1, _2, _3);
     boost::signals2::connection c =  mGrabber->registerCallback(fn);
-
     assert(c.connected());
-    
-    memset(&mParams, 0, sizeof(mParams));
-    mParams.Width = 640;
-    mParams.Height = 480;
-    mParams.FocalX = 528.49404721f;
-    mParams.FocalY = 528.49404721f;
-    mParams.CenterX = mParams.Width / 2 - 0.5f;
-    mParams.CenterY = mParams.Height / 2 - 0.5f;
-    
+    mConnections.push_back(c);
 }
 
 bool KinectDeviceReader::ContinueExecution() const
@@ -80,8 +80,8 @@ void KinectDeviceReader::RGBDCallback(const boost::shared_ptr<openni_wrapper::Im
                                       float /*invFocalLength*/)
 {
     common::Interface::ScopedLock lock(this);
-    
     assert(rgb->getHeight() == depth->getHeight() && rgb->getWidth() == depth->getWidth());
+    
     mRgb.reset(new common::KinectRgbImage());
     mRawDepth.reset(new common::KinectRawDepthImage());
     
@@ -92,21 +92,27 @@ void KinectDeviceReader::RGBDCallback(const boost::shared_ptr<openni_wrapper::Im
     depth->fillDepthImageRaw(depth->getWidth(), depth->getHeight(), mRawDepth->GetArray().data());
     
     GenerateGrayImage();
-
-    if( mGenerateFloatDepth )
+    
+    mFloatDepth.reset(new common::KinectFloatDepthImage());
+    mFloatDepth->Create(depth->getWidth(), depth->getHeight());
+    depth->fillDepthImage(depth->getWidth(), depth->getHeight(), mFloatDepth->GetArray().data());
+    
+    for(size_t i = 0; i < 10; i++)
     {
-        mFloatDepth.reset(new common::KinectFloatDepthImage());
-        mFloatDepth->Create(depth->getWidth(), depth->getHeight());
-        depth->fillDepthImage(depth->getHeight(), depth->getWidth(), mFloatDepth->GetArray().data());
+        size_t idxRaw = mRawDepth->ScanLineIndex(i);
+        size_t idxFloat = mFloatDepth->ScanLineIndex(i);
+        for(size_t j = 0; j < 10; j++)
+        {
+            mRawDepth->At(idxRaw + j) = 0;
+            mFloatDepth->At(idxFloat + j) = std::numeric_limits<float>::quiet_NaN();
+        }
     }
     
-    if( mGeneratePointCloud )
-        mPC = mGrabber->GeneratePC(rgb, depth);
+    mPC = mGrabber->GeneratePC(rgb, depth);
     
     FinishCycle();
     
     //Since this interface does not call ThreadEntry, so we have to call these signals here.
-    mOnCycleCompleteSignal();
     mOnFinishSignal();
 }
 

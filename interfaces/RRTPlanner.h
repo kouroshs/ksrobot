@@ -25,7 +25,7 @@
 #include <ompl/base/spaces/SE2StateSpace.h>
 #include <ompl/base/ProblemDefinition.h>
 #include <ompl/base/Planner.h>
-
+#include <ompl/geometric/PathSimplifier.h>
 
 namespace KSRobot
 {
@@ -43,7 +43,8 @@ public:
     virtual ~RRTPlanner();
     
     virtual void ReadSettings(common::ProgramOptions::Ptr po);
-    virtual void Initialize();
+    virtual void Initialize(size_t max_map_size);
+    virtual void Clear();
     virtual common::MotionPlanner::PlannerResult  Plan();
 private:
     bool IsValidState(const ompl::base::State* st) const;
@@ -52,6 +53,23 @@ private:
     ompl::base::SpaceInformationPtr         mSI;
     ompl::base::ProblemDefinitionPtr        mProbDef;
     ompl::base::PlannerPtr                  mPlanner;
+    ompl::geometric::PathSimplifierPtr      mSimplifier;
+    
+    struct Range
+    {
+        bool                                Enabled;
+        double                              Range;
+    };
+    
+    struct MultipleRuns
+    {
+        bool                                Enabled;
+        int                                 MaxIterations;
+        int                                 MaxRuntimeMillisecs;
+    };
+    
+    Range                                   mRange;
+    MultipleRuns                            mMultipleRuns;
     
     CLASS_DEF_PYEXPORT;
 };
